@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "reviewed": true,
+  "provenance": "Distill-authored capability annotations; no GTFOBins or LOOBins data is redistributed",
+  "commands": {
+    "tar": [{"flag": "--to-command", "kind": "exec"}, {"flag": "--checkpoint-action", "kind": "exec", "prefix": "exec="}],
+    "ssh": [{"flag": "-o", "kind": "exec", "prefix": "ProxyCommand="}, {"flag": "-o", "kind": "exec", "prefix": "LocalCommand="}],
+    "rsync": [{"flag": "-e", "kind": "exec"}, {"flag": "--rsh", "kind": "exec"}],
+    "git": [{"flag": "-c", "kind": "exec", "prefix": "core.fsmonitor="}, {"flag": "-c", "kind": "exec", "prefix": "core.sshCommand="}, {"flag": "-c", "kind": "exec", "prefix": "core.pager="}],
+    "vim": [{"flag": "-c", "kind": "exec"}, {"flag": "--cmd", "kind": "exec"}],
+    "nvim": [{"flag": "-c", "kind": "exec"}, {"flag": "--cmd", "kind": "exec"}],
+    "less": [{"flag": "--use-backslash", "kind": "unresolved"}],
+    "rg": [{"flag": "--pre", "kind": "exec"}],
+    "sort": [{"flag": "--compress-program", "kind": "exec"}],
+    "zip": [{"flag": "--unzip-command", "kind": "exec"}],
+    "man": [{"flag": "--pager", "kind": "exec"}],
+    "tee": [{"flag": "--output-error", "kind": "unresolved"}]
+  }
+}

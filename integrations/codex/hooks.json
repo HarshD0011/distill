@@ -1,0 +1,4 @@
+{
+  "description": "Install user-owned, hash-pinned hooks with distill setup codex --labels; this template intentionally defines no workspace handlers.",
+  "hooks": {}
+}

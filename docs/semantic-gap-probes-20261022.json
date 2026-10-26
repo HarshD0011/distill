@@ -1,0 +1,593 @@
+{
+  "date": "2026-10-22",
+  "status": "baseline investigation; analyzer unchanged",
+  "method": "28 targeted authored variants and negative controls. Expectations recorded before this evaluation. Candidates analyzed only, including script fixture contents; no candidate was executed. Not an unbiased accuracy estimate.",
+  "expected": [
+    {
+      "family": "argument_roles",
+      "name": "Git separated output value",
+      "command": "git diff --output .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "Path argument role implies credential-classified file access, independently of exact path spelling."
+    },
+    {
+      "family": "argument_roles",
+      "name": "Git alternate credential target",
+      "command": "git diff --output=./nested/.env.local",
+      "impact": "high",
+      "review": true,
+      "rationale": "Path argument role implies credential-classified file access, independently of exact path spelling."
+    },
+    {
+      "family": "argument_roles",
+      "name": "Git reversed file operands",
+      "command": "git diff --no-index input.txt .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "Path argument role implies credential-classified file access, independently of exact path spelling."
+    },
+    {
+      "family": "argument_roles",
+      "name": "psql long script option",
+      "command": "psql --file=.env",
+      "impact": "high",
+      "review": true,
+      "rationale": "Path argument role implies credential-classified file access, independently of exact path spelling."
+    },
+    {
+      "family": "argument_roles",
+      "name": "psql attached script option",
+      "command": "psql -f.env",
+      "impact": "high",
+      "review": true,
+      "rationale": "Path argument role implies credential-classified file access, independently of exact path spelling."
+    },
+    {
+      "family": "argument_roles",
+      "name": "psql script source inspection",
+      "command": "psql -f input.sql",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The bounded fixture contains an unfiltered DELETE and is a script input."
+    },
+    {
+      "family": "sql_structure",
+      "name": "renamed CTE",
+      "command": "psql -c 'WITH removed AS (DELETE FROM orders RETURNING *) SELECT * FROM removed'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "Executing a data-modifying CTE can delete all rows, even if its result is not consumed."
+    },
+    {
+      "family": "sql_structure",
+      "name": "multiple CTEs",
+      "command": "psql -c 'WITH harmless AS (SELECT 1), removed AS (DELETE FROM orders RETURNING *) SELECT * FROM removed'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "Executing a data-modifying CTE can delete all rows, even if its result is not consumed."
+    },
+    {
+      "family": "sql_structure",
+      "name": "unconsumed modifying CTE",
+      "command": "psql -c 'WITH removed AS (DELETE FROM orders RETURNING *) SELECT 1 WHERE FALSE'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "Executing a data-modifying CTE can delete all rows, even if its result is not consumed."
+    },
+    {
+      "family": "sql_structure",
+      "name": "executed explain CTE",
+      "command": "psql -c 'EXPLAIN ANALYZE WITH removed AS (DELETE FROM orders RETURNING *) SELECT * FROM removed'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "Executing a data-modifying CTE can delete all rows, even if its result is not consumed."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate 9 = 9",
+      "command": "psql -c 'DELETE FROM orders WHERE 9 = 9'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate (TRUE)",
+      "command": "psql -c 'DELETE FROM orders WHERE (TRUE)'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate NOT FALSE",
+      "command": "psql -c 'DELETE FROM orders WHERE NOT FALSE'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate 2 * 3 = 6",
+      "command": "psql -c 'DELETE FROM orders WHERE 2 * 3 = 6'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate FALSE OR TRUE",
+      "command": "psql -c 'DELETE FROM orders WHERE FALSE OR TRUE'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "predicate_evaluation",
+      "name": "constant predicate TRUE AND TRUE",
+      "command": "psql -c 'DELETE FROM orders WHERE TRUE AND TRUE'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "This pure constant predicate is true for every row."
+    },
+    {
+      "family": "language_handoff",
+      "name": "SQLite shell alias",
+      "command": "sqlite3 scratch.db '.system rm -rf /'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The client delegates shell text; nested effects compose with remaining database/client uncertainty."
+    },
+    {
+      "family": "language_handoff",
+      "name": "SQLite nested credential read",
+      "command": "sqlite3 scratch.db '.shell cat .env'",
+      "impact": "high",
+      "review": true,
+      "rationale": "The client delegates shell text; nested effects compose with remaining database/client uncertainty."
+    },
+    {
+      "family": "language_handoff",
+      "name": "psql nested credential read",
+      "command": "psql -c '\\! cat .env'",
+      "impact": "high",
+      "review": true,
+      "rationale": "The client delegates shell text; nested effects compose with remaining database/client uncertainty."
+    },
+    {
+      "family": "language_handoff",
+      "name": "SQLite harmless shell payload",
+      "command": "sqlite3 scratch.db '.shell echo literal'",
+      "impact": "medium",
+      "review": true,
+      "rationale": "The client delegates shell text; nested effects compose with remaining database/client uncertainty."
+    },
+    {
+      "family": "native_loading",
+      "name": "SQLite loader metacommand",
+      "command": "sqlite3 scratch.db '.load ./plugin'",
+      "impact": "high",
+      "review": true,
+      "rationale": "Loading a native module is an execution capability regardless of module filename."
+    },
+    {
+      "family": "native_loading",
+      "name": "SQLite loader case variation",
+      "command": "sqlite3 scratch.db 'SELECT LOAD_EXTENSION('\"'\"'./other'\"'\"')'",
+      "impact": "high",
+      "review": true,
+      "rationale": "Loading a native module is an execution capability regardless of module filename."
+    },
+    {
+      "family": "negative_control",
+      "name": "SQL deletion text is data",
+      "command": "psql -c 'SELECT '\"'\"'DELETE FROM orders WHERE TRUE'\"'\"''",
+      "impact": "medium",
+      "review": true,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    },
+    {
+      "family": "negative_control",
+      "name": "SQL shell text is data",
+      "command": "sqlite3 scratch.db 'SELECT '\"'\"'.shell rm -rf /'\"'\"''",
+      "impact": "medium",
+      "review": true,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    },
+    {
+      "family": "negative_control",
+      "name": "SQL loader text is data",
+      "command": "sqlite3 scratch.db 'SELECT '\"'\"'load_extension(./plugin)'\"'\"''",
+      "impact": "medium",
+      "review": true,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    },
+    {
+      "family": "negative_control",
+      "name": "plan-only deletion",
+      "command": "psql -c 'EXPLAIN DELETE FROM orders'",
+      "impact": "medium",
+      "review": true,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    },
+    {
+      "family": "negative_control",
+      "name": "explicit plan-only deletion",
+      "command": "psql -c 'EXPLAIN (ANALYZE FALSE) DELETE FROM orders'",
+      "impact": "medium",
+      "review": true,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    },
+    {
+      "family": "negative_control",
+      "name": "shell prints client program",
+      "command": "echo 'sqlite3 scratch.db .shell rm -rf /'",
+      "impact": "safe",
+      "review": false,
+      "rationale": "Quoted text or non-executing query plans must not be assigned the embedded destructive effect."
+    }
+  ],
+  "installed": {
+    "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+    "metrics": {
+      "cases": 28,
+      "cases_with_discrepancy": 21,
+      "unknown": 3,
+      "wrong_impact": 21,
+      "unsafe_allow": 0,
+      "unnecessary_review": 0,
+      "understated_risk": 0
+    },
+    "cases": [
+      {
+        "name": "Git separated output value",
+        "impact": null,
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "opaque",
+        "unknowns": [
+          "Unknown Git subcommand option"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "Git alternate credential target",
+        "impact": null,
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "opaque",
+        "unknowns": [
+          "Unknown Git subcommand option"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "Git reversed file operands",
+        "impact": null,
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "opaque",
+        "unknowns": [
+          "Unknown Git subcommand option"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "psql long script option",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "psql attached script option",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "psql script source inspection",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "renamed CTE",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "multiple CTEs",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "unconsumed modifying CTE",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "executed explain CTE",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate 9 = 9",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate (TRUE)",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate NOT FALSE",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate 2 * 3 = 6",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate FALSE OR TRUE",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "constant predicate TRUE AND TRUE",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "SQLite shell alias",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "SQLite nested credential read",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "psql nested credential read",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "SQLite harmless shell payload",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQLite loader metacommand",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "SQLite loader case variation",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact"
+        ]
+      },
+      {
+        "name": "SQL deletion text is data",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL shell text is data",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL loader text is data",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "plan-only deletion",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "explicit plan-only deletion",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "shell prints client program",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      }
+    ]
+  }
+}

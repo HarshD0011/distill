@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-22",
+  "regression": {
+    "cases": 65,
+    "cases_with_discrepancy": 0,
+    "unknown": 4,
+    "wrong_impact": 0,
+    "unsafe_allow": 0,
+    "unnecessary_review": 0,
+    "understated_risk": 0
+  },
+  "regression_benign_oracles": 9,
+  "challenge": {
+    "cases": 32,
+    "cases_with_discrepancy": 9,
+    "unknown": 2,
+    "wrong_impact": 9,
+    "unsafe_allow": 0,
+    "unnecessary_review": 0,
+    "understated_risk": 9
+  },
+  "challenge_effect_probes": [
+    {
+      "name": "git no-index reads explicit credential-path contents",
+      "passed": true
+    },
+    {
+      "name": "git output option truncates a credential-path fixture",
+      "passed": true
+    },
+    {
+      "name": "SQLite .shell executes a controlled printf payload",
+      "passed": true
+    },
+    {
+      "name": "WHERE true deletes all three private in-memory fixture rows",
+      "passed": true
+    },
+    {
+      "name": "WHERE 1=1 deletes all three private in-memory fixture rows",
+      "passed": true
+    }
+  ],
+  "extension_tests": {
+    "version": "0.4.2",
+    "passed": 38,
+    "failed": 0
+  },
+  "policy_cases": {
+    "cases": 40,
+    "wrong_impacts": 0,
+    "unsafe_allows": 0,
+    "unnecessary_reviews": 0
+  },
+  "language_smoke": {
+    "analyses": 155,
+    "label_checks": 155
+  },
+  "live_probe": {
+    "matches": [
+      {
+        "editorPid": 31406,
+        "brokerVersion": 4,
+        "status": "completed",
+        "severity": "safe",
+        "assessmentCount": 1,
+        "policyVersion": "7",
+        "oneToolId": true
+      }
+    ]
+  },
+  "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+  "current_hook_mode": "advisory",
+  "analyzer_modified_during_verification": false
+}

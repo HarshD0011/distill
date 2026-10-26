@@ -1,0 +1,306 @@
+[
+  {
+    "name": "formatted date and macOS system query",
+    "command": "date '+%Y-%m-%d %H:%M:%S %Z' && uname -s",
+    "impact": "safe",
+    "review": false
+  },
+  {
+    "name": "uname unsupported setting option is unresolved",
+    "command": "uname -S replacement",
+    "impact": null,
+    "review": true
+  },
+  {
+    "name": "python arithmetic output",
+    "command": "python3 -c 'count = 6 * 7; print(count)'",
+    "impact": "low",
+    "review": false
+  },
+  {
+    "name": "node arithmetic output",
+    "command": "node -e 'const count = 6 * 7; console.log(count)'",
+    "impact": "low",
+    "review": false
+  },
+  {
+    "name": "version has no network effect",
+    "command": "curl --version",
+    "impact": "safe",
+    "review": false
+  },
+  {
+    "name": "unmodeled import",
+    "command": "python3 -c 'print(42); import os'",
+    "impact": null,
+    "review": true
+  },
+  {
+    "name": "unresolved runtime file",
+    "command": "python3 absent.py",
+    "impact": null,
+    "review": true
+  },
+  {
+    "name": "unknown tool",
+    "command": "distill-evaluation-unknown --flag",
+    "impact": null,
+    "review": true
+  },
+  {
+    "name": "ordinary read through assignment",
+    "command": "python3 -c 'directory = \"/etc\"; path = directory + \"/passwd\"; print(open(path).read())'",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read",
+    "target": "/etc/passwd"
+  },
+  {
+    "name": "sensitive read through assignment",
+    "command": "python3 -c 'path = \".env\"; open(path)'",
+    "impact": "high",
+    "review": true,
+    "effect": "file_read"
+  },
+  {
+    "name": "keyword sensitive read",
+    "command": "python3 -c 'open(file=\".env\", mode=\"r\")'",
+    "impact": "high",
+    "review": true,
+    "effect": "file_read"
+  },
+  {
+    "name": "python append mode binding",
+    "command": "python3 -c 'path = \"notes.txt\"; mode = \"a\"; open(path, mode)'",
+    "impact": "medium",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "unknown keyword mode may write",
+    "command": "python3 -c 'open(\"notes.txt\", mode=unknown)'",
+    "impact": "medium",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "python startup write",
+    "command": "python3 -c 'path = \".zshrc\"; open(path, \"w\")'",
+    "impact": "high",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "python protected write",
+    "command": "python3 -c 'open(\"/srv/production/data\", \"w\")'",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "python delete via imported function alias",
+    "command": "python3 -c 'from shutil import rmtree as erase; path = \"/\"; erase(path)'",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete",
+    "target": "/"
+  },
+  {
+    "name": "python delete via module alias",
+    "command": "python3 -c 'import shutil as files; base = \"/\"; files.rmtree(base)'",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "literal home marker is ordinary",
+    "command": "python3 -c 'import shutil; shutil.rmtree(\"~\")'",
+    "impact": "medium",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "reassignment changes the target",
+    "command": "python3 -c 'path = \"/\"; path = \"notes.txt\"; open(path)'",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read"
+  },
+  {
+    "name": "branch join loses the exact target",
+    "command": "python3 -c 'path = \"/\"\nif flag:\n    path = \"notes.txt\"\nopen(path)'",
+    "impact": "high",
+    "review": true,
+    "effect": "file_read",
+    "target": null
+  },
+  {
+    "name": "node aliased read",
+    "command": "node -e 'const files = require(\"node:fs\"); const path = \"/etc/\" + \"passwd\"; files.readFileSync(path)'",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read",
+    "target": "/etc/passwd"
+  },
+  {
+    "name": "node recursive alias delete",
+    "command": "node -e 'const files = require(\"fs\"); const erase = files.rmSync; const path = \"/\"; erase(path, {recursive:true})'",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "node alias reassignment",
+    "command": "node -e 'let files = require(\"fs\"); files = other; files.rmSync(\"/\", {recursive:true})'",
+    "impact": null,
+    "review": true
+  },
+  {
+    "name": "node initializer strings are inert",
+    "command": "node -e 'const sample = \"shutil.rmtree(/)\"; console.log(sample)'",
+    "impact": "low",
+    "review": false
+  },
+  {
+    "name": "go bound path read",
+    "extension": "go",
+    "tool": "go run",
+    "source": "package main\nimport \"os\"\nfunc main(){ path := \"/etc/passwd\"; os.ReadFile(path) }\n",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read",
+    "target": "/etc/passwd"
+  },
+  {
+    "name": "go aliased protected delete",
+    "extension": "go",
+    "tool": "go run",
+    "source": "package main\nimport files \"os\"\nfunc main(){ path := \"/\"; files.RemoveAll(path) }\n",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "go command builder has no execution effect",
+    "extension": "go",
+    "tool": "go run",
+    "source": "package main\nimport \"os/exec\"\nfunc main(){ exec.Command(\"true\") }\n",
+    "impact": null,
+    "review": true,
+    "forbidden_effect": "execute"
+  },
+  {
+    "name": "go command Run executes",
+    "extension": "go",
+    "tool": "go run",
+    "source": "package main\nimport \"os/exec\"\nfunc main(){ exec.Command(\"true\").Run() }\n",
+    "impact": "high",
+    "review": true,
+    "effect": "execute"
+  },
+  {
+    "name": "C pointer literal read",
+    "extension": "c",
+    "tool": "cc",
+    "source": "#include <stdio.h>\nint main(void){ const char *path = \"/etc/passwd\"; fopen(path, \"r\"); }\n",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read",
+    "target": "/etc/passwd"
+  },
+  {
+    "name": "C read write mode has both effects",
+    "extension": "c",
+    "tool": "cc",
+    "source": "#include <stdio.h>\nint main(void){ fopen(\"notes.txt\", \"r+\"); }\n",
+    "impact": "medium",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "C++ qualified file read",
+    "extension": "cpp",
+    "tool": "clang++",
+    "source": "#include <cstdio>\nint main(){ const char *path = \"/etc/passwd\"; std::fopen(path, \"r\"); }\n",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read"
+  },
+  {
+    "name": "C++ recursive filesystem deletion",
+    "extension": "cpp",
+    "tool": "clang++",
+    "source": "#include <filesystem>\nint main(){ const char *path = \"/\"; std::filesystem::remove_all(path); }\n",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "Rust bound file read",
+    "extension": "rs",
+    "tool": "rustc",
+    "source": "fn main(){ let path = \"/etc/passwd\"; std::fs::read(path); }\n",
+    "impact": "low",
+    "review": true,
+    "effect": "file_read",
+    "target": "/etc/passwd"
+  },
+  {
+    "name": "Rust bound root deletion",
+    "extension": "rs",
+    "tool": "rustc",
+    "source": "fn main(){ let path = \"/\"; std::fs::remove_dir_all(path); }\n",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "Rust builder has no execution effect",
+    "extension": "rs",
+    "tool": "rustc",
+    "source": "fn main(){ std::process::Command::new(\"true\"); }\n",
+    "impact": "low",
+    "review": true,
+    "forbidden_effect": "execute"
+  },
+  {
+    "name": "Rust status executes",
+    "extension": "rs",
+    "tool": "rustc",
+    "source": "fn main(){ std::process::Command::new(\"true\").status(); }\n",
+    "impact": "high",
+    "review": true,
+    "effect": "execute"
+  },
+  {
+    "name": "shell protected deletion",
+    "command": "rm -rf /srv/production",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_delete"
+  },
+  {
+    "name": "shell startup write",
+    "command": "printf text > .zshrc",
+    "impact": "high",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "shell ordinary file write",
+    "command": "printf text > notes.txt",
+    "impact": "medium",
+    "review": true,
+    "effect": "file_write"
+  },
+  {
+    "name": "unresolved source with protected compiler output",
+    "extension": "cpp",
+    "tool": "clang++",
+    "source": "int main(){ unknown(); }\n",
+    "arguments": "-o /srv/production/program",
+    "impact": "critical",
+    "review": true,
+    "effect": "file_write"
+  }
+]

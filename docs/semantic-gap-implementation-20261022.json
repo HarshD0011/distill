@@ -1,0 +1,2781 @@
+{
+  "method": "Targeted authored regression, challenge and variation expectations. Candidate commands were analyzed only; no accuracy estimate is inferred. Counts across suites can overlap.",
+  "candidate_execution": false,
+  "suites": {
+    "regression": {
+      "expectations": "corpus/verdict-audit.json",
+      "before": {
+        "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+        "metrics": {
+          "cases": 65,
+          "cases_with_discrepancy": 0,
+          "unknown": 4,
+          "wrong_impact": 0,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 0
+        },
+        "cases": [
+          {
+            "name": "echo",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "pwd",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "metadata listing",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "credential metadata only",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git whitespace check",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git cached whitespace check",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git status",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git current branch",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep filename listing",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head legacy count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "tail legacy count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sed literal print",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "numbered contents",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep explicit file",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep explicit regexp",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep preprocessor disabled",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat credentials",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "count credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sed credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep inline credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "Bash startup injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "loader audit injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Git external diff injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep config injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep hostname helper",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep executable preprocessor",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep preprocessor is an executable not shell text",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep external decompressor",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "quoted root executable",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "wrapped root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Elevated privilege or executable resolution is conditional"
+            ],
+            "issues": []
+          },
+          {
+            "name": "xargs replacement token",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Capability invokes additional commands with unresolved execution context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "xargs quoted replacement token",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Capability invokes additional commands with unresolved execution context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "find nested root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "find -exec command is not resolved",
+              "Find may execute a nested program in a traversal-dependent context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "find later nested root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "find -exec command is not resolved",
+              "Find may execute a nested program in a traversal-dependent context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "download and execute",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "opaque",
+            "unknowns": [
+              "Network destination and transferred data are not fully resolved",
+              "Downloaded script contents are unavailable before execution",
+              "Shell may read unresolved code from standard input",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "multipart credential upload",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Network destination and transferred data are not fully resolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "copied credential upload",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Copy/move directory contents and destination expansion are unresolved",
+              "Network destination and transferred data are not fully resolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL line comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL block comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL nested comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL dollar quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL tagged dollar quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL explain without execution",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL explain analyze disabled",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "cloud query data contains delete",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL actual drop",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL inline actual drop",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL actual delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL comment cannot provide WHERE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL nested WHERE cannot constrain delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL analyze executes delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL parenthesized analyze executes delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "cloud actual destruction",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Kubernetes actual deletion",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL filtered delete",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "opaque executable",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown command definition"
+            ],
+            "issues": []
+          },
+          {
+            "name": "computed executable",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Executable contains an expansion"
+            ],
+            "issues": []
+          },
+          {
+            "name": "encoded shell input",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "macOS command is recognized but its options are not fully modeled",
+              "Shell may read unresolved code from standard input",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Python unmodeled imports",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Source includes behavior outside the supported static semantics",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          }
+        ]
+      },
+      "after": {
+        "binary_sha256": "300d1aa420043a37b2001a3a3b08fa6d1311bbb192a22d7826d741289716ac75",
+        "metrics": {
+          "cases": 65,
+          "cases_with_discrepancy": 0,
+          "unknown": 4,
+          "wrong_impact": 0,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 0
+        },
+        "cases": [
+          {
+            "name": "echo",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "pwd",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "metadata listing",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "credential metadata only",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git whitespace check",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git cached whitespace check",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git status",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git current branch",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep filename listing",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head legacy count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "tail legacy count",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sed literal print",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "numbered contents",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep explicit file",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep explicit regexp",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep preprocessor disabled",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat credentials",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "count credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sed credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep credential contents",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "ripgrep inline credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "Bash startup injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "loader audit injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Git external diff injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep config injection",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Runtime environment override is not modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep hostname helper",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep executable preprocessor",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep preprocessor is an executable not shell text",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "ripgrep external decompressor",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "quoted root executable",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "wrapped root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Elevated privilege or executable resolution is conditional"
+            ],
+            "issues": []
+          },
+          {
+            "name": "xargs replacement token",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Capability invokes additional commands with unresolved execution context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "xargs quoted replacement token",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Capability invokes additional commands with unresolved execution context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "find nested root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "find -exec command is not resolved",
+              "Find may execute a nested program in a traversal-dependent context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "find later nested root deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "find -exec command is not resolved",
+              "Find may execute a nested program in a traversal-dependent context",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "download and execute",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "opaque",
+            "unknowns": [
+              "Network destination and transferred data are not fully resolved",
+              "Downloaded script contents are unavailable before execution",
+              "Shell may read unresolved code from standard input",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "multipart credential upload",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Network destination and transferred data are not fully resolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "copied credential upload",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Copy/move directory contents and destination expansion are unresolved",
+              "Network destination and transferred data are not fully resolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL line comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL block comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL nested comment",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL dollar quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL tagged dollar quoted text",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL explain without execution",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL explain analyze disabled",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "cloud query data contains delete",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL actual drop",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL inline actual drop",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL actual delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL comment cannot provide WHERE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL nested WHERE cannot constrain delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL analyze executes delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL parenthesized analyze executes delete",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "cloud actual destruction",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Kubernetes actual deletion",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL filtered delete",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "opaque executable",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown command definition"
+            ],
+            "issues": []
+          },
+          {
+            "name": "computed executable",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Executable contains an expansion"
+            ],
+            "issues": []
+          },
+          {
+            "name": "encoded shell input",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "macOS command is recognized but its options are not fully modeled",
+              "Shell may read unresolved code from standard input",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "Python unmodeled imports",
+            "impact": null,
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Source includes behavior outside the supported static semantics",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          }
+        ]
+      }
+    },
+    "challenge": {
+      "expectations": "corpus/verdict-challenge-20261022.json",
+      "before": {
+        "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+        "metrics": {
+          "cases": 32,
+          "cases_with_discrepancy": 9,
+          "unknown": 2,
+          "wrong_impact": 9,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 9
+        },
+        "cases": [
+          {
+            "name": "inert quoted deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "inert printf deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "shell prints inert deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "nested shell deletes root",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "literal eval deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat credential after delimiter",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head credential byte count",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "tail credential starting line",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "grep credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sort credential file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential-looking pattern",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg inline credential-looking pattern",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential metadata",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential ignore file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg inline helper disabled",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg helper enabled last",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "rg ordinary patterns credential input",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg files mode skips preprocessor",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git credential output file",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown Git subcommand option"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "git no-index credential read",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown Git subcommand option"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "git configured executable pager",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Reviewed capability catalog identifies executable or unresolved option behavior",
+              "Nested program behavior is unresolved",
+              "Unknown command definition",
+              "Command option can execute a nested program",
+              "Inline Git configuration is not fully modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL second statement drops table",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL semicolon in string",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL quoted keyword identifier",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL data-modifying CTE",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "SQL unconditional true predicate",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "SQL unconditional equality predicate",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "SQL non-executing explain option",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite shell metacommand",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "SQLite extension loading",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "psql shell metacommand",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          },
+          {
+            "name": "psql credential script input",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact",
+              "understated_risk"
+            ]
+          }
+        ]
+      },
+      "after": {
+        "binary_sha256": "300d1aa420043a37b2001a3a3b08fa6d1311bbb192a22d7826d741289716ac75",
+        "metrics": {
+          "cases": 32,
+          "cases_with_discrepancy": 0,
+          "unknown": 0,
+          "wrong_impact": 0,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 0
+        },
+        "cases": [
+          {
+            "name": "inert quoted deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "inert printf deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "shell prints inert deletion",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "nested shell deletes root",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "literal eval deletion",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "cat credential after delimiter",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "head credential byte count",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "tail credential starting line",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "grep credential pattern file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "sort credential file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential-looking pattern",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg inline credential-looking pattern",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential metadata",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg credential ignore file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg inline helper disabled",
+            "impact": "low",
+            "risk": "low",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg helper enabled last",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Search helper executable contents are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "rg ordinary patterns credential input",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "rg files mode skips preprocessor",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git credential output file",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git no-index credential read",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "git configured executable pager",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Reviewed capability catalog identifies executable or unresolved option behavior",
+              "Nested program behavior is unresolved",
+              "Unknown command definition",
+              "Command option can execute a nested program",
+              "Inline Git configuration is not fully modeled"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL second statement drops table",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL semicolon in string",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL quoted keyword identifier",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL data-modifying CTE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL unconditional true predicate",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL unconditional equality predicate",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL non-executing explain option",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite shell metacommand",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite extension loading",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Native module contents, loader search and runtime identity are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "psql shell metacommand",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "psql credential script input",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "SQL syntax or dialect construct is outside the supported AST subset",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          }
+        ]
+      }
+    },
+    "generalization": {
+      "expectations": "corpus/semantic-generalization.json",
+      "before": {
+        "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+        "metrics": {
+          "cases": 28,
+          "cases_with_discrepancy": 21,
+          "unknown": 3,
+          "wrong_impact": 21,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 0
+        },
+        "cases": [
+          {
+            "name": "Git separated output value",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown Git subcommand option"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "Git alternate credential target",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown Git subcommand option"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "Git reversed file operands",
+            "impact": null,
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "opaque",
+            "unknowns": [
+              "Unknown Git subcommand option"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "psql long script option",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "psql attached script option",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "psql script source inspection",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "renamed CTE",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "multiple CTEs",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "unconsumed modifying CTE",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "executed explain CTE",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate 9 = 9",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate (TRUE)",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate NOT FALSE",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate 2 * 3 = 6",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate FALSE OR TRUE",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "constant predicate TRUE AND TRUE",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "SQLite shell alias",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "SQLite nested credential read",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "psql nested credential read",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "SQLite harmless shell payload",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite loader metacommand",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "SQLite loader case variation",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": [
+              "wrong_impact"
+            ]
+          },
+          {
+            "name": "SQL deletion text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL shell text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL loader text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "plan-only deletion",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "explicit plan-only deletion",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Semantic CLI scope and embedded-language behavior are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "shell prints client program",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          }
+        ]
+      },
+      "after": {
+        "binary_sha256": "300d1aa420043a37b2001a3a3b08fa6d1311bbb192a22d7826d741289716ac75",
+        "metrics": {
+          "cases": 28,
+          "cases_with_discrepancy": 0,
+          "unknown": 0,
+          "wrong_impact": 0,
+          "unsafe_allow": 0,
+          "unnecessary_review": 0,
+          "understated_risk": 0
+        },
+        "cases": [
+          {
+            "name": "Git separated output value",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "Git alternate credential target",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "Git reversed file operands",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          },
+          {
+            "name": "psql long script option",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "SQL syntax or dialect construct is outside the supported AST subset",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "psql attached script option",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "SQL syntax or dialect construct is outside the supported AST subset",
+              "Nested program behavior is unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "psql script source inspection",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "renamed CTE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "multiple CTEs",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "unconsumed modifying CTE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "executed explain CTE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate 9 = 9",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate (TRUE)",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate NOT FALSE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate 2 * 3 = 6",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate FALSE OR TRUE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "constant predicate TRUE AND TRUE",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite shell alias",
+            "impact": "critical",
+            "risk": "critical",
+            "decision": "deny",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite nested credential read",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "psql nested credential read",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite harmless shell payload",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Client shell execution is conditional on client state and platform"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite loader metacommand",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Native module contents, loader search and runtime identity are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQLite loader case variation",
+            "impact": "high",
+            "risk": "high",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved",
+              "Native module contents, loader search and runtime identity are unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL deletion text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL shell text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "SQL loader text is data",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "plan-only deletion",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "explicit plan-only deletion",
+            "impact": "medium",
+            "risk": "medium",
+            "decision": "ask",
+            "coverage": "partial",
+            "unknowns": [
+              "Database/client schema, startup configuration and runtime state remain unresolved"
+            ],
+            "issues": []
+          },
+          {
+            "name": "shell prints client program",
+            "impact": "safe",
+            "risk": "safe",
+            "decision": "allow",
+            "coverage": "static_accounted",
+            "unknowns": [],
+            "issues": []
+          }
+        ]
+      }
+    }
+  }
+}

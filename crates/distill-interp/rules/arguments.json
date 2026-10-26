@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "commands": {
+    "git-diff": {
+      "options": [
+        {"names":["--output"],"role":"write","forms":["separate","equals"],"last_wins":true},
+        {"names":["--no-index"],"role":"flag","mode":"filesystem"},
+        {"names":["--check","--cached","--staged","--name-status","--numstat","--no-ext-diff","--no-textconv","--stat","--name-only","--shortstat","--patch","-p","--no-patch","-s","--exit-code","--quiet","--text","-a","--reverse","-R","--raw","--binary","--color","--no-color"],"role":"flag"},
+        {"names":["--unified","-U","--diff-algorithm","--src-prefix","--dst-prefix"],"role":"value","forms":["separate","equals","attached"]}
+      ]
+    },
+    "psql": {
+      "options": [
+        {"names":["-c","--command"],"role":"program","forms":["separate","equals","attached"]},
+        {"names":["-f","--file"],"role":"script","forms":["separate","equals","attached"]},
+        {"names":["-o","--output"],"role":"write","forms":["separate","equals","attached"],"pipe":true,"before_program":true},
+        {"names":["-L","--log-file"],"role":"write","forms":["separate","equals","attached"],"append":true,"before_program":true},
+        {"names":["-h","--host","-p","--port","-U","--username","-d","--dbname","-v","--set","--variable","-F","--field-separator","-R","--record-separator"],"role":"value","forms":["separate","equals","attached"]},
+        {"names":["-X","--no-psqlrc","-A","--no-align","-t","--tuples-only","-q","--quiet","-a","--echo-all","-e","--echo-queries","-E","--echo-hidden","-n","--no-readline","-w","--no-password","-W","--password","-x","--expanded","--csv","-1","--single-transaction"],"role":"flag"}
+      ]
+    },
+    "sqlite3": {
+      "options": [
+        {"names":["-cmd"],"role":"program","forms":["separate"],"before_program":true},
+        {"names":["-init"],"role":"script","forms":["separate"],"before_program":true},
+        {"names":["-separator","-newline","-nullvalue"],"role":"value","forms":["separate"]},
+        {"names":["-readonly","-batch","-bail","-csv","-column","-list","-line","-json","-html","-header","-noheader","-echo","-quote","-table","-box","-tabs","-safe","--safe"],"role":"flag"}
+      ]
+    },
+    "mysql": {
+      "options": [
+        {"names":["-e","--execute"],"role":"program","forms":["separate","equals","attached"]},
+        {"names":["-h","--host","-P","--port","-u","--user","-D","--database"],"role":"value","forms":["separate","equals","attached"]},
+        {"names":["--batch","-B","--raw","--skip-column-names","-N","--silent","-s"],"role":"flag"}
+      ]
+    }
+  }
+}

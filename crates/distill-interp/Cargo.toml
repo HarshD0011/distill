@@ -1,0 +1,22 @@
+[package]
+name = "distill-interp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pure tool semantics and effect interpretation for distill"
+
+[dependencies]
+distill-core = { workspace = true }
+distill-parse = { workspace = true }
+distill-rules = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true }
+sqlparser = { version = "=0.63.0", default-features = false, features = ["std", "visitor"] }
+tree-sitter = "0.27.1"
+tree-sitter-bash = "0.25.1"
+tree-sitter-c = "0.24.2"
+tree-sitter-cpp = "0.23.4"
+tree-sitter-go = "0.25.0"
+tree-sitter-javascript = "0.25.0"
+tree-sitter-python = "0.25.0"
+tree-sitter-rust = "0.24.2"

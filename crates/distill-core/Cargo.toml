@@ -1,0 +1,16 @@
+[package]
+name = "distill-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Shared distill IDs, reports, effects, coverage and configuration types"
+
+[dependencies]
+libc = "0.2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+toml = { workspace = true }
+sha2 = { workspace = true }
+sha1 = { workspace = true }
+hmac = { workspace = true }
+regex = { workspace = true }

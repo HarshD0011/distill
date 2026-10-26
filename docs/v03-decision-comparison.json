@@ -1,0 +1,75 @@
+{
+  "scope": "51 synthetic regression cases; candidate commands analyzed as data",
+  "cases": 51,
+  "changes": [
+    {
+      "case": "git-current-branch-query",
+      "before": {
+        "impact": "medium",
+        "approval_risk": "medium",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "after": {
+        "impact": "safe",
+        "approval_risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted"
+      },
+      "decision_downgrade": true
+    },
+    {
+      "case": "mktemp-literal-template",
+      "before": {
+        "impact": null,
+        "approval_risk": "medium",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "after": {
+        "impact": "medium",
+        "approval_risk": "medium",
+        "decision": "ask",
+        "coverage": "static_accounted"
+      },
+      "decision_downgrade": false
+    },
+    {
+      "case": "make-prerequisite",
+      "before": {
+        "impact": null,
+        "approval_risk": "medium",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "after": {
+        "impact": "critical",
+        "approval_risk": "critical",
+        "decision": "deny",
+        "coverage": "partial"
+      },
+      "decision_downgrade": false
+    },
+    {
+      "case": "make-directory-and-file",
+      "before": {
+        "impact": null,
+        "approval_risk": "medium",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "after": {
+        "impact": "critical",
+        "approval_risk": "critical",
+        "decision": "deny",
+        "coverage": "partial"
+      },
+      "decision_downgrade": false
+    }
+  ],
+  "decision_downgrades": 1,
+  "reviewed_decision_relaxations": [
+    "git-current-branch-query"
+  ],
+  "unreviewed_decision_relaxations": []
+}

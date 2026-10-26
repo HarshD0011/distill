@@ -1,32 +1,69 @@
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
-# Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
+# Rust build artifacts
+/target/
+**/*.rs.bk
+*.rmeta
+
+# C / C++ / Native & Metal compilation artifacts
+/build/
+/cmake-build-*/
+*.o
+*.a
 *.so
 *.dylib
+*.dll
+*.metal
+*.air
+*.metallib
+*.dSYM/
 
-# Test binary, built with `go test -c`
-*.test
+# Model Weights & Data Large Files
+*.safetensors
+*.gguf
+*.bin
+*.onnx
+*.pt
+*.pth
+*.ckpt
+/models/
+/weights/
+/data/
 
-# Code coverage profiles and other test artifacts
-*.out
-coverage.*
-*.coverprofile
-profile.cov
+# macOS / System
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# IDEs & Editors
+.vscode/
+!/extensions/vscode/.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
 
-# Go workspace file
-go.work
-go.work.sum
-
-# env file
+# Environment & Logs
 .env
+.env.*
+*.log
 
-# Editor/IDE
-# .idea/
-# .vscode/
+# VS Code extension packages
+*.vsix
+
+
+# Added by cargo
+
+/target
+
+command-risk-plugin-guide.md
+distill_complete_architecture.md
+
+# Fuzz build output and transient crash artifacts
+/fuzz/target/
+/fuzz/artifacts/
+/oom-*
+/crash-*
+/timeout-*
