@@ -1,0 +1,23 @@
+{
+  "version":1,
+  "functions": {
+    "sqlite": {
+      "load_extension":{"kind":"native_load","argument":0},
+      "readfile":{"kind":"file_read","argument":0},
+      "writefile":{"kind":"file_write","argument":0}
+    }
+  },
+  "clients": {
+    "sqlite3": {
+      ".shell":{"kind":"shell","syntax":"sqlite_join"},
+      ".system":{"kind":"shell","syntax":"sqlite_join"},
+      ".load":{"kind":"native_load","syntax":"sqlite_words"},
+      ".read":{"kind":"script","syntax":"sqlite_words","pipe":true}
+    },
+    "psql": {
+      "\\!":{"kind":"shell","syntax":"rest"},
+      "\\i":{"kind":"script","syntax":"psql_path"},
+      "\\include":{"kind":"script","syntax":"psql_path"}
+    }
+  }
+}

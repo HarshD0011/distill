@@ -1,0 +1,9 @@
+[package]
+name = "distill-rules"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scoring, coverage floors and policy decisions for distill"
+
+[dependencies]
+distill-core = { workspace = true }

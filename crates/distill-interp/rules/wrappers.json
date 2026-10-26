@@ -1,0 +1,146 @@
+{
+  "version": 1,
+  "wrappers": {
+    "env": {
+      "flags": [
+        "-i",
+        "--ignore-environment"
+      ],
+      "values": [
+        "-u",
+        "--unset",
+        "-C",
+        "--chdir"
+      ],
+      "assignments": true
+    },
+    "sudo": {
+      "flags": [
+        "-n",
+        "-E",
+        "-H",
+        "-S",
+        "--non-interactive",
+        "--preserve-env"
+      ],
+      "values": [
+        "-u",
+        "-g",
+        "-C",
+        "-D",
+        "-R",
+        "--user",
+        "--group",
+        "--chdir",
+        "--chroot"
+      ],
+      "privilege": true
+    },
+    "doas": {
+      "flags": [
+        "-n"
+      ],
+      "values": [
+        "-u"
+      ],
+      "privilege": true
+    },
+    "command": {
+      "flags": [
+        "-p"
+      ],
+      "query": [
+        "-v",
+        "-V"
+      ]
+    },
+    "builtin": {},
+    "nohup": {},
+    "nice": {
+      "values": [
+        "-n",
+        "--adjustment"
+      ]
+    },
+    "timeout": {
+      "flags": [
+        "--foreground",
+        "--preserve-status",
+        "-v",
+        "--verbose"
+      ],
+      "values": [
+        "-k",
+        "--kill-after",
+        "-s",
+        "--signal"
+      ],
+      "operand": true
+    },
+    "time": {
+      "flags": [
+        "-p"
+      ],
+      "values": [
+        "-o",
+        "--output",
+        "-f",
+        "--format"
+      ]
+    }
+  },
+  "commands": {
+    "mkdir": {
+      "flags": [
+        "-p",
+        "--parents",
+        "-v",
+        "--verbose"
+      ],
+      "values": [
+        "-m",
+        "--mode"
+      ],
+      "targets": "write_all"
+    },
+    "touch": {
+      "flags": [
+        "-a",
+        "-m",
+        "-c",
+        "--no-create"
+      ],
+      "values": [
+        "-t",
+        "-r",
+        "-d",
+        "--date",
+        "--reference"
+      ],
+      "targets": "write_all"
+    },
+    "cp": {
+      "flags": [
+        "-R",
+        "-r",
+        "-f",
+        "-i",
+        "-n",
+        "-p",
+        "-v"
+      ],
+      "values": [],
+      "targets": "copy"
+    },
+    "mv": {
+      "flags": [
+        "-f",
+        "-i",
+        "-n",
+        "-v"
+      ],
+      "values": [],
+      "targets": "move"
+    }
+  }
+}

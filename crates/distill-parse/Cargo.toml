@@ -1,0 +1,9 @@
+[package]
+name = "distill-parse"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Bounded Bash-subset shell tokenizer for distill"
+
+[dependencies]
+distill-core = { workspace = true }

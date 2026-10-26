@@ -1,0 +1,97 @@
+{
+  "name": "distill-trace",
+  "displayName": "Distill \u2014 Chat Command Trace",
+  "description": "Temporary per-chat command history with Distill severity, policy decisions, and output.",
+  "version": "0.4.4",
+  "publisher": "distill",
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/harshdhiman/distill"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./src/extension.js",
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "distill.openTrace",
+        "title": "Distill: Open Chat Command Trace"
+      },
+      {
+        "command": "distill.setupHooks",
+        "title": "Distill: Connect User Hooks"
+      },
+      {
+        "command": "distill.clearTrace",
+        "title": "Distill: Clear Logs",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "distill.clearTrace",
+          "when": "view == distill.trace",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "distill",
+          "title": "Distill",
+          "icon": "media/distill.svg"
+        }
+      ]
+    },
+    "views": {
+      "distill": [
+        {
+          "type": "webview",
+          "id": "distill.trace",
+          "name": "Chat Command Trace"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Distill",
+      "properties": {
+        "distill.binaryPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to the Distill CLI. Empty uses trusted user/system install locations; workspace PATH lookup is disabled."
+        },
+        "distill.codexHome": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Optional Codex home for chat titles. Reads only session_index.jsonl metadata; defaults to CODEX_HOME or ~/.codex."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "check": "node scripts/check.js",
+    "package": "python3 scripts/package.py"
+  }
+}

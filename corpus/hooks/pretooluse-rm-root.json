@@ -1,0 +1,10 @@
+{
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Bash",
+  "cwd": "/tmp",
+  "session_id": "local-test",
+  "tool_use_id": "tool-rm-root",
+  "tool_input": {
+    "command": "rm -rf /"
+  }
+}

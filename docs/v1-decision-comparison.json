@@ -1,0 +1,39 @@
+{
+  "scope": "44 synthetic regression cases; candidate commands analyzed as data",
+  "cases": 44,
+  "changes": [
+    {
+      "case": "traversal-python",
+      "before": {
+        "impact": "low",
+        "approval_risk": "low",
+        "decision": "allow",
+        "coverage": "static_accounted"
+      },
+      "after": {
+        "impact": null,
+        "approval_risk": "high",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "decision_downgrade": false
+    },
+    {
+      "case": "traversal-node",
+      "before": {
+        "impact": "low",
+        "approval_risk": "low",
+        "decision": "allow",
+        "coverage": "static_accounted"
+      },
+      "after": {
+        "impact": null,
+        "approval_risk": "high",
+        "decision": "ask",
+        "coverage": "partial"
+      },
+      "decision_downgrade": false
+    }
+  ],
+  "decision_downgrades": 0
+}

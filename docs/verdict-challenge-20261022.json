@@ -1,0 +1,643 @@
+{
+  "date": "2026-10-22",
+  "method": "32 targeted authored challenge expectations recorded before their first evaluation. All candidate commands were analyzed only. Separate effect probes used private disposable files, harmless printf, and private in-memory tables. This is not an unbiased accuracy estimate.",
+  "expected": [
+    {
+      "name": "inert quoted deletion",
+      "command": "echo 'rm -rf /'",
+      "impact": "safe",
+      "review": false,
+      "rationale": "Printing literal shell-looking text does not execute it."
+    },
+    {
+      "name": "inert printf deletion",
+      "command": "printf '%s\\n' 'rm -rf /'",
+      "impact": "safe",
+      "review": false,
+      "rationale": "A literal printf argument is data."
+    },
+    {
+      "name": "shell prints inert deletion",
+      "command": "bash -c \"echo 'rm -rf /'\"",
+      "impact": "safe",
+      "review": false,
+      "rationale": "The nested shell runs echo, with deletion text as data."
+    },
+    {
+      "name": "nested shell deletes root",
+      "command": "bash -c 'rm -rf /'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The literal nested shell program requests root deletion.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "literal eval deletion",
+      "command": "eval 'rm -rf /'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "Eval interprets its literal argument as shell source.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "cat credential after delimiter",
+      "command": "cat -- .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "The delimiter preserves .env as a credential file operand.",
+      "risk_min": "high"
+    },
+    {
+      "name": "head credential byte count",
+      "command": "head -c 1 .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "A byte limit still reads credential contents.",
+      "risk_min": "high"
+    },
+    {
+      "name": "tail credential starting line",
+      "command": "tail -n +1 .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "A starting line still reads credential contents.",
+      "risk_min": "high"
+    },
+    {
+      "name": "grep credential pattern file",
+      "command": "grep -f .env input.txt",
+      "impact": "high",
+      "review": true,
+      "rationale": "The pattern-file option opens credential contents.",
+      "risk_min": "high"
+    },
+    {
+      "name": "sort credential file",
+      "command": "sort .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "Sorting reads and prints credential contents.",
+      "risk_min": "high"
+    },
+    {
+      "name": "rg credential-looking pattern",
+      "command": "rg -e .env input.txt",
+      "impact": "low",
+      "review": false,
+      "rationale": "The .env token is a literal pattern; the input file is ordinary."
+    },
+    {
+      "name": "rg inline credential-looking pattern",
+      "command": "rg --regexp=.env input.txt",
+      "impact": "low",
+      "review": false,
+      "rationale": "The inline pattern does not open .env."
+    },
+    {
+      "name": "rg credential metadata",
+      "command": "rg --files .env",
+      "impact": "safe",
+      "review": false,
+      "rationale": "Files mode lists names rather than matching file contents."
+    },
+    {
+      "name": "rg credential ignore file",
+      "command": "rg --ignore-file=.env needle input.txt",
+      "impact": "high",
+      "review": true,
+      "rationale": "The ignore-file option reads .env contents.",
+      "risk_min": "high"
+    },
+    {
+      "name": "rg inline helper disabled",
+      "command": "rg --pre=payload --no-pre needle input.txt",
+      "impact": "low",
+      "review": false,
+      "rationale": "The later no-pre option disables preprocessing."
+    },
+    {
+      "name": "rg helper enabled last",
+      "command": "rg --no-pre --pre=payload needle input.txt",
+      "impact": "high",
+      "review": true,
+      "rationale": "The later pre option enables an unresolved executable helper.",
+      "risk_min": "high"
+    },
+    {
+      "name": "rg ordinary patterns credential input",
+      "command": "rg -f input.txt .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "An ordinary pattern file does not remove the credential input read.",
+      "risk_min": "high"
+    },
+    {
+      "name": "rg files mode skips preprocessor",
+      "command": "rg --files --pre payload",
+      "impact": "safe",
+      "review": false,
+      "rationale": "Files mode lists paths and does not preprocess search contents."
+    },
+    {
+      "name": "git credential output file",
+      "command": "git diff --output=.env",
+      "impact": "high",
+      "review": true,
+      "rationale": "The output option can overwrite a credential-classified file.",
+      "risk_min": "high"
+    },
+    {
+      "name": "git no-index credential read",
+      "command": "git diff --no-index .env input.txt",
+      "impact": "high",
+      "review": true,
+      "rationale": "No-index compares explicit file contents, including .env.",
+      "risk_min": "high"
+    },
+    {
+      "name": "git configured executable pager",
+      "command": "git -c core.pager=payload log",
+      "impact": "high",
+      "review": true,
+      "rationale": "Inline Git configuration can select executable helper behavior.",
+      "risk_min": "high"
+    },
+    {
+      "name": "SQL second statement drops table",
+      "command": "psql -c 'SELECT 1; DROP TABLE users'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "A later SQL statement drops a table.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "SQL semicolon in string",
+      "command": "psql -c \"SELECT '; DROP TABLE users'\"",
+      "impact": "medium",
+      "review": true,
+      "rationale": "The semicolon and DROP text are inside one string; remote query effects remain unresolved."
+    },
+    {
+      "name": "SQL quoted keyword identifier",
+      "command": "psql -c 'SELECT \"DROP\" FROM users'",
+      "impact": "medium",
+      "review": true,
+      "rationale": "A quoted column identifier does not establish a DROP statement."
+    },
+    {
+      "name": "SQL data-modifying CTE",
+      "command": "psql -c 'WITH gone AS (DELETE FROM accounts RETURNING *) SELECT * FROM gone'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The CTE executes an unfiltered delete even though the outer statement is SELECT.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "SQL unconditional true predicate",
+      "command": "psql -c 'DELETE FROM accounts WHERE true'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "A constant true predicate selects every row; it does not constrain deletion.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "SQL unconditional equality predicate",
+      "command": "psql -c 'DELETE FROM accounts WHERE 1=1'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "A constant true equality selects every row.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "SQL non-executing explain option",
+      "command": "psql -c 'EXPLAIN (ANALYZE FALSE) DELETE FROM accounts'",
+      "impact": "medium",
+      "review": true,
+      "rationale": "ANALYZE FALSE requests an execution plan without executing the DELETE."
+    },
+    {
+      "name": "SQLite shell metacommand",
+      "command": "sqlite3 scratch.db '.shell rm -rf /'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The SQLite CLI metacommand executes a shell deletion payload.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "SQLite extension loading",
+      "command": "sqlite3 scratch.db \"SELECT load_extension('./payload')\"",
+      "impact": "high",
+      "review": true,
+      "rationale": "Loading an extension can execute unresolved native code.",
+      "risk_min": "high"
+    },
+    {
+      "name": "psql shell metacommand",
+      "command": "psql -c '\\! rm -rf /'",
+      "impact": "critical",
+      "review": true,
+      "rationale": "The psql shell metacommand executes its shell payload.",
+      "risk_min": "critical"
+    },
+    {
+      "name": "psql credential script input",
+      "command": "psql -f .env",
+      "impact": "high",
+      "review": true,
+      "rationale": "The script-file option opens credential-classified contents.",
+      "risk_min": "high"
+    }
+  ],
+  "installed": {
+    "binary_sha256": "b6f79b446b7ec344965fa46c5731f78ea4a4de56feee9d4adf5caac6705c3916",
+    "metrics": {
+      "cases": 32,
+      "cases_with_discrepancy": 9,
+      "unknown": 2,
+      "wrong_impact": 9,
+      "unsafe_allow": 0,
+      "unnecessary_review": 0,
+      "understated_risk": 9
+    },
+    "cases": [
+      {
+        "name": "inert quoted deletion",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "inert printf deletion",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "shell prints inert deletion",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "nested shell deletes root",
+        "impact": "critical",
+        "risk": "critical",
+        "decision": "deny",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "literal eval deletion",
+        "impact": "critical",
+        "risk": "critical",
+        "decision": "deny",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "cat credential after delimiter",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "head credential byte count",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "tail credential starting line",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "grep credential pattern file",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "sort credential file",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg credential-looking pattern",
+        "impact": "low",
+        "risk": "low",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg inline credential-looking pattern",
+        "impact": "low",
+        "risk": "low",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg credential metadata",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg credential ignore file",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg inline helper disabled",
+        "impact": "low",
+        "risk": "low",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg helper enabled last",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Search helper executable contents are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "rg ordinary patterns credential input",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "rg files mode skips preprocessor",
+        "impact": "safe",
+        "risk": "safe",
+        "decision": "allow",
+        "coverage": "static_accounted",
+        "unknowns": [],
+        "issues": []
+      },
+      {
+        "name": "git credential output file",
+        "impact": null,
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "opaque",
+        "unknowns": [
+          "Unknown Git subcommand option"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "git no-index credential read",
+        "impact": null,
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "opaque",
+        "unknowns": [
+          "Unknown Git subcommand option"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "git configured executable pager",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Reviewed capability catalog identifies executable or unresolved option behavior",
+          "Nested program behavior is unresolved",
+          "Unknown command definition",
+          "Command option can execute a nested program",
+          "Inline Git configuration is not fully modeled"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL second statement drops table",
+        "impact": "critical",
+        "risk": "critical",
+        "decision": "deny",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL semicolon in string",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL quoted keyword identifier",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQL data-modifying CTE",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "SQL unconditional true predicate",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "SQL unconditional equality predicate",
+        "impact": "high",
+        "risk": "high",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "SQL non-executing explain option",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": []
+      },
+      {
+        "name": "SQLite shell metacommand",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "SQLite extension loading",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "psql shell metacommand",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      },
+      {
+        "name": "psql credential script input",
+        "impact": "medium",
+        "risk": "medium",
+        "decision": "ask",
+        "coverage": "partial",
+        "unknowns": [
+          "Semantic CLI scope and embedded-language behavior are unresolved"
+        ],
+        "issues": [
+          "wrong_impact",
+          "understated_risk"
+        ]
+      }
+    ]
+  },
+  "effect_probes": [
+    {
+      "name": "git no-index reads explicit credential-path contents",
+      "passed": true
+    },
+    {
+      "name": "git output option truncates a credential-path fixture",
+      "passed": true
+    },
+    {
+      "name": "SQLite .shell executes a controlled printf payload",
+      "passed": true
+    },
+    {
+      "name": "WHERE true deletes all three private in-memory fixture rows",
+      "passed": true
+    },
+    {
+      "name": "WHERE 1=1 deletes all three private in-memory fixture rows",
+      "passed": true
+    }
+  ],
+  "semantic_references": [
+    "https://git-scm.com/docs/git-diff",
+    "https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING",
+    "https://www.postgresql.org/docs/current/app-psql.html",
+    "https://www.sqlite.org/cli.html",
+    "https://www.sqlite.org/loadext.html"
+  ]
+}

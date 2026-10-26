@@ -1,0 +1,15 @@
+[package]
+name = "distill-agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Vendor hook payload adapters for distill"
+
+[dependencies]
+distill-core = { workspace = true }
+distill-parse = { workspace = true }
+distill-interp = { workspace = true }
+distill-rules = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+libc = { workspace = true }

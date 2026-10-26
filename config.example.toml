@@ -1,0 +1,72 @@
+schema_version = 1
+
+[analysis]
+deadline_ms = 900
+command_bytes_max = 65536
+expansion_depth_max = 8
+graph_nodes_max = 4096
+
+[trace]
+enabled = false
+network = "deny"
+
+[policy]
+medium = "ask"
+high = "ask"
+critical = "deny"
+incomplete = "ask"
+unavailable = "hold"
+protected_paths = ["/srv/production"]
+protected_packages = ["python"]
+
+[policy.effects]
+# Shared impact ratings for equivalent shell and source-code operations.
+# Incomplete analysis still uses the separate policy.incomplete action.
+read = "low"
+write = "medium"
+build_artifact = "low"
+delete = "medium"
+recursive_delete = "medium"
+sensitive = "high"
+startup = "high"
+protected_modify = "critical"
+execute = "high"
+network = "low"
+unresolved_target = "high"
+outside_workspace_read = "medium"
+outside_workspace_modify = "high"
+database_query = "medium"
+database_modify = "high"
+database_all_rows = "critical"
+database_unknown_scope = "high"
+
+# Temporary editor tracing has its own output controls. No history is written to disk.
+[editor_trace]
+enabled = true
+
+[history]
+# Reserved for persistent history; the current CLI does not persist history.
+enabled = true
+retention_days = 7
+
+[privacy]
+# Controls command output in temporary editor history. Set false for metadata only.
+capture_output = false
+telemetry = false
+
+[agents.codex]
+# Show severity and keep native user approval in control.
+mode = "advisory"
+
+[ledger]
+enabled = true
+ttl_seconds = 7200
+max_entries = 1000
+repeat_limit = 3
+
+[sandbox]
+backend = "auto"
+timeout_ms = 30000
+
+[agents.claude]
+mode = "advisory"
