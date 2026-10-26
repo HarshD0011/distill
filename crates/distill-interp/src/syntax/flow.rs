@@ -9,6 +9,7 @@ use super::{children, field_text, text};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum Value {
     String(String),
+    Path(String),
     Callable(String),
     Unknown,
 }
@@ -58,6 +59,24 @@ impl Environment {
             return Value::String(value);
         }
         match node.kind() {
+            "call"
+                if node
+                    .child_by_field_name("function")
+                    .and_then(|n| self.callee(n, source))
+                    .as_deref()
+                    == Some("pathlib.Path") =>
+            {
+                let args = node
+                    .child_by_field_name("arguments")
+                    .map(children)
+                    .unwrap_or_default();
+                if args.len() == 1 {
+                    self.string(args[0], source)
+                        .map_or(Value::Unknown, Value::Path)
+                } else {
+                    Value::Unknown
+                }
+            }
             "identifier" => self
                 .0
                 .get(text(node, source))
@@ -102,7 +121,7 @@ impl Environment {
 
     pub fn string(&self, node: Node<'_>, source: &str) -> Option<String> {
         match self.value(node, source) {
-            Value::String(value) => Some(value),
+            Value::String(value) | Value::Path(value) => Some(value),
             _ => None,
         }
     }
@@ -113,6 +132,7 @@ impl Environment {
                 let name = text(node, source);
                 match self.0.get(name) {
                     Some(Value::Callable(value)) => Some(value.clone()),
+                    Some(Value::Path(_)) => Some("pathlib.Path".into()),
                     Some(_) => None,
                     // Unbound spelling supplies a conditional observation only.
                     None => Some(name.to_owned()),
@@ -156,6 +176,15 @@ impl Environment {
                 let module = module.strip_prefix("node:").unwrap_or(&module);
                 matches!(module, "fs" | "child_process" | "http" | "https")
                     .then(|| module.to_owned())
+            }
+            "call"
+                if node
+                    .child_by_field_name("function")
+                    .and_then(|n| self.callee(n, source))
+                    .as_deref()
+                    == Some("pathlib.Path") =>
+            {
+                Some("pathlib.Path".into())
             }
             _ => None,
         }

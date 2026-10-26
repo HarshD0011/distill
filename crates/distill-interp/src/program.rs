@@ -35,6 +35,32 @@ impl Analyzer<'_> {
                 | "RUSTC_WORKSPACE_WRAPPER"
                 | "GCC_EXEC_PREFIX"
                 | "COMPILER_PATH"
+                | "CPATH"
+                | "C_INCLUDE_PATH"
+                | "CPLUS_INCLUDE_PATH"
+                | "OBJC_INCLUDE_PATH"
+                | "LIBRARY_PATH"
+                | "SDKROOT"
+                | "RUSTFLAGS"
+                | "CARGO_ENCODED_RUSTFLAGS"
+                | "CARGO_HOME"
+                | "CARGO_TARGET_DIR"
+                | "RUSTUP_TOOLCHAIN"
+                | "GOTOOLCHAIN"
+                | "GOWORK"
+                | "GOMOD"
+                | "GOPATH"
+                | "GOBIN"
+                | "CGO_CFLAGS"
+                | "CGO_LDFLAGS"
+                | "CC"
+                | "CXX"
+                | "JAVA_TOOL_OPTIONS"
+                | "JDK_JAVA_OPTIONS"
+                | "JDK_JAVAC_OPTIONS"
+                | "_JAVA_OPTIONS"
+                | "CLASSPATH"
+                | "JAVA_HOME"
                 | "BASH_ENV"
                 | "ENV"
                 | "RUBYOPT"
@@ -69,6 +95,45 @@ impl Analyzer<'_> {
         if info_only(args, &["--version", "-V"]) {
             self.raise(Severity::Safe);
             return;
+        }
+        let prefix = crate::tooling::decode(
+            args,
+            &["-W", "-X"],
+            &[
+                "-I", "-E", "-s", "-S", "-B", "-u", "-O", "-OO", "-q", "-v", "-b",
+            ],
+            true,
+        );
+        // Locate -m using Python's option boundary, not an arbitrary occurrence in program data.
+        let mut at = 0;
+        while let Some(arg) = args.get(at) {
+            if arg.dynamic {
+                break;
+            }
+            if arg.text == "-m" {
+                if let Some(module) = args.get(at + 1).filter(|w| !w.dynamic) {
+                    if matches!(module.text.as_str(), "pip" | "pip3" | "pipx" | "uv") {
+                        self.package_tool(&module.text, &args[at + 2..], 0);
+                    } else {
+                        self.python_module(module, &args[at + 2..]);
+                    }
+                    self.unresolved_program("Python module resolution and interpreter startup code are not fully resolved");
+                    return;
+                }
+                break;
+            }
+            if matches!(arg.text.as_str(), "-c" | "--") || !arg.text.starts_with('-') {
+                break;
+            }
+            if matches!(arg.text.as_str(), "-W" | "-X") {
+                at += 2;
+            } else {
+                at += 1;
+            }
+        }
+        if prefix.incomplete && !args.iter().any(|w| w.text == "-c") {
+            // Existing narrow parsing still examines supported files, but never clears this gap.
+            self.context_partial = true;
         }
         if let Some(script) = python_script(args) {
             if !script.dynamic {
@@ -117,7 +182,7 @@ impl Analyzer<'_> {
         {
             self.inspect_file(Language::Go, file);
         } else {
-            self.unresolved_program("Go invocation or source is unresolved");
+            self.go_extended(args);
         }
     }
 
@@ -135,7 +200,7 @@ impl Analyzer<'_> {
             return;
         }
         let Some((source, output)) = compiler_arguments(args, rust) else {
-            self.unresolved_program("Compiler options or source are unresolved");
+            self.compiler_extended(args, rust);
             return;
         };
         let language = if rust {
@@ -215,7 +280,7 @@ impl Analyzer<'_> {
         }
     }
 
-    fn inspect_file(&mut self, language: Language, file: &Word) -> bool {
+    pub(super) fn inspect_file(&mut self, language: Language, file: &Word) -> bool {
         if !self.within_budget() {
             return false;
         }

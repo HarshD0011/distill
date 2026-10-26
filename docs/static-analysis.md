@@ -5,7 +5,7 @@ This document describes the bounded analyzer. [0.4 implementation notes](v04-imp
 # Static source analysis
 
 Distill parses shell structure and source with embedded Tree-sitter grammars for Bash, Python, JavaScript,
-Go, C, C++, and Rust. It does not start an interpreter, import a module, compile a
+Go, C, C++, Rust, and Java. It does not start an interpreter, import a module, compile a
 candidate, or execute candidate code during analysis. The normal CLI and agent
 hooks use the same analyzer.
 
@@ -62,6 +62,10 @@ data-flow predictions, not observations of executed effects.
 - Rust: one `main` function using literal `print!`, `println!`, `eprint!`, or
   `eprintln!`. Macro definitions, captured format identifiers, other functions,
   and additional code remain unresolved.
+- Java: conditional observations of selected `Files` operations, literal `Path.of`/`Paths.get`
+  targets, file-stream constructors, and process/native-library calls. Java never
+  receives the print-only proof. Annotation processors, plugins, class loading,
+  escaped targets, and runtime dependencies remain unresolved.
 
 Whitespace, line layout, URLs inside strings, and ordinary comments do not
 change these structural checks. Arbitrary imports, calls, loops, custom types,
@@ -140,6 +144,13 @@ absent ordinary output is a LOW build-artifact write; existing outputs and
 source-file outputs receive MEDIUM overwrite findings, while startup and
 protected paths receive stronger findings. These are metadata observations,
 not an atomic reservation of the output path.
+
+Broader compiler invocations now retain explicit source and output observations even
+when additional flags, multiple inputs, plugins, or response files are unresolved.
+These invocations never receive a print-only output proof. Cargo reads a bounded
+literal manifest and selected local Rust sources/build scripts; Java compilation
+uses a bounded Tree-sitter grammar. See [tool coverage](tool-coverage.md) for exact
+adapter boundaries and installation/removal behavior.
 
 Explicit and default executable outputs receive a print-program proof only
 across an immediate `&&` edge.

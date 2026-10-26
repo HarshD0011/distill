@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "distill-core"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "hmac",
  "libc",
@@ -100,18 +100,21 @@ dependencies = [
 
 [[package]]
 name = "distill-interp"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "distill-core",
  "distill-parse",
  "distill-rules",
  "serde",
  "serde_json",
+ "sqlparser",
+ "toml",
  "tree-sitter",
  "tree-sitter-bash",
  "tree-sitter-c",
  "tree-sitter-cpp",
  "tree-sitter-go",
+ "tree-sitter-java",
  "tree-sitter-javascript",
  "tree-sitter-python",
  "tree-sitter-rust",
@@ -119,14 +122,14 @@ dependencies = [
 
 [[package]]
 name = "distill-parse"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "distill-core",
 ]
 
 [[package]]
 name = "distill-rules"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "distill-core",
 ]
@@ -226,6 +229,12 @@ dependencies = [
  "arbitrary",
  "cc",
 ]
+
+[[package]]
+name = "log"
+version = "0.4.34"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
 name = "memchr"
@@ -369,6 +378,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
+name = "sqlparser"
+version = "0.63.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3679862809bd1f92e563cf6fd820e28f39135303668001c10331d5027183e8b4"
+dependencies = [
+ "log",
+ "sqlparser_derive",
+]
+
+[[package]]
+name = "sqlparser_derive"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2905ae8e8148d8f7f5748ea95d1e949fa4fc1d7f5161547b758ad118b2e4b0aa"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -480,6 +510,16 @@ name = "tree-sitter-go"
 version = "0.25.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8560a4d2f835cc0d4d2c2e03cbd0dde2f6114b43bc491164238d333e28b16ea"
+dependencies = [
+ "cc",
+ "tree-sitter-language",
+]
+
+[[package]]
+name = "tree-sitter-java"
+version = "0.23.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0aa6cbcdc8c679b214e616fd3300da67da0e492e066df01bcf5a5921a71e90d6"
 dependencies = [
  "cc",
  "tree-sitter-language",

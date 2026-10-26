@@ -6,6 +6,7 @@ use tree_sitter::{Language as Grammar, Node, ParseOptions, Parser, Tree};
 
 mod dynamic;
 mod flow;
+mod java;
 mod native;
 mod operations;
 
@@ -20,6 +21,7 @@ pub(super) struct Analysis {
 pub(super) enum Language {
     Python,
     JavaScript,
+    Java,
     Go,
     C,
     Cpp,
@@ -31,6 +33,7 @@ impl Language {
         match self {
             Self::Python => tree_sitter_python::LANGUAGE.into(),
             Self::JavaScript => tree_sitter_javascript::LANGUAGE.into(),
+            Self::Java => tree_sitter_java::LANGUAGE.into(),
             Self::Go => tree_sitter_go::LANGUAGE.into(),
             Self::C => tree_sitter_c::LANGUAGE.into(),
             Self::Cpp => tree_sitter_cpp::LANGUAGE.into(),

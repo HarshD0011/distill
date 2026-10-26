@@ -16,6 +16,9 @@ pub(crate) struct Observation {
 }
 
 pub(super) fn collect(language: Language, root: Node<'_>, source: &str) -> Vec<Observation> {
+    if matches!(language, Language::Java) {
+        return super::java::collect(root, source);
+    }
     let mut result = Vec::new();
     visit(
         language,
@@ -196,6 +199,10 @@ fn visit(
     let call = node
         .child_by_field_name("function")
         .and_then(|function| env.callee(function, source));
+    let receiver_path = node
+        .child_by_field_name("function")
+        .and_then(|n| n.child_by_field_name("object"))
+        .and_then(|n| env.string(n, source));
     let args = node
         .child_by_field_name("arguments")
         .map(children)
@@ -230,6 +237,7 @@ fn visit(
                 | "require"
                 | "std::process::Command::new"
                 | "exec.Command"
+                | "pathlib.Path"
         ) {
             env.invalidate();
         }
@@ -237,11 +245,36 @@ fn visit(
     };
     let file_effect = matches!(
         kind,
-        EffectKind::FileRead | EffectKind::FileWrite | EffectKind::FileDelete
+        EffectKind::FileRead
+            | EffectKind::FileWrite
+            | EffectKind::FileDelete
+            | EffectKind::PermissionChange
     );
-    let path = file_effect
-        .then(|| argument(&args, &values, 0, "file", source))
-        .flatten();
+    let copying = matches!(
+        call.as_str(),
+        "shutil.copy"
+            | "shutil.copy2"
+            | "shutil.copyfile"
+            | "shutil.copytree"
+            | "shutil.move"
+            | "os.rename"
+            | "os.replace"
+    );
+    let path = if call.starts_with("pathlib.Path.") {
+        receiver_path
+    } else {
+        file_effect
+            .then(|| {
+                argument(
+                    &args,
+                    &values,
+                    usize::from(copying),
+                    if copying { "dst" } else { "file" },
+                    source,
+                )
+            })
+            .flatten()
+    };
     let mode = open_mode(&args, &values, source);
     let append = call.contains("append") || mode.as_ref().is_some_and(|mode| mode.contains('a'));
     result.push(Observation {
@@ -253,6 +286,21 @@ fn visit(
         line: node.start_position().row + 1,
         column: node.start_position().column + 1,
     });
+    if copying {
+        result.push(Observation {
+            kind: if matches!(call.as_str(), "shutil.move" | "os.rename" | "os.replace") {
+                EffectKind::FileDelete
+            } else {
+                EffectKind::FileRead
+            },
+            call: call.clone(),
+            path: argument(&args, &values, 0, "src", source),
+            recursive: call == "shutil.copytree",
+            append: false,
+            line: node.start_position().row + 1,
+            column: node.start_position().column + 1,
+        });
+    }
     // An unresolved fopen/open mode can read or write. Never default it to read-only.
     if matches!(call.as_str(), "open" | "fopen" | "std::fopen")
         && (mode.is_none() || mode.as_ref().is_some_and(|mode| mode.contains('+')))
@@ -376,20 +424,38 @@ fn model(
     source: &str,
 ) -> Option<(EffectKind, bool)> {
     let supported = match language {
-        Language::Python => matches!(
-            call,
-            "open"
-                | "os.remove"
-                | "os.unlink"
-                | "shutil.rmtree"
-                | "eval"
-                | "exec"
-                | "os.system"
-                | "subprocess.run"
-                | "subprocess.Popen"
-                | "requests.get"
-                | "requests.post"
-        ),
+        Language::Python => {
+            call.starts_with("pathlib.Path.")
+                || matches!(
+                    call,
+                    "open"
+                        | "os.remove"
+                        | "os.unlink"
+                        | "shutil.rmtree"
+                        | "eval"
+                        | "exec"
+                        | "os.system"
+                        | "subprocess.run"
+                        | "subprocess.Popen"
+                        | "requests.get"
+                        | "requests.post"
+                        | "shutil.copy"
+                        | "shutil.copy2"
+                        | "shutil.copyfile"
+                        | "shutil.copytree"
+                        | "shutil.move"
+                        | "os.rename"
+                        | "os.replace"
+                        | "os.chmod"
+                        | "os.chown"
+                        | "subprocess.call"
+                        | "subprocess.check_call"
+                        | "subprocess.check_output"
+                        | "os.popen"
+                        | "urllib.request.urlopen"
+                        | "urllib.request.urlretrieve"
+                )
+        }
         Language::JavaScript => {
             call.starts_with("fs.")
                 || call.starts_with("child_process.")
@@ -414,6 +480,7 @@ fn model(
                 | "std::filesystem::remove_all"
         ),
         Language::Rust => call.starts_with("std::fs::") || call.starts_with("process_builder."),
+        Language::Java => false,
     };
     if !supported {
         return None;
@@ -439,6 +506,15 @@ fn model(
         | "ioutil.ReadFile"
         | "std::fs::read"
         | "std::fs::read_to_string" => (EffectKind::FileRead, false),
+        "pathlib.Path.read_text" | "pathlib.Path.read_bytes" => (EffectKind::FileRead, false),
+        "pathlib.Path.write_text"
+        | "pathlib.Path.write_bytes"
+        | "pathlib.Path.touch"
+        | "pathlib.Path.mkdir" => (EffectKind::FileWrite, false),
+        "pathlib.Path.unlink" | "pathlib.Path.rmdir" => (EffectKind::FileDelete, false),
+        "shutil.copy" | "shutil.copy2" | "shutil.copyfile" | "shutil.copytree" | "shutil.move"
+        | "os.rename" | "os.replace" => (EffectKind::FileWrite, false),
+        "os.chmod" | "os.chown" | "pathlib.Path.chmod" => (EffectKind::PermissionChange, false),
         "fs.writeFile" | "fs.writeFileSync" | "fs.appendFileSync" | "os.WriteFile"
         | "std::fs::write" => (EffectKind::FileWrite, false),
         "os.remove"
@@ -461,6 +537,10 @@ fn model(
         | "os.system"
         | "subprocess.run"
         | "subprocess.Popen"
+        | "subprocess.call"
+        | "subprocess.check_call"
+        | "subprocess.check_output"
+        | "os.popen"
         | "child_process.exec"
         | "child_process.execSync"
         | "child_process.spawn"
@@ -473,8 +553,15 @@ fn model(
         | "process_builder.output"
         | "system"
         | "std::system" => (EffectKind::Execute, false),
-        "fetch" | "requests.get" | "requests.post" | "http.Get" | "http.Post" | "http.request"
-        | "https.request" => (EffectKind::Connect, false),
+        "fetch"
+        | "requests.get"
+        | "requests.post"
+        | "http.Get"
+        | "http.Post"
+        | "http.request"
+        | "https.request"
+        | "urllib.request.urlopen"
+        | "urllib.request.urlretrieve" => (EffectKind::Connect, false),
         _ => return None,
     };
     Some((kind, recursive))

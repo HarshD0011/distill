@@ -6,17 +6,21 @@ use distill_parse::{Token, Word};
 
 mod arguments;
 mod artifact;
+mod build_tools;
 mod capabilities;
 mod class;
 mod client;
 mod curl;
 mod dialect;
+mod docker;
 mod expand;
+mod git;
 #[cfg(test)]
 mod hardening_tests;
 mod macos_commands;
 mod macos_syscalls;
 mod makefile;
+mod packages;
 mod profiles;
 mod program;
 mod readers;
@@ -26,6 +30,9 @@ mod semantic_tests;
 mod shell;
 mod sql;
 mod syntax;
+#[cfg(test)]
+mod tool_tests;
+mod tooling;
 mod trie;
 use std::path::{Component, Path, PathBuf};
 
@@ -263,6 +270,7 @@ impl Analyzer<'_> {
             class::ArgClass::RootOrHome => TargetClass::Protected,
             class::ArgClass::Secret => TargetClass::Secret,
             class::ArgClass::StartupFile => TargetClass::Startup,
+            _ if application_path(path) => TargetClass::Protected,
             class::ArgClass::Regenerable => TargetClass::Regenerable,
             class::ArgClass::Source => TargetClass::Source,
             _ => TargetClass::Ordinary,
@@ -419,6 +427,13 @@ impl Analyzer<'_> {
         if self.inspect_stdin(name, args, input, depth) {
             return;
         }
+        if matches!(name, "docker" | "podman") {
+            self.docker(name, args, depth);
+            return;
+        }
+        if self.package_tool(name, args, depth) {
+            return;
+        }
         if self.capability_command(name, args, depth) {
             return;
         }
@@ -512,6 +527,10 @@ impl Analyzer<'_> {
             "node" => self.node(args),
             "go" => self.go_tool(args),
             "rustc" => self.rustc(args),
+            "cargo" => self.cargo(args),
+            "javac" | "java" | "jar" | "mvn" | "mvnw" | "gradle" | "gradlew" => {
+                self.java_tool(name, args)
+            }
             "clang" | "clang++" | "gcc" | "g++" | "cc" | "c++" => self.cxx(args),
             "cat" | "head" | "tail" => {
                 let mut skip_count = false;
@@ -847,6 +866,9 @@ impl Analyzer<'_> {
     }
 
     fn protected(&self, path: &Path) -> bool {
+        if application_path(path) {
+            return true;
+        }
         if path == Path::new("/") {
             return true;
         }
@@ -1076,57 +1098,81 @@ impl Analyzer<'_> {
     }
 
     fn git_inner(&mut self, args: &[Word]) {
-        let mut index = 0;
-        while let Some(arg) = args.get(index).filter(|arg| arg.text.starts_with('-')) {
-            let (flag, attached) = arg
-                .text
-                .split_once('=')
-                .map_or((arg.text.as_str(), None), |(flag, value)| {
-                    (flag, Some(value))
-                });
-            if matches!(flag, "--no-pager" | "--paginate" | "--no-optional-locks") {
-                index += 1;
-                continue;
-            }
-            if matches!(
-                flag,
-                "-c" | "--config-env" | "-C" | "--git-dir" | "--work-tree"
-            ) {
-                index += 1;
-                let value = attached.or_else(|| args.get(index).map(|arg| arg.text.as_str()));
-                if attached.is_none() {
-                    index += 1;
+        if args.len() == 1
+            && !args[0].dynamic
+            && matches!(args[0].text.as_str(), "--version" | "version")
+        {
+            self.raise(Severity::Safe);
+            return;
+        }
+        let global = self.tool_options(
+            args,
+            &[
+                "-c",
+                "--config-env",
+                "-C",
+                "--git-dir",
+                "--work-tree",
+                "--namespace",
+                "--exec-path",
+            ],
+            &[
+                "--no-pager",
+                "-P",
+                "--paginate",
+                "-p",
+                "--no-optional-locks",
+                "--bare",
+                "--literal-pathspecs",
+                "--no-replace-objects",
+            ],
+            true,
+        );
+        for (name, value) in &global.values {
+            match name.as_str() {
+                "-C" => {
+                    if let Some(value) = value {
+                        self.cwd = self.resolve(value);
+                    }
                 }
-                if value.is_none() {
-                    self.unknown("Git global option value is missing");
-                    return;
-                }
-                self.context_partial = true;
-                if matches!(flag, "-c" | "--config-env") {
+                "-c" | "--config-env" | "--exec-path" | "--paginate" | "-p" => {
+                    self.unresolved_program("Git configuration may select executable aliases, hooks, helpers, filters, or a pager");
                     self.finding(
                         Severity::High,
                         EffectKind::Execute,
                         "exec.git-config",
                         "Git configuration may select executable hooks, helpers, or filters",
                     );
-                    self.unknown("Inline Git configuration is not fully modeled");
-                } else {
-                    self.cwd = None;
-                    self.unknown("Git working-tree or repository override has partial coverage");
                 }
-                continue;
+                "--git-dir" | "--work-tree" | "--namespace" | "--bare" => {
+                    self.context_partial = true;
+                    self.unknown("Git repository override is not fully resolved");
+                    if matches!(name.as_str(), "--work-tree" | "--git-dir") {
+                        self.cwd = None;
+                    }
+                }
+                _ => {}
             }
-            self.command_unknown = true;
-            self.unknown("Unknown Git global option");
-            return;
         }
-        let args = &args[index..];
+        let args = global.operands.as_slice();
         let Some(first) = args.first() else {
             self.unknown("Git subcommand is missing");
             return;
         };
         let sub = first.text.as_str();
+        if self.git_extended(sub, &args[1..]) {
+            return;
+        }
         if sub == "diff" {
+            if args
+                .iter()
+                .take_while(|a| a.text != "--")
+                .any(|a| matches!(a.text.as_str(), "--ext-diff" | "--textconv"))
+            {
+                self.unresolved_program(
+                    "Git diff may execute external diff or text conversion helpers",
+                );
+            }
             let decoded = arguments::decode("git-diff", &args[1..], &self.budget);
             let filesystem = decoded
                 .arguments
@@ -1173,7 +1219,9 @@ impl Analyzer<'_> {
         if !self.flag_known(&["git"], sub) {
             self.command_unknown = true;
             self.raise(Severity::Medium);
-            self.unknown("Unknown Git subcommand");
+            self.unresolved_program(
+                "Unknown Git subcommand may resolve to an executable alias or external helper",
+            );
             return;
         }
         let mut matched_flag = false;
@@ -1412,7 +1460,15 @@ impl Analyzer<'_> {
     }
 
     fn kill(&mut self, name: &str, args: &[Word]) {
-        if name == "kill" && args.iter().any(|a| a.text == "-0") {
+        // A probe must be an exact signal-zero invocation. A later -s/-n can
+        // override -0, and after -- the text -0 denotes a process group.
+        if name == "kill"
+            && args.first().is_some_and(|a| !a.dynamic && a.text == "-0")
+            && args.len() > 1
+            && args[1..].iter().all(|a| {
+                !a.dynamic && !a.text.is_empty() && a.text.bytes().all(|b| b.is_ascii_digit())
+            })
+        {
             self.raise(Severity::Safe);
             return;
         }
@@ -1504,7 +1560,11 @@ impl Analyzer<'_> {
 
     fn sysctl(&mut self, args: &[Word]) {
         if args.iter().any(|a| {
-            a.text == "-w" || a.text == "-p" || a.text == "--system" || a.text.contains('=')
+            matches!(a.text.as_str(), "-w" | "-p" | "-f" | "--load" | "--system")
+                || a.text.starts_with("--load=")
+                || a.text.starts_with("-p")
+                || a.text.starts_with("-f")
+                || a.text.contains('=')
         }) {
             self.finding(
                 Severity::High,
@@ -1716,9 +1776,59 @@ fn is_sensitive(path: &str) -> bool {
         ".env",
         "id_rsa",
         "id_ed25519",
+        ".netrc",
+        ".npmrc",
+        ".pypirc",
+        ".docker/config.json",
+        ".cargo/credentials",
+        ".gnupg/",
     ]
     .iter()
     .any(|p| path.contains(p))
+}
+
+/// Installed executables, application bundles and shared application configuration.
+/// Component boundaries avoid treating /usr-local or /Applications-backup as system roots.
+fn application_path(path: &Path) -> bool {
+    let text = path.to_string_lossy().to_ascii_lowercase();
+    let path = Path::new(&text);
+    if [
+        "/applications",
+        "/system",
+        "/library",
+        "/usr",
+        "/bin",
+        "/sbin",
+        "/opt",
+        "/etc",
+        "/private/etc",
+    ]
+    .iter()
+    .any(|root| path.starts_with(root))
+    {
+        return true;
+    }
+    if path
+        .components()
+        .any(|part| part.as_os_str().to_string_lossy().ends_with(".app"))
+    {
+        return true;
+    }
+    if let Some(home) = std::env::var_os("HOME") {
+        let home = PathBuf::from(home.to_string_lossy().to_ascii_lowercase());
+        return [
+            "applications",
+            ".local/bin",
+            "bin",
+            ".cargo/bin",
+            ".rustup/toolchains",
+            ".local/lib",
+            "library/launchagents",
+        ]
+        .iter()
+        .any(|suffix| path.starts_with(home.join(suffix)));
+    }
+    false
 }
 
 /// Resolve the existing prefix before lexical cleanup, preserving symlink/.. semantics.

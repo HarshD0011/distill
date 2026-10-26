@@ -17,11 +17,24 @@ impl Analyzer<'_> {
             );
         }
         self.emit_path(&["curl"]);
+        if !args
+            .first()
+            .is_some_and(|a| !a.dynamic && matches!(a.text.as_str(), "-q" | "--disable"))
+        {
+            self.context_partial = true;
+            self.unknown(
+                "Implicit curl configuration is not inspected; -q must be first to disable it",
+            );
+        }
         let mut index = 0;
         let mut options = true;
         let mut modifier = false;
         while index < args.len() {
             let text = args[index].text.as_str();
+            if args[index].dynamic {
+                self.context_partial = true;
+                self.unknown("Dynamic curl arguments are unresolved");
+            }
             if options && text == "--" {
                 options = false;
                 index += 1;
@@ -32,6 +45,7 @@ impl Analyzer<'_> {
             } else if options && text.starts_with('-') && text != "-" {
                 self.curl_short(text, args, &mut index, &mut modifier);
             } else {
+                self.curl_url(text);
                 if text.contains("://")
                     && text
                         .split("://")
@@ -80,6 +94,10 @@ impl Analyzer<'_> {
             *index += 1;
             None
         };
+        if takes_value && value.is_none() {
+            self.context_partial = true;
+            self.unknown("Curl option is missing a required value");
+        }
         self.curl_named(name, value.as_deref(), modifier);
     }
 
@@ -108,6 +126,7 @@ impl Analyzer<'_> {
                     | 'P'
                     | 'Q'
                     | 'Y'
+                    | 'D'
             );
             let inline = if !last && takes_value {
                 Some(chars[offset + 1..].iter().collect::<String>())
@@ -125,23 +144,31 @@ impl Analyzer<'_> {
                 None
             };
             match flag {
-                'd' | 'F' => self.curl_upload(value.as_deref()),
+                'd' => self.curl_upload(value.as_deref()),
+                'F' => self.curl_form(value.as_deref()),
                 'T' => {
                     self.curl_upload(value.as_deref().map(|value| format!("@{value}")).as_deref())
                 }
-                'o' | 'O' => self.curl_output(value.as_deref()),
+                'o' | 'O' | 'D' | 'c' => self.curl_output(value.as_deref()),
                 'X' => self.curl_method(value.as_deref()),
                 'H' => self.curl_header(value.as_deref()),
-                'u' | 'b' | 'c' => self.emit_path(&["curl", "secret"]),
-                'K' => self.emit_path(&["curl", "config"]),
+                'u' | 'b' => self.emit_path(&["curl", "secret"]),
+                'K' => self.curl_config(value.as_deref()),
+                'w' => self.curl_write_out(value.as_deref()),
+                'Q' => self.curl_named("quote", value.as_deref(), modifier),
+                'E' => self.curl_named("cert", value.as_deref(), modifier),
                 'k' => *modifier = true,
-                'I' | 's' | 'S' | 'f' | 'v' | 'L' | 'G' | '#' => {}
+                'I' | 's' | 'S' | 'f' | 'v' | 'L' | 'G' | '#' | 'q' => {}
                 _ => {
                     self.context_partial = true;
                     self.unknown("Unmodeled curl short option");
                 }
             }
             if takes_value {
+                if value.is_none() {
+                    self.context_partial = true;
+                    self.unknown("Curl option is missing a required value");
+                }
                 break;
             }
         }
@@ -149,20 +176,62 @@ impl Analyzer<'_> {
 
     fn curl_named(&mut self, name: &str, value: Option<&str>, modifier: &mut bool) {
         match name {
-            "data" | "data-binary" | "data-urlencode" | "form" => self.curl_upload(value),
+            "data" | "data-binary" | "json" => self.curl_upload(value),
+            "form" => self.curl_form(value),
+            "data-urlencode" | "url-query" => self.curl_encoded(value, name == "url-query"),
             "upload-file" => self.curl_upload(value.map(|value| format!("@{value}")).as_deref()),
             "data-raw" | "form-string" => self.emit_path(&["curl", "upload"]),
-            "output" | "remote-name" | "output-dir" | "dump-header" | "trace" | "trace-ascii"
-            | "libcurl" | "cookie-jar" => self.curl_output(value),
+            "output" | "remote-name" | "dump-header" | "trace" | "trace-ascii" | "libcurl"
+            | "cookie-jar" => self.curl_output(value),
+            "output-dir" => {
+                self.curl_output(value);
+                self.context_partial = true;
+                self.unknown(
+                    "Curl output directory and per-transfer filenames are not fully combined",
+                );
+            }
             "request" => self.curl_method(value),
             "header" => self.curl_header(value),
             "user" | "oauth2-bearer" | "netrc" | "netrc-optional" | "netrc-file" | "cookie" => {
                 self.emit_path(&["curl", "secret"]);
             }
-            "config" => self.emit_path(&["curl", "config"]),
+            "config" => self.curl_config(value),
+            "write-out" => self.curl_write_out(value),
+            "url" => {
+                if let Some(value) = value {
+                    self.curl_url(value);
+                }
+            }
+            "key" | "cert" | "cacert" | "proxy-key" | "proxy-cert" => {
+                if let Some(value) = value {
+                    self.read_destination(&crate::tooling::literal(
+                        value.split(':').next().unwrap_or(value),
+                    ));
+                }
+                self.emit_path(&["curl", "secret"]);
+            }
+            "unix-socket" | "abstract-unix-socket" => self.finding(
+                distill_core::Severity::High,
+                distill_core::EffectKind::Privilege,
+                "curl.local-service",
+                "Sends HTTP requests to a local service or control socket",
+            ),
+            "quote" | "prequote" | "postquote" => self.finding(
+                distill_core::Severity::High,
+                distill_core::EffectKind::Execute,
+                "curl.remote-command",
+                "Sends commands to an FTP or SFTP server",
+            ),
+            "engine" => {
+                self.unresolved_program("Curl may load a selected cryptographic engine or plugin")
+            }
+            "remote-header-name" | "remote-name-all" => {
+                self.curl_output(None);
+                self.unknown("Curl output filename depends on remote response or URL");
+            }
             "insecure" => *modifier = true,
             "head" | "silent" | "show-error" | "fail" | "verbose" | "location" | "get"
-            | "http1.1" | "http2" | "ipv4" | "ipv6" => {}
+            | "http1.1" | "http2" | "ipv4" | "ipv6" | "disable" => {}
             "help" | "version" | "manual" => {}
             _ if CURL_KNOWN.contains(&name) => {}
             _ => {
@@ -173,13 +242,7 @@ impl Analyzer<'_> {
     }
 
     fn curl_upload(&mut self, value: Option<&str>) {
-        let file = value
-            .and_then(|value| {
-                value
-                    .strip_prefix('@')
-                    .or_else(|| value.split_once("=@").map(|(_, path)| path))
-            })
-            .map(|value| value.split(';').next().unwrap_or(value));
+        let file = value.and_then(|value| value.strip_prefix('@'));
         if let Some(file) = file {
             let word = Word {
                 text: file.into(),
@@ -201,6 +264,9 @@ impl Analyzer<'_> {
             self.emit_path(&["curl", "output"]);
             return;
         };
+        if matches!(value, "-" | "/dev/stdout" | "/dev/stderr") {
+            return;
+        }
         let word = Word {
             text: value.trim_start_matches('@').into(),
             dynamic: value.contains('$'),
@@ -249,12 +315,25 @@ impl Analyzer<'_> {
         if value.is_some_and(|value| value.eq_ignore_ascii_case("DELETE")) {
             self.emit_path(&["curl", "DELETE"]);
         }
+        if value
+            .is_some_and(|v| ["POST", "PUT", "PATCH"].contains(&v.to_ascii_uppercase().as_str()))
+        {
+            self.finding(
+                distill_core::Severity::High,
+                distill_core::EffectKind::NetworkSend,
+                "curl.remote-mutation",
+                "Uses an HTTP method that may modify remote application state",
+            );
+        }
     }
 
     fn curl_header(&mut self, value: Option<&str>) {
         let Some(value) = value else {
             return;
         };
+        if value.starts_with('@') {
+            self.curl_upload(Some(value));
+        }
         let lower = value.to_ascii_lowercase();
         if lower.starts_with("authorization:")
             || lower.contains("bearer ")
@@ -263,6 +342,125 @@ impl Analyzer<'_> {
             || lower.contains("token")
         {
             self.emit_path(&["curl", "header-secret"]);
+        }
+    }
+}
+
+impl Analyzer<'_> {
+    fn curl_form(&mut self, value: Option<&str>) {
+        let file = value
+            .and_then(|v| v.split_once('='))
+            .and_then(|(_, content)| {
+                content
+                    .strip_prefix('@')
+                    .or_else(|| content.strip_prefix('<'))
+            })
+            .map(|p| p.split(';').next().unwrap_or(p));
+        if let Some(file) = file {
+            self.curl_upload(Some(&format!("@{file}")));
+        } else {
+            self.emit_path(&["curl", "upload"]);
+        }
+    }
+
+    fn curl_encoded(&mut self, value: Option<&str>, query: bool) {
+        let file = value
+            .filter(|v| !(query && v.starts_with('+')))
+            .and_then(|v| {
+                let at = v.find('@')?;
+                (v.find('=').is_none_or(|equal| at < equal)).then_some(&v[at + 1..])
+            });
+        if let Some(file) = file {
+            self.curl_upload(Some(&format!("@{file}")));
+        } else {
+            self.emit_path(&["curl", "upload"]);
+        }
+    }
+
+    fn curl_url(&mut self, value: &str) {
+        if let Some(path) = value.strip_prefix("file://") {
+            self.read_destination(&crate::tooling::literal(path));
+        }
+        if value
+            .split("://")
+            .nth(1)
+            .and_then(|s| s.split('/').next())
+            .is_some_and(|s| s.contains('@'))
+        {
+            self.emit_path(&["curl", "userinfo"]);
+        }
+    }
+
+    fn curl_write_out(&mut self, value: Option<&str>) {
+        let Some(value) = value else {
+            return;
+        };
+        if let Some(path) = value.strip_prefix('@') {
+            self.read_destination(&crate::tooling::literal(path));
+            self.context_partial = true;
+            self.unknown("Curl write-out format file may select additional output destinations");
+        }
+        for part in value.split("%output{").skip(1) {
+            if let Some((path, _)) = part.split_once('}') {
+                self.curl_output(Some(path.trim_start_matches(">>")));
+            } else {
+                self.unknown("Curl write-out destination is malformed");
+            }
+        }
+    }
+
+    fn curl_config(&mut self, value: Option<&str>) {
+        self.emit_path(&["curl", "config"]);
+        self.context_partial = true;
+        self.unknown(
+            "Curl configuration, nested files, and option overrides are not fully resolved",
+        );
+        let Some(value) = value.filter(|v| *v != "-") else {
+            return;
+        };
+        let word = crate::tooling::literal(value);
+        let Some(path) = self.lexical_path(&word) else {
+            return;
+        };
+        let Ok(source) = self.inspect_read(&path, 64 * 1024) else {
+            return;
+        };
+        for line in source.lines().take(1024) {
+            if !self.within_budget() {
+                return;
+            }
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            let split = line
+                .find(|c: char| c.is_whitespace() || matches!(c, '=' | ':'))
+                .unwrap_or(line.len());
+            let name = line[..split].trim_start_matches('-');
+            let raw = line[split..]
+                .trim_start_matches(|c: char| c.is_whitespace() || matches!(c, '=' | ':'));
+            let value = raw
+                .strip_prefix('"')
+                .and_then(|s| s.strip_suffix('"'))
+                .unwrap_or(raw);
+            if value.contains(['\\', '"']) {
+                self.unknown("Escaped curl configuration value is unresolved");
+                continue;
+            }
+            if matches!(name, "config" | "K") {
+                continue;
+            }
+            let name = match name {
+                "o" => "output",
+                "T" => "upload-file",
+                "d" => "data",
+                "F" => "form",
+                "H" => "header",
+                "X" => "request",
+                "w" => "write-out",
+                other => other,
+            };
+            self.curl_named(name, (!value.is_empty()).then_some(value), &mut false);
         }
     }
 }
@@ -323,6 +521,27 @@ const CURL_VALUE_OPTIONS: &[&str] = &[
     "connect-timeout",
     "retry",
     "write-out",
+    "url-query",
+    "json",
+    "unix-socket",
+    "abstract-unix-socket",
+    "key",
+    "cert",
+    "cacert",
+    "proxy-key",
+    "proxy-cert",
+    "quote",
+    "prequote",
+    "postquote",
+    "engine",
+    "continue-at",
+    "range",
+    "resolve",
+    "connect-to",
+    "proto",
+    "proto-redir",
+    "retry-delay",
+    "limit-rate",
 ];
 
 const CURL_KNOWN: &[&str] = &[
