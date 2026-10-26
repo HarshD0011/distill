@@ -12,6 +12,34 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+// Two ledger transactions may occur per hook. Keep their contention budget below
+// the CLI's six-second watchdog, while allowing slow CI disks to flush a short queue.
+const LOCK_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
+
+#[cfg(unix)]
+fn lock(file: &fs::File, timeout: std::time::Duration) -> Result<(), String> {
+    use std::os::fd::AsRawFd;
+    let started = std::time::Instant::now();
+    loop {
+        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
+            return Ok(());
+        }
+        let error = std::io::Error::last_os_error();
+        if !matches!(
+            error.kind(),
+            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
+        ) {
+            return Err(format!(
+                "Cannot lock session ledger: {error}; review is required"
+            ));
+        }
+        let Some(remaining) = timeout.checked_sub(started.elapsed()) else {
+            return Err("Session ledger is busy; review is required".into());
+        };
+        std::thread::sleep(remaining.min(std::time::Duration::from_millis(2)));
+    }
+}
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct State {
     entries: Vec<Entry>,
@@ -87,24 +115,12 @@ fn transaction<T>(
     }
     let mut file = options.open(&path).map_err(|e| e.to_string())?;
     #[cfg(unix)]
-    {
-        use std::os::fd::AsRawFd;
-        let started = std::time::Instant::now();
-        while unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-            let error = std::io::Error::last_os_error();
-            if error.kind() != std::io::ErrorKind::WouldBlock
-                || started.elapsed().as_millis() >= 500
-            {
-                return Err("Session ledger is busy; review is required".into());
-            }
-            std::thread::sleep(std::time::Duration::from_millis(2));
-        }
-    }
-    let bytes = read_private(&path, 2 * 1024 * 1024)?;
-    let mut state: State = if bytes.is_empty() {
+    lock(&file, LOCK_WAIT)?;
+    let original = read_private(&path, 2 * 1024 * 1024)?;
+    let mut state: State = if original.is_empty() {
         State::default()
     } else {
-        serde_json::from_slice(&bytes)
+        serde_json::from_slice(&original)
             .map_err(|_| "Session ledger is corrupt; review is required")?
     };
     let cutoff = now().saturating_sub(config.ledger.ttl_seconds);
@@ -132,6 +148,12 @@ fn transaction<T>(
     let bytes = serde_json::to_vec(&state).map_err(|e| e.to_string())?;
     if bytes.len() > 2 * 1024 * 1024 {
         return Err("Session ledger byte limit reached".into());
+    }
+    // Looking up shell options or retrying an unchanged completion must not
+    // truncate and fsync the ledger while every competing hook waits for it.
+    // Expiration cleanup and real mutations still persist under the same lock.
+    if bytes == original {
+        return Ok(result);
     }
     file.rewind().map_err(|e| e.to_string())?;
     file.set_len(0).map_err(|e| e.to_string())?;
@@ -377,4 +399,88 @@ pub fn shell_options(
     transaction(config, source, session, workspace, |state| {
         Ok(state.shell_options.clone())
     })
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::{os::fd::AsRawFd, os::unix::fs::OpenOptionsExt, time::Duration};
+
+    struct Fixture(PathBuf);
+    impl Fixture {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(crate::new_id("ledger-test"));
+            private_directory(&path).unwrap();
+            Self(path)
+        }
+        fn file(&self) -> fs::File {
+            fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .create(true)
+                .truncate(false)
+                .mode(0o600)
+                .open(self.0.join("lock"))
+                .unwrap()
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn unchanged_reads_preserve_the_ledger_file() {
+        let f = Fixture::new();
+        let mut config = Config::default();
+        config.ledger.enabled = true;
+        config.ledger.directory = Some(f.0.clone());
+        let workspace = Path::new("/tmp");
+        assert_eq!(
+            shell_options(&config, "test", "session", workspace).unwrap(),
+            None
+        );
+        let path = fs::read_dir(&f.0).unwrap().next().unwrap().unwrap().path();
+        let before = fs::metadata(&path).unwrap().modified().unwrap();
+        let bytes = fs::read(&path).unwrap();
+        std::thread::sleep(Duration::from_millis(25));
+        for _ in 0..8 {
+            assert_eq!(
+                shell_options(&config, "test", "session", workspace).unwrap(),
+                None
+            );
+        }
+        assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), before);
+        assert_eq!(fs::read(&path).unwrap(), bytes);
+    }
+
+    #[test]
+    fn contended_lock_survives_a_slow_flush_beyond_the_old_deadline() {
+        let f = Fixture::new();
+        let held = f.file();
+        assert_eq!(
+            unsafe { libc::flock(held.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) },
+            0
+        );
+        let waiting = f.file();
+        let (tx, rx) = std::sync::mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            tx.send(()).unwrap();
+            lock(&waiting, LOCK_WAIT)
+        });
+        rx.recv().unwrap();
+        std::thread::sleep(Duration::from_millis(650));
+        drop(held);
+        worker.join().unwrap().unwrap();
+    }
+
+    #[test]
+    fn a_stuck_lock_still_fails_closed_with_a_bounded_wait() {
+        let f = Fixture::new();
+        let held = f.file();
+        lock(&held, LOCK_WAIT).unwrap();
+        let error = lock(&f.file(), Duration::from_millis(25)).unwrap_err();
+        assert!(error.contains("busy") && error.contains("review is required"));
+    }
 }

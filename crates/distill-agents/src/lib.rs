@@ -1059,10 +1059,13 @@ mod tests {
                 .unwrap()
                 .join("concurrent-ledger"),
         );
+        let barrier = std::sync::Barrier::new(8);
         std::thread::scope(|scope| {
             let workers = (0..8).map(|worker| {
                 let config = &config;
+                let barrier = &barrier;
                 scope.spawn(move || {
+                    barrier.wait();
                     for index in 0..8 {
                         let event = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "session_id":"parallel", "tool_use_id":format!("{worker}-{index}"), "tool_input":{"command":"echo hello"}});
                         let (_, report) = assess_hook(Integration::Codex, &event.to_string(), config, HookOptions::default()).unwrap();
@@ -1074,5 +1077,26 @@ mod tests {
                 worker.join().unwrap();
             }
         });
+        let files = std::fs::read_dir(config.ledger.directory.as_ref().unwrap())
+            .unwrap()
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        assert_eq!(files.len(), 1);
+        let state: Value =
+            serde_json::from_slice(&std::fs::read(files[0].path()).unwrap()).unwrap();
+        let entries = state["entries"].as_array().unwrap();
+        assert_eq!(
+            entries.len(),
+            64,
+            "Concurrent transactions must not lose entries"
+        );
+        assert_eq!(
+            entries
+                .iter()
+                .map(|entry| entry["id"].as_str().unwrap())
+                .collect::<std::collections::BTreeSet<_>>()
+                .len(),
+            64
+        );
     }
 }
