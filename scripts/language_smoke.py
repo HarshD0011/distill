@@ -44,12 +44,13 @@ def main(binary: str) -> None:
                 "tool_name": "Bash",
                 "tool_input": {
                     "command": command,
+                    "shell": "/bin/bash",
                     "sandbox_permissions": "use_default",
                     "justification": "Language approval regression test",
                 },
             }
             response = json.loads(subprocess.check_output(
-                [binary, "hook", "codex", "--config", str(config), "--mode", "advisory", "--label-command"],
+                [binary, "hook", "codex", "--no-prompt", "--config", str(config), "--mode", "advisory", "--label-command"],
                 input=json.dumps(event).encode(),
                 env=analysis_env,
             ))
@@ -73,6 +74,10 @@ def main(binary: str) -> None:
                 failures.append(f"{name}: missing source syntax evidence")
             if impact is not unchecked and report["impact_severity"] != impact:
                 failures.append(f"{name}: expected impact {impact}, got {report['impact_severity']}")
+            if report["severity"] == "critical":
+                if rewrite.get("permissionDecision") != "deny" or "updatedInput" in rewrite:
+                    failures.append(f"{name}: critical verdict must block without a command rewrite")
+                return
             label = report["impact_severity"] or "unknown"
             color = {"unknown": "⚪", "safe": "🟢", "low": "🔵", "medium": "🟡", "high": "🟠", "critical": "🔴"}[label]
             if not first.startswith(f"# Distill severity: {label.upper()} {color}"):

@@ -13,12 +13,27 @@ async function smoke() {
   const extension = vscode.extensions.getExtension('distill.distill-trace');
   assert.ok(extension, 'Packaged extension was discovered');
   await extension.activate();
+  const runtime = await extension.exports.ready();
+  assert.equal(runtime.managed, true, 'The extension installs its CLI without a configured binary');
+  assert.ok(runtime.binary.startsWith(path.dirname(process.env.DISTILL_HOST_TEST_RESULT)), 'The CLI lives in the isolated profile, not a system installation');
+  process.env.DISTILL_TEST_BINARY = runtime.binary;
   assert.ok(extension.isActive);
   assert.equal(require('node:fs').realpathSync(extension.extensionPath), require('node:fs').realpathSync(process.env.DISTILL_HOST_TEST_EXTENSION), 'The installed VSIX is active');
   assert.ok(Number(process.env.VSCODE_PID) > 1, 'Main application identity is available');
   const roots = vscode.workspace.workspaceFolders.map(folder => require('node:fs').realpathSync(folder.uri.fsPath));
   const endpoint = await connectBroker(roots, process.env.DISTILL_TEST_BINARY);
   const fs = require('node:fs');
+  assert.equal(fs.existsSync(path.join(process.env.HOME, '.cargo/bin/distill')), false);
+  const hookPath = path.join(process.env.CODEX_HOME, 'hooks.json');
+  const installedHooks = JSON.parse(fs.readFileSync(hookPath, 'utf8'));
+  const handler = installedHooks.hooks.PreToolUse.find(group => group.matcher === '^Bash$').hooks[0].command;
+  assert.ok(handler.includes(runtime.binary));
+  assert.match(handler, /hook-launcher\.js/);
+  assert.ok(!handler.includes('python'));
+  const autoEvent = { hook_event_name:'PreToolUse', tool_name:'Bash', cwd:roots[0], tool_input:{command:'echo first-run',shell:'/bin/bash'} };
+  const automatic = require('node:child_process').spawnSync('/bin/sh', ['-c', handler], { input:JSON.stringify(autoEvent), encoding:'utf8', timeout:10000 });
+  assert.equal(automatic.status, 0, automatic.stderr);
+  assert.match(JSON.parse(automatic.stdout).systemMessage, /Severity: SAFE/);
   const otherRoot = path.join(path.dirname(roots[0]), 'other-workspace');
   fs.mkdirSync(otherRoot, { recursive: true });
   await rpc(endpoint, { action: 'register', roots: [otherRoot] });
@@ -42,14 +57,14 @@ async function smoke() {
       ['git-output', 'git diff --output=.env'], ['sql-cte', "psql -c 'WITH gone AS (DELETE FROM accounts RETURNING *) SELECT * FROM gone'"],
       ['sql-predicate', "psql -c 'DELETE FROM accounts WHERE 2 * 3 = 6'"], ['client-shell', "sqlite3 scratch.db '.shell rm -rf /'"],
       ['native-loader', "sqlite3 scratch.db \"SELECT load_extension('./module')\""], ['script-read', 'psql -f .env']]) {
-      const pre = { hook_event_name: 'PreToolUse', tool_name: 'Bash', session_id: event.session_id, tool_use_id: `hook-${id}`, cwd: roots[0], tool_input: { command } };
-      const args = ['hook', 'codex', '--mode', 'advisory', '--config', policy];
+      const pre = { hook_event_name: 'PreToolUse', tool_name: 'Bash', session_id: event.session_id, tool_use_id: `hook-${id}`, cwd: roots[0], tool_input: { command, shell:'/bin/bash' } };
+      const args = ['hook', 'codex', '--no-prompt', '--mode', 'advisory', '--config', policy];
       const labeled = JSON.parse(execFileSync(process.env.DISTILL_TEST_BINARY, [...args, '--label-command'], { input: JSON.stringify(pre), encoding: 'utf8', timeout: 5000 }));
-      execFileSync(process.env.DISTILL_TEST_BINARY, args, { input: JSON.stringify({ ...pre, hook_event_name: 'PostToolUse', tool_input: labeled.hookSpecificOutput.updatedInput, tool_response: { exit_code: 0 } }), encoding: 'utf8', timeout: 5000 });
+      if (labeled.hookSpecificOutput.permissionDecision !== 'deny') execFileSync(process.env.DISTILL_TEST_BINARY, args, { input: JSON.stringify({ ...pre, hook_event_name: 'PostToolUse', tool_input: labeled.hookSpecificOutput.updatedInput, tool_response: { exit_code: 0 } }), encoding: 'utf8', timeout: 5000 });
     }
     await rpc(endpoint, { action: 'record', event: { ...event, tool_use_id: 'unassessed', command: 'echo missing-assessment' } });
     if (process.env.DISTILL_HOST_TEST_RESULT) {
-      fs.writeFileSync(phaseFile, JSON.stringify({ socket: endpoint.socket, owner: process.env.VSCODE_PID }));
+      fs.writeFileSync(phaseFile, JSON.stringify({ socket: endpoint.socket, owner: process.env.VSCODE_PID, binary:runtime.binary, hookMtime:fs.statSync(hookPath).mtimeMs }));
       // Reload destroys this extension host and cancels its command promise.
       void vscode.commands.executeCommand('workbench.action.reloadWindow').then(() => {}, () => {});
       await new Promise(() => {});
@@ -58,6 +73,8 @@ async function smoke() {
     const previous = JSON.parse(fs.readFileSync(phaseFile, 'utf8'));
     assert.equal(endpoint.socket, previous.socket, 'Window reload retains the same broker');
     assert.equal(process.env.VSCODE_PID, previous.owner, 'Reload preserves the owning application');
+    assert.equal(runtime.binary, previous.binary, 'Reload reuses the immutable installed CLI');
+    assert.equal(fs.statSync(hookPath).mtimeMs, previous.hookMtime, 'Reload does not rewrite approved hook definitions');
   }
   await vscode.commands.executeCommand('distill.openTrace');
   const reconnected = await connectBroker(roots, process.env.DISTILL_TEST_BINARY);

@@ -159,7 +159,37 @@ pub(crate) fn distill_handler(command: &str, host: &str) -> Option<(String, Vec<
             _ => None,
         })
         .collect::<Option<_>>()?;
-    let words = if words.first().is_some_and(|word| word.ends_with("python3")) {
+    let node_prefix = [
+        "/usr/bin/env",
+        "-u",
+        "NODE_OPTIONS",
+        "-u",
+        "NODE_PATH",
+        "-u",
+        "LD_PRELOAD",
+        "-u",
+        "LD_LIBRARY_PATH",
+        "-u",
+        "DYLD_INSERT_LIBRARIES",
+        "-u",
+        "DYLD_LIBRARY_PATH",
+        "ELECTRON_RUN_AS_NODE=1",
+    ];
+    let node_launcher = words
+        .iter()
+        .take(node_prefix.len())
+        .map(String::as_str)
+        .eq(node_prefix)
+        && words
+            .get(14)
+            .is_some_and(|word| Path::new(word).is_absolute())
+        && words.get(15).is_some_and(|word| {
+            Path::new(word)
+                .file_name()
+                .is_some_and(|name| name == "hook-launcher.js")
+        })
+        && words.get(16).is_some_and(|word| word == "--binary");
+    let words = if node_launcher || words.first().is_some_and(|word| word.ends_with("python3")) {
         let index = words.iter().position(|word| word == "--binary")?;
         let binary = words.get(index + 1)?.clone();
         let hook = words.iter().position(|word| word == "hook")?;

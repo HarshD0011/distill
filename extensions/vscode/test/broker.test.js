@@ -79,7 +79,7 @@ test('real CLI joins assessments to large completion output and keeps native hoo
   const policy = path.join(directory, 'test-policy.toml');
   fs.writeFileSync(policy, '[privacy]\ncapture_output=true\n[ledger]\nenabled=false\n');
   async function hook(event, mode = 'advisory') {
-    const process = spawn(binary, ['hook', 'codex', '--mode', mode, '--config', policy], { env: { ...global.process.env, DISTILL_TRACE_DIR: directory, VSCODE_PID: String(owner.pid) }, stdio: ['pipe', 'pipe', 'pipe'] });
+    const process = spawn(binary, ['hook', 'codex', '--no-prompt', '--mode', mode, '--config', policy], { env: { ...global.process.env, DISTILL_TRACE_DIR: directory, VSCODE_PID: String(owner.pid) }, stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = ''; let stderr = '';
     process.stdout.on('data', chunk => { stdout += chunk; });
     process.stderr.on('data', chunk => { stderr += chunk; });
@@ -89,7 +89,7 @@ test('real CLI joins assessments to large completion output and keeps native hoo
     assert.equal(stderr, '');
     return JSON.parse(stdout);
   }
-  const pre = { hook_event_name: 'PreToolUse', tool_name: 'Bash', session_id: 'chat-a', tool_use_id: 'tool-1', cwd: repository, tool_input: { command: 'echo private-command' } };
+  const pre = { hook_event_name: 'PreToolUse', tool_name: 'Bash', session_id: 'chat-a', tool_use_id: 'tool-1', cwd: repository, tool_input: { command: 'echo private-command', shell: '/bin/bash' } };
   const response = await hook(pre);
   assert.equal(response.hookSpecificOutput.permissionDecision, undefined);
   await hook(pre); // Fresh report IDs/timings for the same result must not duplicate history.

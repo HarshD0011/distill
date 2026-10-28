@@ -30,7 +30,7 @@ async function main() {
     }
     if(!broker.endpoint) throw new Error('Isolated recorder did not start');
     async function hook(event, labels=false) {
-      const child = spawn(binary,['hook','codex','--mode','advisory','--config',policy,...(labels?['--label-command']:[])],{env:{...process.env,DISTILL_TRACE_DIR:directory,VSCODE_PID:String(process.pid)},stdio:['pipe','pipe','pipe']});
+      const child = spawn(binary,['hook','codex','--no-prompt','--mode','advisory','--config',policy,...(labels?['--label-command']:[])],{env:{...process.env,DISTILL_TRACE_DIR:directory,VSCODE_PID:String(process.pid)},stdio:['pipe','pipe','pipe']});
       let stdout='',stderr=''; child.stdout.on('data',chunk=>stdout+=chunk); child.stderr.on('data',chunk=>stderr+=chunk);
       const completed = new Promise((resolve,reject)=>{child.on('error',reject);child.on('close',code=>code===0?resolve():reject(new Error(stderr||`CLI exit ${code}`)));});
       child.stdin.end(JSON.stringify(event)); await completed;
@@ -45,13 +45,15 @@ async function main() {
       ['native-loader',"sqlite3 scratch.db \"SELECT load_extension('./module')\""],
       ['client-script-read','psql -f .env']);
     for(const [name,command] of cases) {
-      const pre={hook_event_name:'PreToolUse',tool_name:'Bash',session_id:'audit',tool_use_id:name,cwd:directory,tool_input:{command}};
+      const pre={hook_event_name:'PreToolUse',tool_name:'Bash',session_id:'audit',tool_use_id:name,cwd:directory,tool_input:{command,shell:'/bin/bash'}};
       const labeled=await hook(pre,true);
-      await hook({...pre,hook_event_name:'PostToolUse',tool_input:labeled.hookSpecificOutput.updatedInput,tool_response:{exit_code:0}});
+      if(labeled.hookSpecificOutput?.permissionDecision!=='deny') {
+        await hook({...pre,hook_event_name:'PostToolUse',tool_input:labeled.hookSpecificOutput.updatedInput,tool_response:{exit_code:0}});
+      }
     }
     if(extensionCheck) await hook({hook_event_name:'PostToolUse',tool_name:'Bash',session_id:'audit',tool_use_id:'missing',cwd:directory,tool_input:{command:'echo missing-assessment'},tool_response:{exit_code:0}});
     const session=(await rpc(broker.endpoint,{action:'snapshot'})).sessions.find(session=>session.id==='audit');
-    const result={replayedCommands:cases.length+(extensionCheck?1:0),rows:session.commands.length,unknown:session.commands.filter(row=>row.severity==='unknown').length,unassessed:session.commands.filter(row=>row.assessmentCount===0).length,proposed:session.commands.filter(row=>row.status==='proposed').length,completed:session.commands.filter(row=>row.status==='completed').length,candidateExecution:false};
+    const result={replayedCommands:cases.length+(extensionCheck?1:0),rows:session.commands.length,unknown:session.commands.filter(row=>row.severity==='unknown').length,unassessed:session.commands.filter(row=>row.assessmentCount===0).length,proposed:session.commands.filter(row=>row.status==='proposed').length,completed:session.commands.filter(row=>row.status==='completed').length,blocked:session.commands.filter(row=>row.status==='blocked').length,candidateExecution:false};
     if(extensionCheck) {
       const compact=(await rpc(broker.endpoint,{action:'snapshot',compact:true})).sessions.find(session=>session.id==='audit');
       result.extension={session:compact,details:[]};

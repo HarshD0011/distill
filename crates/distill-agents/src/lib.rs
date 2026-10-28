@@ -1,6 +1,6 @@
 use distill_core::{
-    AgentMode, AnalyzeRequest, CommandForm, CommandKind, Config, CoverageSummary, Decision,
-    FindingBasis, Integration, Report, ShellDialect,
+    AgentMode, AnalyzeRequest, CommandForm, CommandKind, Config, CoverageLevel, CoverageSummary,
+    Decision, FindingBasis, Integration, Report, Severity, ShellDialect,
 };
 use distill_interp::interpret;
 use distill_rules::score;
@@ -164,7 +164,27 @@ pub fn assess_hook(
             session_cwd.unwrap_or(&request.cwd),
         )?;
     }
-    let draft = interpret(&request, config);
+    let mut draft = interpret(&request, config);
+    if host == Integration::Codex && request.context.shell.is_none() {
+        // Codex aliases several execution tools as Bash and may supply only
+        // command text. The alias does not establish the actual shell dialect.
+        // Retain discovered effects (including critical ones), but never claim
+        // complete coverage from the conditional Bash-subset interpretation.
+        let reason = "Execution shell metadata is missing; Bash-subset analysis is conditional";
+        draft.unknowns.push(reason.into());
+        draft.coverage.stop_reasons.push(reason.into());
+        if draft.coverage.summary == CoverageSummary::StaticAccounted {
+            draft.coverage.summary = CoverageSummary::Partial;
+        }
+        draft.coverage.parse = CoverageLevel::Partial;
+        draft.coverage.expansion = CoverageLevel::Partial;
+        draft.max_severity = Some(
+            draft
+                .max_severity
+                .unwrap_or(Severity::Safe)
+                .max(Severity::High),
+        );
+    }
     let mut report = score(&request, draft, config, started.elapsed().as_millis());
     if request.context.sandbox_escalation {
         report.severity = report.severity.max(distill_core::Severity::High);
@@ -185,6 +205,9 @@ pub fn assess_hook(
             confidence: "conditional",
             basis: FindingBasis::Impact,
         });
+    }
+    if report.severity == Severity::Critical {
+        report.decision = Decision::Deny;
     }
     if let (Some(session), Some(id)) =
         (request.session_id.as_deref(), event["tool_use_id"].as_str())
@@ -240,7 +263,8 @@ fn can_label_command(host: Integration, event: &Value, config: &Config) -> bool 
     }
 }
 
-fn authenticated_command<'a>(command: &'a str, config: &Config) -> &'a str {
+/// Strip only a label authenticated with this installation's private key.
+pub fn authenticated_command<'a>(command: &'a str, config: &Config) -> &'a str {
     let Some((line, rest)) = command.split_once('\n') else {
         return command;
     };
@@ -303,6 +327,15 @@ fn add_command_label(
     reason: Option<&str>,
     config: &Config,
 ) -> Result<(), String> {
+    // A display label must never replace a blocking decision with the allow
+    // decision required by the host's rewrite API.
+    if output
+        .pointer("/hookSpecificOutput/permissionDecision")
+        .and_then(Value::as_str)
+        == Some("deny")
+    {
+        return Ok(());
+    }
     let key = distill_core::integrity::key_path(config).ok_or("Signing key path unavailable")?;
     let key = distill_core::integrity::read_private(&key, 32)
         .map_err(|_| "Command labeling requires a private key; use distill setup")?;
@@ -400,6 +433,18 @@ fn annotation(event_name: &str, summary: &str) -> Value {
 
 fn translate_event(host: Integration, config: &Config, report: &Report, event_name: &str) -> Value {
     let summary = severity_message(report);
+    if report.severity == Severity::Critical {
+        let reason = if host == Integration::Codex {
+            format!(
+                "{summary}\nExplicit human approval required. The command remains paused until the Distill dialog is approved. Automatic approval and chat approval cannot release it. If a dialog is unavailable or dismissed, the command is denied."
+            )
+        } else {
+            format!(
+                "{summary}\nCritical commands are blocked and require explicit human review, including in advisory mode."
+            )
+        };
+        return deny_event(event_name, &reason);
+    }
     if mode(host, config) == AgentMode::Advisory {
         return annotation(event_name, &summary);
     }
@@ -551,13 +596,135 @@ mod tests {
             "hook_event_name": event_name,
             "tool_name": "Bash",
             "cwd": "/tmp",
-            "tool_input": {"command": command}
+            "tool_input": {"command": command, "shell": "/bin/bash"}
         })
         .to_string()
     }
 
     #[test]
-    fn advisory_flags_every_severity_without_deciding_or_rewriting() {
+    fn critical_cannot_be_auto_approved_or_rewritten_even_in_advisory_mode() {
+        for agent_mode in [AgentMode::Advisory, AgentMode::Strict] {
+            let mut config = test_config();
+            config.agents.codex.mode = agent_mode;
+            // The hook's minimum critical-review requirement also applies to
+            // policies that would otherwise permit critical effects.
+            config.policy.critical = distill_core::PolicyAction::Allow;
+            for permission_mode in ["default", "dontAsk", "bypassPermissions"] {
+                for event_name in ["PreToolUse", "PermissionRequest"] {
+                    let mut input: Value =
+                        serde_json::from_str(&event(event_name, "rm -rf /")).unwrap();
+                    input["permission_mode"] = json!(permission_mode);
+                    let (output, report) = assess_hook(
+                        Integration::Codex,
+                        &input.to_string(),
+                        &config,
+                        HookOptions {
+                            label_command: agent_mode == AgentMode::Advisory
+                                && event_name == "PreToolUse",
+                        },
+                    )
+                    .unwrap();
+                    assert_eq!(report.decision, Decision::Deny);
+                    let details = &output["hookSpecificOutput"];
+                    assert_eq!(details["hookEventName"], event_name);
+                    if event_name == "PreToolUse" {
+                        assert_eq!(details["permissionDecision"], "deny");
+                    } else {
+                        assert_eq!(details["decision"]["behavior"], "deny");
+                    }
+                    assert!(details.get("updatedInput").is_none());
+                    let message = output["systemMessage"].as_str().unwrap();
+                    assert!(message.contains("Explicit human approval required"));
+                    assert!(message.contains("Distill dialog"));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn missing_codex_shell_metadata_is_incomplete_without_losing_known_hazards() {
+        let mut config = test_config();
+        config.agents.codex.mode = AgentMode::Advisory;
+        for (command, impact) in [
+            ("echo hello", None),
+            ("cat input.txt", Some(Severity::Low)),
+            ("touch ordinary.txt", Some(Severity::Medium)),
+            ("rm -rf /", Some(Severity::Critical)),
+        ] {
+            let input = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "tool_input":{"command":command}});
+            let (output, report) = assess_hook(
+                Integration::Codex,
+                &input.to_string(),
+                &config,
+                HookOptions {
+                    label_command: true,
+                },
+            )
+            .unwrap();
+            assert_eq!(report.impact_severity, impact, "{command}");
+            assert!(report.severity >= Severity::High);
+            assert_ne!(report.coverage.summary, CoverageSummary::StaticAccounted);
+            assert!(report.analysis_context.shell.is_none());
+            assert!(
+                report
+                    .unknowns
+                    .iter()
+                    .any(|reason| reason.contains("shell metadata is missing"))
+            );
+            if impact == Some(Severity::Critical) {
+                assert_eq!(output["hookSpecificOutput"]["permissionDecision"], "deny");
+                assert!(output["hookSpecificOutput"].get("updatedInput").is_none());
+            }
+        }
+        let (_, explicit) = assess_hook(
+            Integration::Codex,
+            &event("PreToolUse", "echo hello"),
+            &config,
+            HookOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(explicit.impact_severity, Some(Severity::Safe));
+        assert_eq!(explicit.coverage.summary, CoverageSummary::StaticAccounted);
+    }
+
+    #[test]
+    fn zsh_requires_a_host_supplied_compatible_option_snapshot() {
+        let mut input: Value = serde_json::from_str(&event("PreToolUse", "echo hello")).unwrap();
+        input["tool_input"]["shell"] = json!("/bin/zsh");
+        let config = test_config();
+        let (_, report) = assess_hook(
+            Integration::Codex,
+            &input.to_string(),
+            &config,
+            HookOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(report.impact_severity, None);
+        assert_eq!(report.severity, Severity::High);
+        input["tool_input"]["shell_options"] = json!([
+            "noaliases",
+            "norcs",
+            "noglobalrcs",
+            "noequals",
+            "nomultios",
+            "nobanghist",
+            "noextendedglob",
+            "noglobsubst",
+            "noshwordsplit"
+        ]);
+        let (_, report) = assess_hook(
+            Integration::Codex,
+            &input.to_string(),
+            &config,
+            HookOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(report.impact_severity, Some(Severity::Safe));
+        assert_eq!(report.coverage.summary, CoverageSummary::StaticAccounted);
+    }
+
+    #[test]
+    fn advisory_flags_noncritical_severities_without_deciding_or_rewriting() {
         let mut config = test_config();
         config.agents.codex.mode = AgentMode::Advisory;
         config.agents.claude.mode = AgentMode::Advisory;
@@ -568,7 +735,6 @@ mod tests {
             ("rm -f /tmp/source.py", "HIGH"),
             ("mystery --do-it", "UNKNOWN"),
             ("python3 exploit.py", "UNKNOWN"),
-            ("rm -rf /", "CRITICAL"),
         ] {
             for (host, event_name) in [
                 (Integration::Codex, "PreToolUse"),
@@ -716,14 +882,13 @@ mod tests {
     fn command_labels_preserve_execution_and_approval_fields() {
         let mut config = test_config();
         config.agents.codex.mode = AgentMode::Advisory;
-        for (command, severity) in [
-            ("echo hello", "SAFE"),
-            ("python3 -c 'print(1)'", "LOW"),
-            ("printf '' > /tmp/distill-output", "MEDIUM"),
-            ("rm -f /tmp/source.py", "HIGH"),
-            ("mystery --do-it", "UNKNOWN"),
-            ("python3 exploit.py", "UNKNOWN"),
-            ("rm -rf /", "CRITICAL"),
+        for command in [
+            "echo hello",
+            "python3 -c 'print(1)'",
+            "printf '' > /tmp/distill-output",
+            "rm -f /tmp/source.py",
+            "mystery --do-it",
+            "python3 exploit.py",
         ] {
             let mut input: Value = serde_json::from_str(&event("PreToolUse", command)).unwrap();
             input["tool_input"] = json!({
@@ -756,16 +921,8 @@ mod tests {
             let (label, body) = labeled.split_once('\n').unwrap();
             assert!(label.starts_with(&format!(
                 "# Distill severity: {} {}",
-                if severity == "CRITICAL" {
-                    "CRITICAL"
-                } else {
-                    "HIGH"
-                },
-                severity_mark(if severity == "CRITICAL" {
-                    "CRITICAL"
-                } else {
-                    "HIGH"
-                })
+                "HIGH",
+                severity_mark("HIGH")
             )));
             assert_eq!(body, command);
             expected["command"] = json!(labeled);
@@ -779,7 +936,7 @@ mod tests {
         config.agents.codex.mode = AgentMode::Advisory;
         let mut input: Value = serde_json::from_str(&event(
             "PreToolUse",
-            "# Distill severity: SAFE\n# Distill severity: UNKNOWN\nrm -rf /",
+            "# Distill severity: SAFE\n# Distill severity: UNKNOWN\ncat /tmp/input.txt",
         ))
         .unwrap();
         for _ in 0..2 {
@@ -795,8 +952,8 @@ mod tests {
             let labeled = output["hookSpecificOutput"]["updatedInput"]["command"]
                 .as_str()
                 .unwrap();
-            assert!(labeled.starts_with("# Distill severity: CRITICAL 🔴 "));
-            assert!(labeled.ends_with("\nrm -rf /"));
+            assert!(labeled.starts_with("# Distill severity: LOW 🔵 "));
+            assert!(labeled.ends_with("\ncat /tmp/input.txt"));
             input["tool_input"] = output["hookSpecificOutput"]["updatedInput"].clone();
         }
     }
@@ -1067,7 +1224,7 @@ mod tests {
                 scope.spawn(move || {
                     barrier.wait();
                     for index in 0..8 {
-                        let event = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "session_id":"parallel", "tool_use_id":format!("{worker}-{index}"), "tool_input":{"command":"echo hello"}});
+                        let event = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "session_id":"parallel", "tool_use_id":format!("{worker}-{index}"), "tool_input":{"command":"echo hello", "shell":"/bin/bash"}});
                         let (_, report) = assess_hook(Integration::Codex, &event.to_string(), config, HookOptions::default()).unwrap();
                         assert_eq!(report.decision, Decision::Allow);
                     }

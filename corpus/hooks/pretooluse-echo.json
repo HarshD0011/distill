@@ -5,6 +5,7 @@
   "session_id": "local-test",
   "tool_use_id": "tool-echo",
   "tool_input": {
-    "command": "echo hello"
+    "command": "echo hello",
+    "shell": "/bin/bash"
   }
 }

@@ -12,7 +12,7 @@ use std::{
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Included in report provenance and the policy digest when built-in semantics change.
-pub const BEHAVIOR_POLICY_VERSION: &str = "8";
+pub const BEHAVIOR_POLICY_VERSION: &str = "9";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -173,6 +173,10 @@ impl AnalysisBudget {
     pub fn visit_node(&self) -> bool {
         self.nodes.set(self.nodes.get().saturating_add(1));
         !self.expired()
+    }
+
+    pub fn remaining_nodes(&self) -> usize {
+        self.node_limit.saturating_sub(self.nodes.get())
     }
 
     pub fn stop_reason(&self) -> &'static str {

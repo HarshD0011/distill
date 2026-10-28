@@ -37,6 +37,23 @@ pub fn assessment(
     response: &Value,
     config: &distill_core::Config,
 ) -> Result<(), String> {
+    assessment_value(
+        host,
+        input,
+        &serde_json::to_value(report).map_err(|e| e.to_string())?,
+        response,
+        config,
+    )
+}
+
+/// Record the final human decision after the supervised CLI's approval dialog.
+pub fn assessment_value(
+    host: Integration,
+    input: &str,
+    report: &Value,
+    response: &Value,
+    config: &distill_core::Config,
+) -> Result<(), String> {
     if !has_endpoints() {
         return Ok(());
     }
@@ -47,7 +64,7 @@ pub fn assessment(
         || response.get("decision") == Some(&json!("block"));
     let mut trace = envelope(host, &event, config)?;
     trace["kind"] = json!("assessment");
-    trace["report"] = serde_json::to_value(report).map_err(|e| e.to_string())?;
+    trace["report"] = report.clone();
     trace["blocked"] = json!(blocked);
     deliver(trace)
 }

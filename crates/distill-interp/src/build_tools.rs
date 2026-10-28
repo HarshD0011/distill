@@ -308,6 +308,12 @@ impl Analyzer<'_> {
     }
 
     pub(super) fn cargo(&mut self, args: &[Word]) {
+        let saved = self.cwd.clone();
+        self.cargo_command(args);
+        self.cwd = saved;
+    }
+
+    fn cargo_command(&mut self, args: &[Word]) {
         if args.len() == 1
             && !args[0].dynamic
             && matches!(args[0].text.as_str(), "--version" | "-V" | "--help")
@@ -339,6 +345,9 @@ impl Analyzer<'_> {
             self.unresolved_program("Cargo subcommand is unresolved");
             return;
         };
+        if let Some(directory) = global.all(&["-C"]).last() {
+            self.cwd = self.resolve(directory);
+        }
         let rest = &global.operands[1..];
         let opts = self.tool_options(
             rest,
@@ -364,6 +373,8 @@ impl Analyzer<'_> {
                 "-j",
                 "--message-format",
                 "--color",
+                "--exclude",
+                "--features",
                 "-Z",
             ],
             &[
@@ -389,6 +400,10 @@ impl Analyzer<'_> {
                 "--benches",
                 "--examples",
                 "--dry-run",
+                "--no-fail-fast",
+                "--doc",
+                "--check",
+                "--list",
             ],
             false,
         );
@@ -402,12 +417,76 @@ impl Analyzer<'_> {
             "install" | "uninstall" | "remove" | "rm" | "add" | "update" => {
                 self.package_change("cargo", rest, matches!(sub, "uninstall" | "remove" | "rm"));
             }
-            "build" | "b" | "check" | "c" | "run" | "r" | "test" | "t" | "bench" | "doc" | "rustc" | "rustdoc" | "clippy" | "fix" => self.unresolved_program("Cargo may execute build scripts, procedural macros, tests, runners, or compiler extensions"),
-            "clean" => self.finding(Severity::High, EffectKind::FileDelete, "cargo.clean", "Deletes Cargo build outputs at the selected target directory"),
-            "publish" | "login" | "owner" | "yank" => self.finding(Severity::High, EffectKind::NetworkSend, "cargo.registry", "Changes registry state or sends package contents or credentials"),
-            "metadata" | "tree" | "locate-project" | "pkgid" | "version" | "help" | "search" | "info" => self.finding(Severity::Low, EffectKind::FileRead, "cargo.query", "Queries Cargo project, package, or registry metadata"),
-            "fetch" | "vendor" | "new" | "init" | "fmt" | "package" | "generate-lockfile" => self.finding(Severity::Medium, EffectKind::FileWrite, "cargo.files", "Creates or updates project files, package archives, or dependency caches"),
-            _ => self.unresolved_program("Cargo external subcommand or alias may execute arbitrary code"),
+            "build" | "b" | "check" | "c" | "run" | "r" | "test" | "t" | "bench" | "doc" | "d"
+            | "rustc" | "rustdoc" | "clippy" | "fix" => {
+                self.unresolved_program("Cargo may execute build scripts, procedural macros, tests, runners, or compiler extensions");
+                let target = opts
+                    .all(&["--target-dir"])
+                    .last()
+                    .cloned()
+                    .unwrap_or_else(|| literal("target"));
+                self.write_destination(&target, true);
+                if matches!(sub, "run" | "r")
+                    || matches!(sub, "test" | "t" | "bench") && !opts.has(&["--no-run"])
+                {
+                    self.workflow_execution("Cargo executes project binaries or test harnesses");
+                }
+            }
+            "clean" => self.finding(
+                Severity::High,
+                EffectKind::FileDelete,
+                "cargo.clean",
+                "Deletes Cargo build outputs at the selected target directory",
+            ),
+            "publish" | "login" | "owner" | "yank" => self.finding(
+                Severity::High,
+                EffectKind::NetworkSend,
+                "cargo.registry",
+                "Changes registry state or sends package contents or credentials",
+            ),
+            "metadata" | "tree" | "locate-project" | "pkgid" | "version" | "help" | "search"
+            | "info" => self.finding(
+                Severity::Low,
+                EffectKind::FileRead,
+                "cargo.query",
+                "Queries Cargo project, package, or registry metadata",
+            ),
+            "fmt" => {
+                let check = rest.iter().any(|word| {
+                    !word.dynamic && matches!(word.text.as_str(), "--check" | "--emit=stdout")
+                }) || rest.windows(2).any(|pair| {
+                    pair[0].text == "--emit"
+                        && pair[1].text == "stdout"
+                        && !pair.iter().any(|word| word.dynamic)
+                });
+                self.finding(
+                    if check {
+                        Severity::Low
+                    } else {
+                        Severity::Medium
+                    },
+                    if check {
+                        EffectKind::FileRead
+                    } else {
+                        EffectKind::FileWrite
+                    },
+                    "cargo.format",
+                    if check {
+                        "Checks Rust formatting without rewriting source"
+                    } else {
+                        "Formats Rust source files"
+                    },
+                );
+            }
+            "fetch" | "vendor" | "new" | "init" | "package" | "generate-lockfile" => self.finding(
+                Severity::Medium,
+                EffectKind::FileWrite,
+                "cargo.files",
+                "Creates or updates project files, package archives, or dependency caches",
+            ),
+            _ => self.unresolved_program(
+                "Cargo external subcommand or alias may execute arbitrary code",
+            ),
         }
         for target in opts.all(&["--target-dir", "--root"]) {
             if sub == "clean" {
@@ -437,6 +516,7 @@ impl Analyzer<'_> {
                 | "t"
                 | "bench"
                 | "doc"
+                | "d"
                 | "install"
                 | "rustc"
                 | "clippy"
@@ -461,6 +541,27 @@ impl Analyzer<'_> {
     }
 
     fn cargo_sources(&mut self, manifest: &Word) {
+        let mut pending = vec![manifest.clone()];
+        let mut seen = std::collections::BTreeSet::new();
+        while let Some(manifest) = pending.pop() {
+            if !self.within_budget() {
+                return;
+            }
+            let Some(path) = self.resolve(&manifest) else {
+                continue;
+            };
+            if !seen.insert(path.clone()) {
+                continue;
+            }
+            if seen.len() > 32 {
+                self.unknown("Cargo workspace manifest discovery reached its bounded limit");
+                return;
+            }
+            self.cargo_manifest_sources(&literal(path.to_string_lossy()), &mut pending);
+        }
+    }
+
+    fn cargo_manifest_sources(&mut self, manifest: &Word, pending: &mut Vec<Word>) {
         let Some(path) = self.lexical_path(manifest) else {
             return;
         };
@@ -474,8 +575,36 @@ impl Analyzer<'_> {
         let Some(base) = path.parent() else {
             return;
         };
+        if let Some(members) = value
+            .get("workspace")
+            .and_then(|v| v.get("members"))
+            .and_then(toml::Value::as_array)
+        {
+            for member in members.iter().filter_map(toml::Value::as_str).take(32) {
+                for directory in self.cargo_member_paths(base, member) {
+                    pending.push(literal(directory.join("Cargo.toml").to_string_lossy()));
+                }
+            }
+        }
         let build = value.get("package").and_then(|v| v.get("build"));
         let mut sources = vec!["src/main.rs".to_owned(), "src/lib.rs".to_owned()];
+        if let Some(source) = value
+            .get("lib")
+            .and_then(|v| v.get("path"))
+            .and_then(toml::Value::as_str)
+        {
+            sources.push(source.into());
+        }
+        for kind in ["bin", "test", "bench", "example"] {
+            if let Some(targets) = value.get(kind).and_then(toml::Value::as_array) {
+                sources.extend(
+                    targets
+                        .iter()
+                        .filter_map(|target| target.get("path").and_then(toml::Value::as_str))
+                        .map(str::to_owned),
+                );
+            }
+        }
         if build.and_then(toml::Value::as_bool) != Some(false) {
             sources.push(
                 build
@@ -487,9 +616,60 @@ impl Analyzer<'_> {
         for source in sources {
             let path = base.join(source);
             if path.is_file() {
-                self.inspect_file(Language::Rust, &literal(path.to_string_lossy()));
+                self.inspect_workflow_file(Language::Rust, &literal(path.to_string_lossy()));
             }
         }
+        for relative in ["src", "tests", "benches", "examples"] {
+            for source in self.discover_sources(&base.join(relative), "rs", false) {
+                if !self.within_budget() {
+                    return;
+                }
+                if !self.inspected_files.iter().any(|file| file.path == source) {
+                    self.inspect_workflow_file(Language::Rust, &literal(source.to_string_lossy()));
+                }
+            }
+        }
+    }
+
+    fn cargo_member_paths(
+        &mut self,
+        base: &std::path::Path,
+        pattern: &str,
+    ) -> Vec<std::path::PathBuf> {
+        let mut directories = vec![base.to_path_buf()];
+        for part in pattern.split('/') {
+            if !self.within_budget() {
+                return vec![];
+            }
+            if part.contains(['?', '[', ']']) || part == "**" {
+                self.unknown("Cargo workspace member glob is outside the supported bounded subset");
+                return vec![];
+            }
+            let mut next = Vec::new();
+            for directory in directories {
+                if let Some((prefix, suffix)) = part.split_once('*') {
+                    if let Ok(entries) = directory.read_dir() {
+                        for entry in entries.take(128).filter_map(Result::ok) {
+                            if !self.budget.visit_node() {
+                                self.within_budget();
+                                return vec![];
+                            }
+                            let name = entry.file_name();
+                            let name = name.to_string_lossy();
+                            if name.starts_with(prefix) && name.ends_with(suffix) {
+                                next.push(entry.path());
+                            }
+                        }
+                    }
+                } else {
+                    next.push(directory.join(part));
+                }
+            }
+            next.sort();
+            next.truncate(32);
+            directories = next;
+        }
+        directories
     }
 
     pub(super) fn java_tool(&mut self, name: &str, args: &[Word]) {

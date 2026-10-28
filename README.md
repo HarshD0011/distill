@@ -1,10 +1,12 @@
 # Distill
 
-Distill 0.4.2 is a local command analyzer for coding agents. It separates **known impact**, **analysis coverage**, and the **policy decision**. An UNKNOWN verdict means the analyzer cannot establish an impact rating; a known rating with partial coverage still requires review under the default policy. No model or network service runs in the analysis path.
+Distill 0.4.5 is a local command analyzer for coding agents. It separates **known impact**, **analysis coverage**, and the **policy decision**. An UNKNOWN verdict means the analyzer cannot establish an impact rating; a known rating with partial coverage still requires review under the default policy. No model or network service runs in the analysis path.
 
 The workspace contains the embedded Rust analyzer, Codex/Claude hooks, a VS Code command trace extension, a bounded session policy ledger, and an opt-in execution gate. `analyze` and hook assessment never execute candidate commands. **`run` executes a command inside native containment.** Hooks remain analysis adapters: installing them does not automatically route host execution through the gate.
 
 ## Build and install
+
+For VS Code users, the [Distill extension](extensions/vscode/README.md#install-and-connect) bundles and automatically installs the CLI and configures its hooks. Install the platform-specific VSIX, open a trusted local folder, and approve the hooks in your agent. No separate CLI, Rust, or Python installation is required.
 
 ```sh
 cargo test --workspace
@@ -17,7 +19,7 @@ distill doctor --json --workspace-root /absolute/workspace
 
 Setup writes user-owned hook definitions, an isolated Python launcher, and a separate policy file under `~/.config/distill`. It pins the absolute CLI path and SHA-256, preserves unrelated handlers and existing strict mode, and leaves project files untouched. Rerunning setup preserves the host's stored policy and labels; `--config` deliberately replaces the stored policy. After upgrading the binary, rerun setup to refresh its pin. Codex may require reviewing and trusting changed definitions in `/hooks`. User hooks do not establish managed enforcement against project configuration or an agent that can modify user files.
 
-Bundled defaults are strict. Pass an explicit reviewed advisory policy, such as a customized [example](config.example.toml), to `setup --config` when advisory behavior is desired. Advisory hooks show findings and preserve host permission checks. Strict Codex hooks deny commands requiring review because PreToolUse has no native ask response; Claude can request native review. A modeled safe/low command does not produce an automatic permission grant in strict mode.
+Bundled defaults are strict. Pass an explicit reviewed advisory policy, such as a customized [example](config.example.toml), to `setup --config` when advisory behavior is desired. Advisory hooks show findings and preserve host permission checks for noncritical verdicts. **CRITICAL verdicts require a human decision in every hook mode**, including advisory mode and automatic approval. On macOS the supervised CLI displays a Distill-owned AppKit dialog brought to the foreground across Spaces, with the exact command, working directory, and reason. Only **Approve once** releases that invocation; **Deny**, closing the dialog, timeout, unavailable GUI, or changed inspected files/policy deny it. Chat/model approval cannot substitute for the click. This is a Distill dialog, since Codex PreToolUse has no native ask response. The parser retains its six-second watchdog; the dialog has a separate 120-second response window, and installed pre-execution hooks have a 150-second timeout. Other host permission checks still apply. Headless checks can use `hook --no-prompt`, which always denies CRITICAL commands. Other platforms currently retain the denial fallback. Strict Codex hooks also deny other commands requiring review because PreToolUse has no native ask response; Claude can request native review. A modeled safe/low command does not produce an automatic permission grant in strict mode.
 
 ## Analyze commands
 
@@ -37,6 +39,8 @@ Dedicated adapters also describe Python package/module operations, Git configura
 Typed argument grammars bind Git diff outputs, no-index inputs, and database-client programs/files to shared effects. Bounded SQL AST analysis collects modifying CTEs, distinguishes executing from plan-only statements, and evaluates supported constant predicates with SQL NULL semantics. Client shell commands and native loaders route through reviewed capabilities. These models contain no command-specific severity labels; configurable effect policy supplies ratings. See [the semantic-gap implementation](docs/semantic-gap-design.md).
 
 Zsh uses a conservative dialect layer, not a complete Zsh grammar. Without a complete supported explicit option snapshot, it retains HIGH uncertainty. Unsupported expansion, aliases, options, modules, and grammar retain incomplete coverage. `run` establishes its own restricted shell options; ordinary hook calls do not infer a shell snapshot from the user's login environment.
+
+Codex's `Bash` hook name can represent other execution shells. If the host omits `tool_input.shell`, Distill uses the Bash subset only to discover conditional effects, marks coverage incomplete, and retains at least HIGH approval risk. It does not infer the execution shell or options from the hook process. Known CRITICAL effects still require the human dialog when shell metadata is missing.
 
 ## Signed approval labels
 

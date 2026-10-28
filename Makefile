@@ -40,4 +40,5 @@ demo: build
 smoke: build
 	python3 scripts/smoke.py $(DISTILL)
 	python3 scripts/language_smoke.py $(DISTILL)
+	python3 scripts/workflow_smoke.py $(DISTILL)
 	python3 scripts/policy_evaluation.py $(DISTILL)

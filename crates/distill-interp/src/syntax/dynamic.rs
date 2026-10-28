@@ -7,6 +7,7 @@ use super::{Language, children, field_text, pure, text};
 pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bool {
     let mut symbols = HashSet::new();
     let mut printed = false;
+    let mut asserted = false;
     for statement in children(root) {
         match (language, statement.kind()) {
             (Language::Python, "expression_statement") => {
@@ -24,6 +25,13 @@ pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bo
                 } else {
                     return false;
                 }
+            }
+            (Language::Python, "assert_statement") => {
+                let values = children(statement);
+                if values.is_empty() || !values.iter().all(|value| pure(*value, source, &symbols)) {
+                    return false;
+                }
+                asserted = true;
             }
             (Language::JavaScript, "lexical_declaration" | "variable_declaration") => {
                 for declaration in children(statement) {
@@ -46,7 +54,7 @@ pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bo
             _ => return false,
         }
     }
-    printed
+    printed || asserted
 }
 
 fn binding(

@@ -31,6 +31,7 @@ pub fn configure(
     roots: &[PathBuf],
     check: bool,
     labels: bool,
+    node_runtime: Option<&Path>,
 ) -> Result<Value, String> {
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
     let directory = if host == "codex" {
@@ -57,7 +58,26 @@ pub fn configure(
         .map_err(|e| e.to_string())?;
     let digest = sha256(&fs::read(&binary).map_err(|e| e.to_string())?);
     let state = home.join(".config/distill");
-    let launcher = state.join("hook-launcher.py");
+    let (launcher, launcher_source, launcher_command) = if let Some(runtime) = node_runtime {
+        if !runtime.is_absolute() {
+            return Err("Node runtime must be an absolute executable path".into());
+        }
+        let runtime = fs::canonicalize(runtime).map_err(|e| e.to_string())?;
+        if !runtime.is_file() || roots.iter().any(|root| runtime.starts_with(root)) {
+            return Err("Node runtime must be installed outside the workspace".into());
+        }
+        let launcher = state.join("hook-launcher.js");
+        let command = format!(
+            "/usr/bin/env -u NODE_OPTIONS -u NODE_PATH -u LD_PRELOAD -u LD_LIBRARY_PATH -u DYLD_INSERT_LIBRARIES -u DYLD_LIBRARY_PATH ELECTRON_RUN_AS_NODE=1 {} {}",
+            quote(&runtime),
+            quote(&launcher)
+        );
+        (launcher, NODE_LAUNCHER, command)
+    } else {
+        let launcher = state.join("hook-launcher.py");
+        let command = format!("/usr/bin/python3 -I {}", quote(&launcher));
+        (launcher, LAUNCHER, command)
+    };
     let policy = state.join(format!("hook-policy-{host}.toml"));
     let mut pinned_config = config.clone();
     pinned_config.security.label_key_path = key_path(config);
@@ -122,13 +142,17 @@ pub fn configure(
         // -I prevents repository modules and PYTHON* injection into the pin-checking launcher.
         needs_key |= !label.is_empty();
         let command = format!(
-            "/usr/bin/python3 -I {} --binary {} --sha256 {} hook {host} --config {} --mode {mode}{label}",
-            quote(&launcher),
+            "{launcher_command} --binary {} --sha256 {} hook {host} --config {} --mode {mode}{label}",
             quote(&binary),
             digest,
             quote(&policy)
         );
-        groups.push(json!({"matcher": "^Bash$", "hooks": [{"type": "command", "command": command, "timeout": 10}]}));
+        let timeout = if *event == "PostToolUse" || *event == "PostToolUseFailure" {
+            10
+        } else {
+            150
+        };
+        groups.push(json!({"matcher": "^Bash$", "hooks": [{"type": "command", "command": command, "timeout": timeout}]}));
     }
     let inventory = crate::hook_sources::inspect(host, roots)?;
     if inventory["handlers"]
@@ -156,7 +180,7 @@ pub fn configure(
                     .ok_or("Key path unavailable")?,
             )?;
         }
-        atomic_private(&launcher, LAUNCHER.as_bytes())?;
+        atomic_private(&launcher, launcher_source.as_bytes())?;
         if read_user_file(&file)?.as_deref() != original_bytes.as_deref() {
             return Err(
                 "User hook configuration changed during setup; retry after reviewing it".into(),
@@ -277,6 +301,7 @@ try:
         for chunk in iter(lambda: executable.read(65536), b''): digest.update(chunk)
     if digest.hexdigest() != expected: deny('Distill: pinned executable changed; reinstall trusted user hooks')
 except OSError: deny('Distill: pinned executable unavailable')
-environment = {key: value for key, value in os.environ.items() if key not in {'LD_PRELOAD', 'LD_LIBRARY_PATH', 'DYLD_INSERT_LIBRARIES', 'DYLD_LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME'}}
+environment = {key: value for key, value in os.environ.items() if key not in {'LD_PRELOAD', 'LD_LIBRARY_PATH', 'DYLD_INSERT_LIBRARIES', 'DYLD_LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME', 'DISTILL_ANALYSIS_WORKER', 'DISTILL_WATCHDOG_MS'}}
 os.execve(binary, [binary, *sys.argv[5:]], environment)
 "#;
+const NODE_LAUNCHER: &str = include_str!("../../../integrations/node/hook-launcher.js");

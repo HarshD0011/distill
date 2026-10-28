@@ -8,6 +8,39 @@ a claim of complete analysis or universal malware detection.
 
 ## Recognized operations
 
+CLI 0.4.3 / behavior policy 9 adds the coding-workflow models below. Supported
+command syntax and known effects are distinct from complete execution coverage.
+Arbitrary Python imports, test plugins, build backends, and missing host shell
+metadata can still make coverage partial or the impact UNKNOWN. These gaps are
+never removed merely because a command is named `test`, `pytest`, or `uv run`.
+
+- Python options support separate/attached `-c` and `-m`, short flag clusters,
+  `-I`, `-S`, `-W`, `-X`, `--`, extensionless scripts, directory `__main__.py`,
+  and flag-prefixed stdin/heredocs. Program arguments remain data after the
+  interpreter boundary. Custom warning categories, startup modules, interactive
+  input, and untrusted interpreter paths retain uncertainty.
+- Pytest and `python -m unittest` have known test-execution effects, bounded
+  inspection of selected test files/directories and local runner modules, pytest
+  `conftest.py`, node IDs, and explicit report/output paths. Discovery does not
+  run imports or test code. Plugins, dynamic selection and discovery limits
+  retain review requirements.
+- `uv run`, module/script modes, `uvx`, and `uv tool run` forward nested argv and
+  stdin to the same models. `--directory` changes execution cwd; `--project`
+  changes metadata discovery. Environment and lock writes, local build backends,
+  package/interpreter changes, caches, queries, and publishing have explicit
+  effects. Remote-script execution remains CRITICAL. `--no-sync`, `--frozen`,
+  `--no-project`, and `--no-cache` do not establish that dependency code is safe.
+- Cargo build/check/clippy expose artifact writes; run/test/bench expose project
+  execution, while `test --no-run` omits that execution effect. `fmt --check`
+  reports a read rather than a source rewrite. Bounded workspace member globs,
+  custom manifest target paths, build scripts and conventional source trees are
+  inspected. Compiler configuration, aliases, macros and dependencies remain
+  conditional.
+
+`python3 scripts/workflow_smoke.py target/debug/distill` replays representative
+workflows through both analysis and the actual hook API. Candidate commands are
+JSON data and are never executed by that check.
+
 - **Python:** `python -m pip` and selected package/module entry points; local
   literal module files; virtual-environment creation and clearing; HTTP serving;
   bytecode compilation; selected `pathlib` reads/writes/deletions, file copying,
@@ -43,10 +76,10 @@ a claim of complete analysis or universal malware detection.
   and dependencies remain partial. Broader invocations do not produce executable
   print proofs. Compiler include-path environment overrides retain execution risk.
 - **Cargo:** install/uninstall, build/check/run/test/doc, cleanup, registry actions
-  and metadata queries. Literal `Cargo.toml` inspection follows the package's
-  explicit/default build-script path and selected conventional Rust source files.
-  Workspace members, dependency build scripts, procedural macros, Cargo aliases,
-  configuration and custom target layouts remain unresolved.
+  and metadata queries. Literal `Cargo.toml` inspection follows bounded workspace
+  members, explicit/default build-script paths, custom manifest targets and
+  conventional Rust source trees. Dependency build scripts, procedural macros,
+  Cargo aliases, configuration and unsupported target layouts remain unresolved.
 - **Java:** `javac` output/source/header directories, source files, argument files,
   annotation processor paths, plugins and JVM agent options. Java source uses the
   same bounded parsing budget and emits conditional operations with locations.
@@ -103,6 +136,7 @@ are recognized.
 
 ## Semantic references
 
+- [Python command-line interface](https://docs.python.org/3/using/cmdline.html), [uv run](https://docs.astral.sh/uv/concepts/projects/run/), [uv CLI](https://docs.astral.sh/uv/reference/cli/), and [pytest plugin discovery](https://docs.pytest.org/en/stable/how-to/plugins.html)
 - [pip build-system interface](https://pip.pypa.io/en/stable/reference/build-system/) and [uninstall](https://pip.pypa.io/en/stable/cli/pip_uninstall/)
 - [Git global options](https://git-scm.com/docs/git), [clone](https://git-scm.com/docs/git-clone), and [configuration](https://git-scm.com/docs/git-config)
 - [Docker run](https://docs.docker.com/reference/cli/docker/container/run/)

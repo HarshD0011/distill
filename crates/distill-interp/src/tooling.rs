@@ -58,7 +58,8 @@ pub(super) fn decode(
         if !options || !word.text.starts_with('-') || word.text == "-" {
             out.operands.push(word.clone());
             if stop_at_operand {
-                options = false;
+                out.operands.extend_from_slice(&args[index..]);
+                break;
             }
             continue;
         }

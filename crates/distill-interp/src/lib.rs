@@ -23,6 +23,7 @@ mod makefile;
 mod packages;
 mod profiles;
 mod program;
+mod python_cli;
 mod readers;
 mod rules;
 #[cfg(test)]
@@ -34,6 +35,8 @@ mod syntax;
 mod tool_tests;
 mod tooling;
 mod trie;
+mod uv;
+mod workflows;
 use std::path::{Component, Path, PathBuf};
 
 struct Analyzer<'a> {
@@ -420,11 +423,21 @@ impl Analyzer<'_> {
                 )
             {
                 self.unresolved_program("Program executable identity is unresolved");
-                return;
+                if !is_python(name) {
+                    return;
+                }
             }
         }
         self.check_stream_consumer(name, args);
         if self.inspect_stdin(name, args, input, depth) {
+            return;
+        }
+        if matches!(name, "uv" | "uvx") {
+            self.uv(name, args, depth, input);
+            return;
+        }
+        if matches!(name, "pytest" | "py.test" | "pytest-3") {
+            self.python_tests("pytest", args);
             return;
         }
         if matches!(name, "docker" | "podman") {
@@ -452,6 +465,7 @@ impl Analyzer<'_> {
                 }
             }
             "rm" => self.rm(args),
+            "rmdir" => self.rmdir(args),
             "find" => self.find(args, depth),
             "git" => self.git(args),
             "brew" => self.brew(args),
@@ -523,7 +537,7 @@ impl Analyzer<'_> {
             }
             "curl" => self.curl(args),
             "wget" => self.curl(args),
-            name if is_python(name) => self.python(args),
+            name if is_python(name) => self.python(args, depth, input),
             "node" => self.node(args),
             "go" => self.go_tool(args),
             "rustc" => self.rustc(args),
@@ -1576,6 +1590,74 @@ impl Analyzer<'_> {
             self.unknown("Parameter effect and running workloads were not checked");
         } else {
             self.raise(Severity::Safe);
+        }
+    }
+
+    fn rmdir(&mut self, args: &[Word]) {
+        let mut options = true;
+        let mut parents = false;
+        let mut targets = Vec::new();
+        for arg in args {
+            if options && arg.text == "--" && !arg.dynamic {
+                options = false;
+            } else if options && arg.text.starts_with('-') && arg.text.len() > 1 {
+                let flags = arg.text.strip_prefix('-').unwrap_or_default();
+                if !arg.dynamic
+                    && (matches!(
+                        arg.text.as_str(),
+                        "--parents" | "--verbose" | "--ignore-fail-on-non-empty"
+                    ) || flags.chars().all(|flag| matches!(flag, 'p' | 'v')))
+                {
+                    parents |=
+                        arg.text == "--parents" || flags.contains('p') && !flags.starts_with('-');
+                } else {
+                    self.command_unknown = true;
+                    self.unknown("Unknown or dynamic rmdir option");
+                }
+            } else {
+                targets.push(arg);
+            }
+        }
+        if targets.is_empty() {
+            self.command_unknown = true;
+            self.unknown("rmdir target is missing");
+        }
+        for target in targets {
+            let mut target = target.clone();
+            loop {
+                if !self.within_budget() {
+                    return;
+                }
+                let path = self.resolve(&target);
+                let target_class = self.target_class(path.as_deref());
+                if target_class == TargetClass::Unresolved {
+                    self.context_partial = true;
+                    self.unknown("Directory deletion target is unresolved");
+                }
+                self.record_behavior(
+                    Behavior {
+                        database: None,
+                        kind: EffectKind::FileDelete,
+                        operation: "rmdir".into(),
+                        target: path.map(|path| path.to_string_lossy().into_owned()),
+                        target_class,
+                        recursive: false,
+                        append: false,
+                        location: None,
+                    },
+                    None,
+                );
+                // -p removes the lexical operand's parents, not every ancestor
+                // of cwd when the operand was relative.
+                let parent = Path::new(&target.text).parent();
+                let Some(parent) = parent.filter(|parent| !parent.as_os_str().is_empty()) else {
+                    break;
+                };
+                if !parents || target.dynamic {
+                    break;
+                }
+                target.text = parent.to_string_lossy().into_owned();
+            }
         }
     }
 }

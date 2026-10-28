@@ -2,7 +2,7 @@
   "name": "distill-trace",
   "displayName": "Distill \u2014 Chat Command Trace",
   "description": "Temporary per-chat command history with Distill severity, policy decisions, and output.",
-  "version": "0.4.4",
+  "version": "0.4.9",
   "publisher": "distill",
   "license": "GPL-3.0-only",
   "repository": {
@@ -78,7 +78,7 @@
           "type": "string",
           "default": "",
           "scope": "machine",
-          "description": "Absolute path to the Distill CLI. Empty uses trusted user/system install locations; workspace PATH lookup is disabled."
+          "description": "Optional absolute path to a custom Distill CLI. Empty automatically installs the verified CLI bundled with this extension; no separate installation is required."
         },
         "distill.codexHome": {
           "type": "string",

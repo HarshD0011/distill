@@ -1,4 +1,4 @@
-# Distill Chat Command Trace · 0.4.4
+# Distill Chat Command Trace · 0.4.9
 
 A VS Code sidebar for commands observed by Distill's Codex and Claude Code hooks. The chat picker uses Codex chat headings. Each compact row shows just the command and severity. Click a row for a plain-language reason, policy decision, status, and output. **More details** contains the full command, coverage, bounded modeled effects (including database row scope), directory, shell, and time; **Assessment history** contains distinct revisions and provenance. Output starts with five lines (up to 1,800 characters); **Read more** loads retained output. Search covers the selected chat's complete retained history, with 100 commands per page.
 
@@ -8,7 +8,19 @@ Chat headings come from Codex's local `session_index.jsonl` metadata and update 
 
 ## Install and connect
 
-From the repository root:
+Install the platform-specific Distill extension and open a trusted local folder. **The extension automatically installs the bundled CLI and configures its user hooks. No Rust, Cargo, Python, terminal installation command, or separate download is required.** In Codex, open `/hooks` and approve the Distill definitions. Existing Claude Code installations are also connected; restart or resume Claude and approve its hooks. Open the Distill activity bar icon and run a command in a chat.
+
+Packages support local desktop VS Code on macOS and Linux, on arm64 and x64. For example, Apple Silicon uses `distill-trace-0.4.9-darwin-arm64.vsix`, installed with **Extensions: Install from VSIX…**. Use the package matching your operating system and architecture.
+
+Extension 0.4.9 bundles CLI 0.4.5 / behavior policy 9, including Python interpreter flags and stdin, pytest/unittest discovery, uv wrappers and environment operations, and Cargo workspace build/test effects. The installer requires the `coding-workflows` capability so a stale custom CLI cannot silently omit those models. Dependency, plugin, and shell-context uncertainty remains visible; recognizing a test command does not certify arbitrary test code as safe.
+
+The installer verifies the bundled SHA-256 before running the CLI, installs it in private extension storage at a path containing its hash, and uses VS Code's own runtime for the pinned hook launcher. An upgrade installs a new binary alongside the old one, so existing hook pins remain valid until setup refreshes them. Approve changed hook definitions after an update. Reopening or reloading the same version reuses the installed binary and leaves unchanged hook files alone.
+
+Fresh installations use advisory mode for noncritical verdicts. **CRITICAL commands always require a human decision**, including under automatic approval. On macOS the bundled CLI opens a Distill-owned AppKit popup in the foreground across Spaces with **Approve once** and **Deny**. It shows the exact command, working directory, and reason. Only the approval click releases that invocation; dismissal, timeout, unavailable UI, or changed inspected files/policy deny it. The popup is provided by Distill, not Codex. Other platforms currently retain the denial fallback. Pre-execution hook timeouts allow 150 seconds for the 120-second dialog and bounded analysis. The installer requires `native-critical-approval` and `foreground-critical-approval` so an older custom CLI cannot silently retain the old behavior. Existing strict modes, stored policies, global policies, unrelated handlers, and project files are preserved. Command output capture defaults off; existing privacy choices are retained.
+
+**Distill: Connect User Hooks** repairs/retries setup and opens the generated hook file for review. Save or revert an unsaved hook document first. **Distill: Binary Path** is an optional absolute override for development or a separately managed CLI; custom CLIs must support the current hook protections. Workspace PATH lookup remains disabled. Remote, Windows, browser, and virtual workspaces are unsupported.
+
+For maintainers, build a package from the repository root:
 
 ```sh
 cargo build -p distill-cli
@@ -18,15 +30,13 @@ npm test
 npm run package
 ```
 
-No npm dependencies or build step are needed. In VS Code, use **Extensions: Install from VSIX…** and select `distill-trace-0.4.4.vsix`. The default resolver uses trusted user/system installation locations and does not search workspace PATH. Set **Distill: Binary Path** to the absolute path of this repository's `target/debug/distill`, or install the updated CLI with `cargo install --path crates/distill-cli --force` from the repository root. `distill doctor --json` reports product version, behavior policy version, output-capture status, and supported capabilities.
+Packaging builds the release CLI for the packaging host and embeds its checksum manifest, executable, and first-run policy in a platform-specific VSIX. Rust and Python are build-time maintainer tools only. To use an existing matching release build, run `python3 scripts/package.py --binary /absolute/path/distill`. No npm dependencies are required. Development hosts can set `distill.binaryPath` and press F5 with **Run Distill Extension**.
 
-Run **Distill: Connect User Hooks** from the Command Palette, choose Codex or Claude Code, and open the Distill activity bar icon. Setup inspects user and ancestor project sources, including Codex inline TOML hooks, then installs user-owned definitions through `distill setup`. The isolated launcher pins the absolute executable path and its SHA-256. Setup preserves unrelated handlers, existing strict mode, and stored host policy; it leaves project files untouched and warns about remaining project handlers. Save or revert an unsaved user hook document before connecting. CLI defaults are strict unless an existing policy selects advisory mode. In Codex, use `/hooks` to review changed definitions. A window reload may be needed for an already running chat. Configuration alone does not verify live capture: run a harmless command and expand its row to check output.
+**Upgrading from 0.3:** Install the current extension, approve the updated hooks, then fully quit and reopen VS Code once. The old TCP recorder survives window reloads and cannot accept the new Unix-socket events. The sidebar reports this mismatch explicitly. As with every application quit, temporary editor history clears. Commands missed while the recorder was incompatible are not backfilled.
 
-**Upgrading from 0.3:** Install extension 0.4.4 alongside CLI 0.4.2, then fully quit and reopen VS Code once. The old TCP recorder survives window reloads and cannot accept the new Unix-socket events. The sidebar reports this mismatch explicitly. As with every application quit, temporary editor history clears. Commands missed while the recorder was incompatible are not backfilled.
+**Upgrading from 0.4.1–0.4.4:** Reload the window to activate the updated sidebar. Existing Unix-socket recorders remain compatible and retain their temporary history. With an older running recorder, expanding a row identifies missing assessments and reveals retained uncertainty reasons; newly started recorders include the assessment state in compact rows immediately. CLI 0.4.1 / policy 7 authenticates its signed labels before correlating new completions. The extension does not reinterpret labels or rewrite old verdicts. CLI 0.4.2 / policy 8 supplies typed file/database/native-loading effects. Recorder version 6 retains up to 32 effects per report with bounded target/location text. Older running recorders continue to show ratings but cannot recover effect details they already discarded; the updated recorder starts on the next full VS Code restart, which clears temporary history.
 
-**Upgrading from 0.4.1–0.4.3:** Reload the window to activate the updated sidebar. Existing Unix-socket recorders remain compatible and retain their temporary history. With an older running recorder, expanding a row identifies missing assessments and reveals retained uncertainty reasons; newly started recorders include the assessment state in compact rows immediately. CLI 0.4.1 / policy 7 authenticates its signed labels before correlating new completions. The extension does not reinterpret labels or rewrite old verdicts. CLI 0.4.2 / policy 8 supplies typed file/database/native-loading effects. Recorder version 6 retains up to 32 effects per report with bounded target/location text. Older running recorders continue to show ratings but cannot recover effect details they already discarded; the updated recorder starts on the next full VS Code restart, which clears temporary history.
-
-For extension development, open this folder in VS Code and press F5 using **Run Distill Extension**.
+The `extension packages` workflow builds macOS and Linux arm64/x64 VSIX artifacts on version tags or manual dispatch. Packages are built on each target architecture; Linux builds use Ubuntu 22.04.
 
 ## Temporary lifetime
 
