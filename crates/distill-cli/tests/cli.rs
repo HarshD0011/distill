@@ -215,7 +215,7 @@ fn run_hook(host: &str, args: &[&str], input: &[u8]) -> serde_json::Value {
     )
     .unwrap();
     let mut child = distill()
-        .args(["hook", host])
+        .args(["hook", host, "--no-prompt"])
         .arg("--config")
         .arg(&config)
         .args(args)
@@ -244,7 +244,7 @@ fn codex_permission_hook_emits_severity_without_auto_approval() {
 }
 
 #[test]
-fn advisory_override_emits_critical_without_blocking() {
+fn advisory_critical_is_blocked_on_both_hosts() {
     for host in ["codex", "claude"] {
         let output = run_hook(
             host,
@@ -257,11 +257,7 @@ fn advisory_override_emits_critical_without_blocking() {
                 .unwrap()
                 .contains("Severity: CRITICAL")
         );
-        assert!(
-            output["hookSpecificOutput"]
-                .get("permissionDecision")
-                .is_none()
-        );
+        assert_eq!(output["hookSpecificOutput"]["permissionDecision"], "deny");
         assert!(output["hookSpecificOutput"].get("updatedInput").is_none());
     }
 }

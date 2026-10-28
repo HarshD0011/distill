@@ -298,7 +298,7 @@ impl Analyzer<'_> {
         true
     }
 
-    fn inspect_python_build(&mut self, args: &[Word]) {
+    pub(super) fn inspect_python_build(&mut self, args: &[Word]) {
         // Only explicit literal local projects are inspected; remote dependency code stays unknown.
         for arg in args
             .iter()
@@ -325,6 +325,47 @@ impl Analyzer<'_> {
                         self.unresolved_program(
                             "Python build-system requirements and backend code are unresolved",
                         );
+                        if let Ok(value) = text.parse::<toml::Value>()
+                            && let Some(system) = value.get("build-system")
+                            && let Some(backend) =
+                                system.get("build-backend").and_then(toml::Value::as_str)
+                        {
+                            let module = backend.split(':').next().unwrap_or_default();
+                            if module.split('.').all(|part| {
+                                !part.is_empty()
+                                    && part.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                            }) {
+                                let directories: Vec<_> = system
+                                    .get("backend-path")
+                                    .and_then(toml::Value::as_array)
+                                    .map(|values| {
+                                        values
+                                            .iter()
+                                            .filter_map(toml::Value::as_str)
+                                            .take(8)
+                                            .collect()
+                                    })
+                                    .unwrap_or_else(|| vec!["."]);
+                                for directory in directories {
+                                    for suffix in [
+                                        format!("{}.py", module.replace('.', "/")),
+                                        format!("{}/__init__.py", module.replace('.', "/")),
+                                    ] {
+                                        let source = path
+                                            .parent()
+                                            .unwrap_or(&path)
+                                            .join(directory)
+                                            .join(suffix);
+                                        if source.is_file() {
+                                            self.inspect_file(
+                                                crate::syntax::Language::Python,
+                                                &crate::tooling::literal(source.to_string_lossy()),
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 } else {
                     self.unresolved_program("Python build metadata could not be inspected");

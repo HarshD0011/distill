@@ -12,6 +12,7 @@ use std::{
     time::Instant,
 };
 
+mod approval;
 mod coverage;
 mod gate;
 mod hook_sources;
@@ -77,6 +78,9 @@ enum Commands {
         check: bool,
         #[arg(long)]
         labels: bool,
+        /// Use the editor's Node/Electron runtime for hooks, without requiring Python.
+        #[arg(long)]
+        node_runtime: Option<PathBuf>,
         #[arg(long = "workspace-root")]
         workspace_roots: Vec<PathBuf>,
     },
@@ -159,6 +163,11 @@ enum Commands {
         label_command: bool,
         #[arg(long = "workspace-root")]
         workspace_roots: Vec<PathBuf>,
+        /// Deny critical commands without displaying a dialog (for headless checks).
+        #[arg(long)]
+        no_prompt: bool,
+        #[arg(long, hide = true)]
+        internal_report: bool,
     },
     /// Report embedded-analyzer health and integration translation.
     Doctor {
@@ -290,6 +299,7 @@ fn run() -> Result<(), String> {
             config,
             check,
             labels,
+            node_runtime,
             workspace_roots,
         } => {
             let host = match host {
@@ -302,6 +312,7 @@ fn run() -> Result<(), String> {
                 &workspace_roots,
                 check,
                 labels,
+                node_runtime.as_deref(),
             )?)?;
         }
         Commands::Coverage { input, editor } => {
@@ -389,6 +400,8 @@ fn run() -> Result<(), String> {
             mode,
             label_command,
             workspace_roots,
+            no_prompt: _,
+            internal_report,
         } => {
             let mut input = read_bounded_stdin(trace::MAX_EVENT_BYTES);
             if !workspace_roots.is_empty() {
@@ -427,8 +440,15 @@ fn run() -> Result<(), String> {
                 .and_then(|input| assess_hook(host.into(), input, &config, options));
             match result {
                 Ok((output, report)) => {
-                    print_json(&output)?;
+                    if internal_report {
+                        print_json(
+                            &serde_json::json!({"distill_hook_response": output, "report": report}),
+                        )?;
+                    } else {
+                        print_json(&output)?;
+                    }
                     if config.editor_trace.enabled
+                        && (!internal_report || report.severity != distill_core::Severity::Critical)
                         && let Err(error) = trace::assessment(
                             host.into(),
                             input.as_deref().unwrap_or(""),
@@ -479,7 +499,7 @@ fn run() -> Result<(), String> {
                     "executable_sha256": std::env::current_exe().ok().and_then(|p| std::fs::read(p).ok()).map(|b| distill_core::sha256(&b)),
                     "trace_protocol": 1, "output_capture": config.capture_editor_output(), "behavior_policy_version": distill_core::BEHAVIOR_POLICY_VERSION,
                     "sandbox": gate::backend(&config).ok(), "session_ledger": config.ledger.enabled, "hooks": {"codex": codex_hooks, "claude": claude_hooks},
-                    "capabilities": ["assessments", "completion", "memory-only", "analysis-context", "shared-deadline", "workspace-context", "hook-source-inspection", "user-hook-setup", "unix-peer-credentials", "execution-gate", "file-bindings", "session-ledger", "coverage-report", "signed-labels", "hard-watchdog"]
+                    "capabilities": ["assessments", "completion", "memory-only", "analysis-context", "shared-deadline", "workspace-context", "hook-source-inspection", "user-hook-setup", "unix-peer-credentials", "execution-gate", "file-bindings", "session-ledger", "coverage-report", "signed-labels", "hard-watchdog", "critical-hook-block", "shell-context-coverage", "node-hook-launcher", "coding-workflows", "native-critical-approval", "foreground-critical-approval"]
                 }))?;
                 return Ok(());
             }
@@ -510,13 +530,13 @@ fn run() -> Result<(), String> {
                 let behavior = match mode {
                     AgentMode::Strict => strict_behavior,
                     AgentMode::Advisory => {
-                        "severity warnings only; native approval stays in control"
+                        "severity warnings; CRITICAL requires a human dialog even with automatic approval"
                     }
                 };
                 println!("agents.{host}.mode: {mode:?} ({behavior})");
             }
             println!(
-                "Codex PermissionRequest: severity warning before native approval; no automatic approval"
+                "Codex PermissionRequest: CRITICAL requires a human dialog; other verdicts preserve native approval"
             );
             println!("history: optional editor-owned memory trace; no command history on disk");
             println!("extension: install extensions/vscode for per-chat command traces");

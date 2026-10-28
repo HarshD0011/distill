@@ -167,7 +167,7 @@ const CATALOG: &[RuleDef] = &[
         Severity::Low,
         Some(EffectKind::Execute),
         "exec.python-print",
-        "Python prints statically known primitive values",
+        "Python evaluates supported primitive expressions, output, or assertions",
         false,
         None,
     ),

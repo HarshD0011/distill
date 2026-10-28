@@ -12,9 +12,11 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-// Two ledger transactions may occur per hook. Keep their contention budget below
-// the CLI's six-second watchdog, while allowing slow CI disks to flush a short queue.
-const LOCK_WAIT: std::time::Duration = std::time::Duration::from_secs(2);
+// Keep a ledger transaction's contention budget below the CLI's six-second
+// watchdog. A hook burst can legitimately serialize dozens of small fsyncs on
+// a shared CI disk, and two seconds is not enough for that queue to drain.
+// The watchdog remains the aggregate fail-closed backstop for a whole hook.
+const LOCK_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
 
 #[cfg(unix)]
 fn lock(file: &fs::File, timeout: std::time::Duration) -> Result<(), String> {

@@ -1,0 +1,30 @@
+name: extension packages
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*', 'extension-v*']
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel, ubuntu-22.04, ubuntu-22.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cargo build --locked -p distill-cli
+      - run: npm run check && npm test
+        working-directory: extensions/vscode
+      - run: npm run package
+        working-directory: extensions/vscode
+      - uses: actions/upload-artifact@v4
+        with:
+          name: distill-extension-${{ matrix.os }}
+          path: extensions/vscode/*.vsix
+          if-no-files-found: error

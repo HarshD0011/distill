@@ -16,7 +16,8 @@ test('real signed hooks and recorder preserve impact badges, separate approval r
   assert.equal(result.candidateExecution, false);
   assert.equal(result.rows, 14);
   assert.equal(result.unassessed, 1);
-  assert.equal(result.completed, 14);
+  assert.equal(result.completed, 10);
+  assert.equal(result.blocked, 4);
   const session = result.extension.session;
   const ui = app();
   ui.receive({ type: 'snapshot', scopedClear: true, sessions: [session], page: { sessionKey: session.key, total: 14, offset: 0, limit: 100 } });
@@ -44,7 +45,7 @@ test('real signed hooks and recorder preserve impact badges, separate approval r
     }
     if (id === 'sql-cte-delete' || id === 'sql-constant-delete') {
       const primary = command.assessments.find(revision => revision.hook === 'PreToolUse').report;
-      assert.equal(primary.behavior_policy_version, '8');
+      assert.equal(primary.behavior_policy_version, '9');
       assert.ok(primary.behaviors.some(behavior => behavior.kind === 'database' && behavior.database?.action === 'delete' && behavior.database.scope === 'all_rows'));
       assert.match(row.textContent, /Modeled effects.*all rows/);
     }

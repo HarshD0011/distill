@@ -454,6 +454,10 @@ fn model(
                         | "os.popen"
                         | "urllib.request.urlopen"
                         | "urllib.request.urlretrieve"
+                        | "unittest.main"
+                        | "pytest.main"
+                        | "doctest.testmod"
+                        | "doctest.testfile"
                 )
         }
         Language::JavaScript => {
@@ -540,6 +544,10 @@ fn model(
         | "subprocess.call"
         | "subprocess.check_call"
         | "subprocess.check_output"
+        | "unittest.main"
+        | "pytest.main"
+        | "doctest.testmod"
+        | "doctest.testfile"
         | "os.popen"
         | "child_process.exec"
         | "child_process.execSync"

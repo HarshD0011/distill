@@ -41,6 +41,9 @@ pub fn supervise() -> bool {
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::inherit());
+    if args[0] == "hook" {
+        command.arg("--internal-report");
+    }
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -78,7 +81,20 @@ pub fn supervise() -> bool {
                     && !bytes.is_empty()
                     && bytes.len() <= 16 * 1024 * 1024
                 {
-                    let _ = std::io::stdout().write_all(&bytes);
+                    if args[0] == "hook" {
+                        match crate::approval::finish(&args, &input, &bytes) {
+                            Ok(output) => {
+                                let _ = std::io::stdout().write_all(&output);
+                            }
+                            Err(error) => failure(
+                                &args,
+                                &input,
+                                &format!("Human approval unavailable: {error}"),
+                            ),
+                        }
+                    } else {
+                        let _ = std::io::stdout().write_all(&bytes);
+                    }
                     return true;
                 }
                 failure(

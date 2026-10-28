@@ -1,0 +1,7 @@
+# First-run extension policy. Existing global or host policies take precedence.
+# CRITICAL hook verdicts always block, including in advisory mode.
+[agents.codex]
+mode = "advisory"
+
+[agents.claude]
+mode = "advisory"

@@ -20,6 +20,15 @@ impl Analyzer<'_> {
                 | "PYTHONHOME"
                 | "PYTHONSTARTUP"
                 | "PYTHONINSPECT"
+                | "PYTHONWARNINGS"
+                | "PYTEST_ADDOPTS"
+                | "PYTEST_PLUGINS"
+                | "UV_PROJECT_ENVIRONMENT"
+                | "UV_CACHE_DIR"
+                | "UV_WORKING_DIR"
+                | "UV_PROJECT"
+                | "UV_PYTHON"
+                | "UV_PYTHON_INSTALL_DIR"
                 | "NODE_OPTIONS"
                 | "NODE_PATH"
                 | "LD_PRELOAD"
@@ -91,60 +100,93 @@ impl Analyzer<'_> {
         }
     }
 
-    pub(super) fn python(&mut self, args: &[Word]) {
-        if info_only(args, &["--version", "-V"]) {
-            self.raise(Severity::Safe);
-            return;
-        }
-        let prefix = crate::tooling::decode(
-            args,
-            &["-W", "-X"],
-            &[
-                "-I", "-E", "-s", "-S", "-B", "-u", "-O", "-OO", "-q", "-v", "-b",
-            ],
-            true,
-        );
-        // Locate -m using Python's option boundary, not an arbitrary occurrence in program data.
-        let mut at = 0;
-        while let Some(arg) = args.get(at) {
-            if arg.dynamic {
-                break;
-            }
-            if arg.text == "-m" {
-                if let Some(module) = args.get(at + 1).filter(|w| !w.dynamic) {
-                    if matches!(module.text.as_str(), "pip" | "pip3" | "pipx" | "uv") {
-                        self.package_tool(&module.text, &args[at + 2..], 0);
-                    } else {
-                        self.python_module(module, &args[at + 2..]);
-                    }
-                    self.unresolved_program("Python module resolution and interpreter startup code are not fully resolved");
-                    return;
-                }
-                break;
-            }
-            if matches!(arg.text.as_str(), "-c" | "--") || !arg.text.starts_with('-') {
-                break;
-            }
-            if matches!(arg.text.as_str(), "-W" | "-X") {
-                at += 2;
-            } else {
-                at += 1;
-            }
-        }
-        if prefix.incomplete && !args.iter().any(|w| w.text == "-c") {
-            // Existing narrow parsing still examines supported files, but never clears this gap.
-            self.context_partial = true;
-        }
-        if let Some(script) = python_script(args) {
-            if !script.dynamic {
-                self.inspect_program(Language::Python, &script.text, None);
+    pub(super) fn python(
+        &mut self,
+        args: &[Word],
+        depth: usize,
+        input: Option<&crate::shell::ShellInput>,
+    ) {
+        use crate::python_cli::Target;
+        let invocation = match crate::python_cli::parse(args) {
+            Ok(invocation) => invocation,
+            Err(reason) => {
+                self.unresolved_program(reason);
                 return;
             }
-        } else if let Some(file) = python_file(args) {
-            self.inspect_file(Language::Python, file);
-            return;
+        };
+        self.python_startup(&invocation);
+        match invocation.target {
+            Target::Info => self.raise(Severity::Safe),
+            Target::Code(source) if !source.dynamic => {
+                self.inspect_program(Language::Python, &source.text, None);
+            }
+            Target::File(mut file) if !file.dynamic => {
+                if self.resolve(&file).is_some_and(|path| path.is_dir()) {
+                    file.text = format!("{}/__main__.py", file.text);
+                }
+                self.inspect_file(Language::Python, &file);
+            }
+            Target::Module(module) if !module.dynamic => {
+                match module.text.as_str() {
+                    "pytest" | "unittest" => self.python_tests(&module.text, &invocation.arguments),
+                    "uv" => self.uv("uv", &invocation.arguments, depth + 1, input),
+                    "pip" | "pip3" | "pipx" => {
+                        self.package_tool(&module.text, &invocation.arguments, 0);
+                    }
+                    _ => self.python_module(&module, &invocation.arguments),
+                }
+                self.unresolved_program(
+                    "Python module resolution and interpreter startup code are not fully resolved",
+                );
+            }
+            _ => {
+                self.unresolved_program("Python invocation or standard-input source is unresolved")
+            }
         }
-        self.unresolved_program("Python invocation or source is unresolved");
+    }
+
+    pub(super) fn python_startup(&mut self, invocation: &crate::python_cli::Invocation) {
+        if invocation.interactive {
+            self.unresolved_program(
+                "Python interactive mode can execute additional input and startup code",
+            );
+        }
+        for option in &invocation.woptions {
+            if option.dynamic
+                || option
+                    .text
+                    .split(':')
+                    .nth(2)
+                    .is_some_and(|category| category.contains('.'))
+            {
+                self.unresolved_program(
+                    "Python warning category resolution may import additional code",
+                );
+            }
+        }
+        for option in &invocation.xoptions {
+            let key = option.text.split('=').next().unwrap_or_default();
+            if key == "pycache_prefix" && !option.dynamic {
+                if let Some((_, path)) = option.text.split_once('=') {
+                    self.write_destination(&crate::tooling::literal(path), true);
+                }
+            } else if option.dynamic
+                || !matches!(
+                    key,
+                    "dev"
+                        | "utf8"
+                        | "faulthandler"
+                        | "tracemalloc"
+                        | "warn_default_encoding"
+                        | "int_max_str_digits"
+                        | "frozen_modules"
+                )
+            {
+                self.unresolved_program(
+                    "Python -X option may load startup code or change execution semantics",
+                );
+            }
+        }
     }
 
     pub(super) fn node(&mut self, args: &[Word]) {
@@ -299,10 +341,37 @@ impl Analyzer<'_> {
         source: &str,
         origin: Option<&str>,
     ) -> bool {
+        self.inspect_program_limited(language, source, origin, None)
+    }
+
+    pub(super) fn inspect_workflow_file(&mut self, language: Language, file: &Word) -> bool {
+        match source_text(self, file) {
+            Ok(source) => {
+                let limit = self.budget.remaining_nodes().saturating_sub(256).min(1024);
+                self.inspect_program_limited(language, &source, Some(&file.text), Some(limit))
+            }
+            Err(reason) => {
+                self.unresolved_program(reason);
+                false
+            }
+        }
+    }
+
+    fn inspect_program_limited(
+        &mut self,
+        language: Language,
+        source: &str,
+        origin: Option<&str>,
+        limit: Option<usize>,
+    ) -> bool {
         if !self.within_budget() {
             return false;
         }
-        match syntax::analyze_with_budget(language, source, &self.budget) {
+        match if limit.is_some() {
+            syntax::analyze_with_limit(language, source, &self.budget, limit)
+        } else {
+            syntax::analyze_with_budget(language, source, &self.budget)
+        } {
             Ok(analysis) if analysis.print_only => {
                 if matches!(language, Language::Python) {
                     self.emit_path(&["python", "-c", "@print"]);
@@ -375,38 +444,6 @@ impl Analyzer<'_> {
 
 fn info_only(args: &[Word], options: &[&str]) -> bool {
     args.len() == 1 && !args[0].dynamic && options.contains(&args[0].text.as_str())
-}
-
-fn python_script(args: &[Word]) -> Option<&Word> {
-    for (index, arg) in args.iter().enumerate() {
-        if arg.dynamic {
-            return None;
-        }
-        if arg.text == "-c" {
-            return args.get(index + 1);
-        }
-        if !python_flag(&arg.text) {
-            return None;
-        }
-    }
-    None
-}
-
-fn python_file(args: &[Word]) -> Option<&Word> {
-    for arg in args {
-        if arg.dynamic {
-            return None;
-        }
-        if python_flag(&arg.text) {
-            continue;
-        }
-        return (!arg.text.starts_with('-') && arg.text.ends_with(".py")).then_some(arg);
-    }
-    None
-}
-
-fn python_flag(text: &str) -> bool {
-    matches!(text, "-u" | "-E" | "-B" | "-s" | "-q" | "-O" | "-OO")
 }
 
 fn compiler_arguments(args: &[Word], rust: bool) -> Option<(&Word, Option<&Word>)> {

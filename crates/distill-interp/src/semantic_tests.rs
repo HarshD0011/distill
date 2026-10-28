@@ -42,6 +42,58 @@ fn scope(report: &Report) -> DatabaseScope {
 }
 
 #[test]
+fn ordinary_home_subdirectories_use_the_shared_delete_policy() {
+    let home = std::path::PathBuf::from(std::env::var_os("HOME").unwrap());
+    for cwd in [home, std::env::temp_dir()] {
+        for command in [
+            "rmdir ordinary-directory",
+            "rmdir -- ordinary-directory",
+            "rmdir -pv ordinary/child",
+            "rm -d ordinary-directory",
+        ] {
+            let mut req = request(command);
+            req.cwd = cwd.clone();
+            let mut config = Config::default();
+            config.policy.effects.delete = Severity::Low;
+            let r = score(&req, &config);
+            assert_eq!(
+                r.impact_severity,
+                Some(Severity::Low),
+                "{command} in {cwd:?}"
+            );
+            assert_eq!(r.coverage.summary, CoverageSummary::StaticAccounted);
+            assert!(
+                r.behaviors
+                    .iter()
+                    .all(|effect| effect.kind == EffectKind::FileDelete)
+            );
+            assert!(!r.behaviors.is_empty());
+            if command.contains("ordinary/child") {
+                assert_eq!(r.behaviors.len(), 2, "relative -p must stop before cwd");
+            }
+        }
+    }
+}
+
+#[test]
+fn directory_removal_preserves_sensitive_protected_and_unresolved_targets() {
+    let home = std::path::PathBuf::from(std::env::var_os("HOME").unwrap());
+    let mut req = request("rmdir protected/child");
+    req.cwd = home.clone();
+    let mut config = Config::default();
+    config.policy.protected_paths.push(home.join("protected"));
+    assert!(score(&req, &config).severity >= Severity::High);
+    req.command.text = "rmdir -p protected/child".into();
+    assert!(score(&req, &config).severity >= Severity::High);
+    req.command.text = "rmdir .ssh/credential-directory".into();
+    assert!(score(&req, &config).severity >= Severity::High);
+    req.command.text = "rmdir $DIRECTORY".into();
+    let r = score(&req, &config);
+    assert!(r.severity >= Severity::High);
+    assert_ne!(r.coverage.summary, CoverageSummary::StaticAccounted);
+}
+
+#[test]
 fn constant_predicate_families_survive_sql_composition() {
     for predicate in [
         "TRUE",

@@ -20,7 +20,7 @@ def analyze(binary: str, command: str) -> dict:
 def hook(binary: str, host: str, path: str, mode: str = "strict", label: bool = False) -> dict:
     with open(path, "rb") as handle:
         payload = handle.read()
-    args = [binary, "hook", host, "--mode", mode, "--config", TEST_CONFIG]
+    args = [binary, "hook", host, "--no-prompt", "--mode", mode, "--config", TEST_CONFIG]
     if label:
         args.append("--label-command")
     output = subprocess.check_output(args, input=payload)
@@ -77,8 +77,8 @@ def main() -> None:
         )
         if "Severity: CRITICAL" not in critical.get("systemMessage", ""):
             raise SystemExit(f"{host}: hook response is missing CRITICAL severity")
-        if permission(critical) is not None:
-            raise SystemExit(f"{host}: advisory mode must not decide permission")
+        if permission(critical) != "deny":
+            raise SystemExit(f"{host}: critical verdict must block even in advisory mode")
 
     labeled = hook(binary, "codex", "corpus/hooks/pretooluse-echo.json", "advisory", label=True)
     rewrite = labeled.get("hookSpecificOutput", {})

@@ -1,15 +1,17 @@
 'use strict';
 const vscode = require('vscode');
 const crypto = require('node:crypto');
-const { promisify } = require('node:util');
-const execFile = promisify(require('node:child_process').execFile);
 const { connectBroker } = require('./client');
+const { ensureBinary } = require('./install');
+const { configureUserHooks } = require('./setup');
 const { rpc } = require('./transport');
 const { SessionTitles } = require('./titles');
 const { normalizeDetails } = require('./assessments');
 
 function activate(context) {
   let endpointPromise;
+  let runtimePromise;
+  let hooksPromise;
   let view;
   let lastVersion = -1;
   let busy = false;
@@ -27,12 +29,34 @@ function activate(context) {
   const titleHome = vscode.workspace.getConfiguration('distill').get('codexHome', '') || undefined;
   const titles = new SessionTitles(titleHome);
   const roots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri).filter(uri => uri.scheme === 'file').map(uri => uri.fsPath);
-  const connect = () => {
+  const prepare = (force = false) => {
     if (vscode.env.remoteName || !['darwin', 'linux'].includes(process.platform)) {
       return Promise.reject(new Error('V1 supports local desktop VS Code on macOS and Linux.'));
     }
     if (!vscode.workspace.isTrusted || !roots().length) return Promise.reject(new Error('Open a trusted local folder to record command traces.'));
-    if (!endpointPromise) endpointPromise = connectBroker(roots(), vscode.workspace.getConfiguration('distill').get('binaryPath', 'distill')).then(endpoint => {
+    if (!runtimePromise) runtimePromise = ensureBinary({
+      extensionPath: context.extensionPath,
+      storagePath: context.globalStorageUri?.fsPath,
+      configured: vscode.workspace.getConfiguration('distill').get('binaryPath', ''),
+    });
+    if (!hooksPromise) hooksPromise = runtimePromise.then(async runtime => {
+      const setups = await configureUserHooks({
+        binary: runtime.binary, extensionPath: context.extensionPath, roots: roots(), force,
+        isDirty: file => vscode.workspace.textDocuments.some(document => document.uri.fsPath === file && document.isDirty),
+      });
+      const changed = setups.filter(setup => setup.changed);
+      if (changed.length) {
+        const next = changed.map(setup => setup.host === 'codex'
+          ? 'Approve the Distill hooks in Codex with /hooks.'
+          : 'Restart or resume Claude Code to approve the Distill hooks.').join(' ');
+        void vscode.window.showInformationMessage(`Distill is installed and its hooks are configured. ${next}`);
+      }
+      return { ...runtime, setups };
+    });
+    return hooksPromise;
+  };
+  const connect = () => {
+    if (!endpointPromise) endpointPromise = prepare().then(runtime => connectBroker(roots(), runtime.binary)).then(endpoint => {
       const id = endpoint.instance_id || endpoint.token;
       if (brokerId && brokerId !== id) {
         recordingWarning = 'Recorder restarted; earlier temporary traces were lost.';
@@ -93,7 +117,7 @@ function activate(context) {
       view.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')] };
       const nonce = crypto.randomBytes(24).toString('hex');
       const resource = name => view.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', name));
-      view.webview.html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${view.webview.cspSource}; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('trace.css')}"><title>Distill chat trace</title></head><body><header><h1>Command trace</h1><p class="muted">Temporary · clears when VS Code quits</p></header><div id="connection" role="status">Connecting to Distill…</div><section class="controls"><label for="chat">Chat session</label><select id="chat" aria-label="Chat session"></select><label class="sr-only" for="search">Filter commands</label><input id="search" type="search" placeholder="Filter commands or severity…"><div class="toolbar"><span id="count" class="muted"></span><button id="clear" class="quiet" title="Clear temporary command logs for this workspace.">Clear logs</button></div></section><main id="commands"></main><section id="empty"><h2>No commands yet</h2><p>Connect Codex or Claude, then run a command in a chat.</p><button id="setup">Connect user hooks</button><p class="muted small">Only commands observed by the hooks are recorded.</p></section><script nonce="${nonce}" src="${resource('trace.js')}"></script></body></html>`;
+      view.webview.html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${view.webview.cspSource}; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('trace.css')}"><title>Distill chat trace</title></head><body><header><h1>Command trace</h1><p class="muted">Temporary · clears when VS Code quits</p></header><div id="connection" role="status">Connecting to Distill…</div><section class="controls"><label for="chat">Chat session</label><select id="chat" aria-label="Chat session"></select><label class="sr-only" for="search">Filter commands</label><input id="search" type="search" placeholder="Filter commands or severity…"><div class="toolbar"><span id="count" class="muted"></span><button id="clear" class="quiet" title="Clear temporary command logs for this workspace.">Clear logs</button></div></section><main id="commands"></main><section id="empty"><h2>No commands yet</h2><p>Approve the Distill hooks in your agent, then run a command in a chat.</p><button id="setup">Review hook setup</button><p class="muted small">Only commands observed by the hooks are recorded.</p></section><script nonce="${nonce}" src="${resource('trace.js')}"></script></body></html>`;
       const currentView = view;
       context.subscriptions.push(view.webview.onDidReceiveMessage(async message => {
         if (!message || typeof message.type !== 'string') return;
@@ -141,43 +165,31 @@ function activate(context) {
   }));
   context.subscriptions.push(vscode.commands.registerCommand('distill.setupHooks', async () => {
     try {
+      runtimePromise = null;
+      hooksPromise = null;
+      endpointPromise = null;
+      const runtime = await prepare(true);
       await connect();
-      const folders = vscode.workspace.workspaceFolders || [];
-      const folder = folders.length === 1 ? folders[0] : (await vscode.window.showQuickPick(folders.map(folder => ({ label: folder.name, description: folder.uri.fsPath, folder })), { title: 'Connect Distill in which workspace folder?' }))?.folder;
-      if (!folder) return;
-      const host = await vscode.window.showQuickPick([
-        { label: 'Codex', id: 'codex', description: 'Record Bash commands and output from each Codex chat' },
-        { label: 'Claude Code', id: 'claude', description: 'Record Bash commands and output from each Claude chat' },
-      ], { title: 'Connect Distill command traces' });
-      if (!host) return;
-      const binary = require('./client').resolveBinary(vscode.workspace.getConfiguration('distill').get('binaryPath', ''));
-      const health = await execFile(binary, ['doctor', '--json'], { timeout: 5000, maxBuffer: 64 * 1024 });
-      const capabilities = JSON.parse(health.stdout);
-      if (capabilities.trace_protocol !== 1 || !['assessments', 'completion', 'memory-only', 'workspace-context', 'hook-source-inspection'].every(name => capabilities.capabilities?.includes(name))) {
-        throw new Error('This Distill CLI does not support the extension trace protocol. Build or install the current CLI before connecting.');
-      }
-      const workspaceRoot = require('node:fs').realpathSync(folder.uri.fsPath);
-      const preview = JSON.parse((await execFile(binary, ['setup', host.id, '--check', '--workspace-root', workspaceRoot], { timeout: 10000, maxBuffer: 1024 * 1024 })).stdout);
-      if (vscode.workspace.textDocuments.some(document => document.uri.fsPath === preview.path && document.isDirty)) {
-        throw new Error('Save or revert the open user hooks file before connecting Distill');
-      }
-      const result = await execFile(binary, ['setup', host.id, '--workspace-root', workspaceRoot], { timeout: 10000, maxBuffer: 1024 * 1024 });
-      const setup = JSON.parse(result.stdout);
-      const file = vscode.Uri.file(setup.path);
+      const file = vscode.Uri.file(runtime.setups[0].path);
       const document = await vscode.workspace.openTextDocument(file);
       await vscode.window.showTextDocument(document, { preview: false });
-      const warnings = setup.project_handlers?.length ? ' Existing project handlers remain in place; inspect their warnings with distill doctor.' : '';
-      vscode.window.showInformationMessage((host.id === 'codex'
-        ? 'Pinned Distill user hooks configured. In Codex, use /hooks to review changed definitions.'
-        : 'Pinned Distill user hooks configured. Restart or resume Claude Code.') + warnings);
     } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.message}`); }
   }));
-  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => { requestRevision++; endpointPromise = null; lastVersion = -1; selectedSession = ''; pageOffset = 0; void refresh(); }));
+  context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => { requestRevision++; endpointPromise = null; hooksPromise = null; lastVersion = -1; selectedSession = ''; pageOffset = 0; void refresh(); }));
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+    if (!event.affectsConfiguration('distill.binaryPath')) return;
+    runtimePromise = null; hooksPromise = null; endpointPromise = null;
+    void refresh();
+  }));
   const timer = setInterval(refresh, 1000);
   context.subscriptions.push({ dispose() { disposed = true; clearInterval(timer); } });
   // Activation starts recording even before the sidebar is opened. Deactivation does
   // not delete history: the broker follows the editor main process, not this host.
   void refresh();
+  if (vscode.workspace.isTrusted && roots().length && !vscode.env.remoteName && ['darwin', 'linux'].includes(process.platform)) {
+    void prepare().catch(error => vscode.window.showErrorMessage(`Distill setup could not finish: ${error.message} Run Distill: Connect User Hooks to retry.`));
+  }
+  return { ready: () => prepare() };
 }
 
 module.exports = { activate };

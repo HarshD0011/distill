@@ -37,7 +37,6 @@ pub fn inspect(host: &str, workspaces: &[PathBuf]) -> Result<Value, String> {
     let mut seen_files = BTreeSet::new();
     let mut handlers = Vec::new();
     let mut warnings = Vec::new();
-    let budget = AnalysisBudget::new(5000);
     let mut binary_hashes = BTreeMap::new();
     for (directory, scope) in directories {
         for name in if host == "codex" {
@@ -54,6 +53,7 @@ pub fn inspect(host: &str, workspaces: &[PathBuf]) -> Result<Value, String> {
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
                 Err(error) => return Err(format!("Cannot inspect {}: {error}", file.display())),
             }
+            let budget = AnalysisBudget::new(5000);
             let contents = read_analysis_file(&file, &budget, 1024 * 1024)
                 .map_err(|error| format!("Cannot inspect {}: {error}", file.display()))?;
             let config: Value = if name.ends_with("toml") {
@@ -159,7 +159,37 @@ pub(crate) fn distill_handler(command: &str, host: &str) -> Option<(String, Vec<
             _ => None,
         })
         .collect::<Option<_>>()?;
-    let words = if words.first().is_some_and(|word| word.ends_with("python3")) {
+    let node_prefix = [
+        "/usr/bin/env",
+        "-u",
+        "NODE_OPTIONS",
+        "-u",
+        "NODE_PATH",
+        "-u",
+        "LD_PRELOAD",
+        "-u",
+        "LD_LIBRARY_PATH",
+        "-u",
+        "DYLD_INSERT_LIBRARIES",
+        "-u",
+        "DYLD_LIBRARY_PATH",
+        "ELECTRON_RUN_AS_NODE=1",
+    ];
+    let node_launcher = words
+        .iter()
+        .take(node_prefix.len())
+        .map(String::as_str)
+        .eq(node_prefix)
+        && words
+            .get(14)
+            .is_some_and(|word| Path::new(word).is_absolute())
+        && words.get(15).is_some_and(|word| {
+            Path::new(word)
+                .file_name()
+                .is_some_and(|name| name == "hook-launcher.js")
+        })
+        && words.get(16).is_some_and(|word| word == "--binary");
+    let words = if node_launcher || words.first().is_some_and(|word| word.ends_with("python3")) {
         let index = words.iter().position(|word| word == "--binary")?;
         let binary = words.get(index + 1)?.clone();
         let hook = words.iter().position(|word| word == "hook")?;

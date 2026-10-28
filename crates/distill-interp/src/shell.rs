@@ -362,9 +362,7 @@ impl Analyzer<'_> {
                         .iter()
                         .all(|arg| matches!(arg.text.as_str(), "-s" | "--"))
             }
-            name if crate::is_python(name) => {
-                args.is_empty() || matches!(args, [arg] if arg.text == "-")
-            }
+            name if crate::is_python(name) => crate::python_cli::stdin(args),
             "node" => args.is_empty() || matches!(args, [arg] if arg.text == "-"),
             _ => false,
         };
@@ -381,6 +379,9 @@ impl Analyzer<'_> {
                     self.inspect_program(Language::JavaScript, &input.text, None);
                 }
                 _ => {
+                    if let Ok(invocation) = crate::python_cli::parse(args) {
+                        self.python_startup(&invocation);
+                    }
                     self.inspect_program(Language::Python, &input.text, None);
                 }
             }
@@ -394,9 +395,7 @@ impl Analyzer<'_> {
             "sh" | "bash" | "zsh" => {
                 args.is_empty() || args.iter().all(|a| matches!(a.text.as_str(), "-s" | "--"))
             }
-            name if crate::is_python(name) => {
-                args.is_empty() || matches!(args, [arg] if arg.text == "-")
-            }
+            name if crate::is_python(name) => crate::python_cli::stdin(args),
             "node" => args.is_empty() || matches!(args, [arg] if arg.text == "-"),
             _ => false,
         };

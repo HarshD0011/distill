@@ -72,6 +72,15 @@ pub(super) fn analyze_with_budget(
     source: &str,
     budget: &distill_core::AnalysisBudget,
 ) -> Result<Analysis, &'static str> {
+    analyze_with_limit(language, source, budget, None)
+}
+
+pub(super) fn analyze_with_limit(
+    language: Language,
+    source: &str,
+    budget: &distill_core::AnalysisBudget,
+    workflow_limit: Option<usize>,
+) -> Result<Analysis, &'static str> {
     if budget.expired() {
         return Err("Shared analysis deadline exhausted");
     }
@@ -85,17 +94,31 @@ pub(super) fn analyze_with_budget(
     let mut stack = vec![(root, 0)];
     let mut nodes = 0;
     while let Some((node, depth)) = stack.pop() {
-        if !budget.visit_node() {
+        if workflow_limit.is_none() && !budget.visit_node() {
             return Err(budget.stop_reason());
         }
         if budget.expired() {
             return Err("Shared analysis deadline exhausted");
         }
         nodes += 1;
+        if workflow_limit.is_some_and(|limit| nodes > limit) {
+            return Err(
+                "Workflow source exceeds the reserved inspection budget; source coverage remains partial",
+            );
+        }
         if nodes > 4096 || depth > 64 {
             return Err("Source syntax tree exceeds the analysis limit");
         }
         stack.extend(children(node).into_iter().map(|child| (child, depth + 1)));
+    }
+    // A workflow can decline an oversized optional source without consuming the
+    // entire shared budget. Accepted syntax nodes still charge that same budget.
+    if workflow_limit.is_some() {
+        for _ in 0..nodes {
+            if !budget.visit_node() {
+                return Err(budget.stop_reason());
+            }
+        }
     }
     let print_only = match language {
         Language::Python | Language::JavaScript => dynamic::print_only(language, root, source),
@@ -174,6 +197,13 @@ fn pure(node: Node<'_>, source: &str, symbols: &HashSet<String>) -> bool {
                 && node
                     .child_by_field_name("right")
                     .is_some_and(|arg| pure(arg, source, symbols))
+        }
+        "comparison_operator" | "boolean_operator" => {
+            let operands = children(node);
+            operands.len() >= 2
+                && operands
+                    .iter()
+                    .all(|operand| pure(*operand, source, symbols))
         }
         _ => false,
     }
