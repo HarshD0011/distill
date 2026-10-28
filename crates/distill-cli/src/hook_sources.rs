@@ -37,7 +37,6 @@ pub fn inspect(host: &str, workspaces: &[PathBuf]) -> Result<Value, String> {
     let mut seen_files = BTreeSet::new();
     let mut handlers = Vec::new();
     let mut warnings = Vec::new();
-    let budget = AnalysisBudget::new(5000);
     let mut binary_hashes = BTreeMap::new();
     for (directory, scope) in directories {
         for name in if host == "codex" {
@@ -54,6 +53,7 @@ pub fn inspect(host: &str, workspaces: &[PathBuf]) -> Result<Value, String> {
                 Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
                 Err(error) => return Err(format!("Cannot inspect {}: {error}", file.display())),
             }
+            let budget = AnalysisBudget::new(5000);
             let contents = read_analysis_file(&file, &budget, 1024 * 1024)
                 .map_err(|error| format!("Cannot inspect {}: {error}", file.display()))?;
             let config: Value = if name.ends_with("toml") {
