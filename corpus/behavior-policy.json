@@ -30,10 +30,10 @@
     "review": false
   },
   {
-    "name": "unmodeled import",
+    "name": "modeled standard-library import",
     "command": "python3 -c 'print(42); import os'",
-    "impact": null,
-    "review": true
+    "impact": "low",
+    "review": false
   },
   {
     "name": "unresolved runtime file",
@@ -51,7 +51,7 @@
     "name": "ordinary read through assignment",
     "command": "python3 -c 'directory = \"/etc\"; path = directory + \"/passwd\"; print(open(path).read())'",
     "impact": "low",
-    "review": true,
+    "review": false,
     "effect": "file_read",
     "target": "/etc/passwd"
   },
@@ -123,7 +123,7 @@
     "name": "reassignment changes the target",
     "command": "python3 -c 'path = \"/\"; path = \"notes.txt\"; open(path)'",
     "impact": "low",
-    "review": true,
+    "review": false,
     "effect": "file_read"
   },
   {

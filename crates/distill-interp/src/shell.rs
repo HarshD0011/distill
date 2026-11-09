@@ -75,6 +75,9 @@ impl Analyzer<'_> {
             self.raise(Severity::Medium);
             self.unknown("Shell contains syntax errors or unsupported syntax");
         }
+        if depth == 0 {
+            self.graph = command_graph(tree.root_node(), source);
+        }
         self.walk_shell(tree.root_node(), source, depth, 0);
     }
 
@@ -363,7 +366,6 @@ impl Analyzer<'_> {
                         .all(|arg| matches!(arg.text.as_str(), "-s" | "--"))
             }
             name if crate::is_python(name) => crate::python_cli::stdin(args),
-            "node" => args.is_empty() || matches!(args, [arg] if arg.text == "-"),
             _ => false,
         };
         if !stdin_code {
@@ -396,7 +398,7 @@ impl Analyzer<'_> {
                 args.is_empty() || args.iter().all(|a| matches!(a.text.as_str(), "-s" | "--"))
             }
             name if crate::is_python(name) => crate::python_cli::stdin(args),
-            "node" => args.is_empty() || matches!(args, [arg] if arg.text == "-"),
+            "node" => crate::node_cli::stdin(args),
             _ => false,
         };
         if self.remote_stream && consumes_code {
@@ -411,6 +413,64 @@ impl Analyzer<'_> {
             self.unknown("Downloaded script contents are unavailable before execution");
         }
     }
+}
+
+fn command_graph(root: Node<'_>, source: &str) -> distill_core::CommandGraph {
+    use distill_core::{CommandGraph, CommandNode, Span};
+    let mut graph = CommandGraph {
+        parse_complete: !root.has_error(),
+        ..Default::default()
+    };
+    let mut pending = vec![(root, None)];
+    while let Some((node, parent)) = pending.pop() {
+        if graph.nodes.len() >= 1024 {
+            graph.truncated = true;
+            break;
+        }
+        let interesting = matches!(
+            node.kind(),
+            "program"
+                | "command"
+                | "pipeline"
+                | "list"
+                | "subshell"
+                | "command_substitution"
+                | "process_substitution"
+                | "redirected_statement"
+                | "if_statement"
+                | "for_statement"
+                | "while_statement"
+                | "function_definition"
+        );
+        let next = if interesting {
+            let id = graph.nodes.len();
+            let program = (node.kind() == "command")
+                .then(|| {
+                    lex(text(node, source))
+                        .ok()
+                        .and_then(|v| distill_parse::command_name(&v))
+                })
+                .flatten()
+                .map(|v| distill_core::privacy::redact(&v));
+            graph.nodes.push(CommandNode {
+                id,
+                parent,
+                kind: node.kind().into(),
+                program,
+                span: Span {
+                    start_byte: node.start_byte(),
+                    end_byte: node.end_byte(),
+                    line: node.start_position().row + 1,
+                    column: node.start_position().column + 1,
+                },
+            });
+            Some(id)
+        } else {
+            parent
+        };
+        pending.extend(children(node).into_iter().rev().map(|child| (child, next)));
+    }
+    graph
 }
 
 fn children(node: Node<'_>) -> Vec<Node<'_>> {

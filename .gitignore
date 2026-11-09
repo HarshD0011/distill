@@ -49,6 +49,8 @@
 .env
 .env.*
 *.log
+__pycache__/
+*.py[cod]
 
 # VS Code extension packages
 *.vsix
@@ -67,3 +69,4 @@ distill_complete_architecture.md
 /oom-*
 /crash-*
 /timeout-*
+*.env

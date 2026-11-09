@@ -1,0 +1,2663 @@
+{
+  "kind": "local_mock_parallel",
+  "model": "deterministic fixture, no inference",
+  "mock_delay": "400 ms + 2 ms per KiB input; synthetic, not a provider estimate",
+  "repeats_per_case": 3,
+  "static_commands": [
+    {
+      "command": "echo hello",
+      "samples": 20,
+      "process_median_ms": 10.618,
+      "process_p95_ms": 17.886,
+      "analysis_median_ms": 4.0,
+      "coverage": "static_accounted",
+      "approval_risk": "safe"
+    },
+    {
+      "command": "cat README.md",
+      "samples": 20,
+      "process_median_ms": 10.616,
+      "process_p95_ms": 11.347,
+      "analysis_median_ms": 4.0,
+      "coverage": "static_accounted",
+      "approval_risk": "low"
+    },
+    {
+      "command": "node scripts/test.js",
+      "samples": 20,
+      "process_median_ms": 10.414,
+      "process_p95_ms": 10.501,
+      "analysis_median_ms": 4.0,
+      "coverage": "partial",
+      "approval_risk": "high"
+    },
+    {
+      "command": "rm -rf /",
+      "samples": 20,
+      "process_median_ms": 10.434,
+      "process_p95_ms": 10.674,
+      "analysis_median_ms": 4.0,
+      "coverage": "static_accounted",
+      "approval_risk": "critical"
+    }
+  ],
+  "trials": [
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        15.479333000257611
+      ],
+      "advice_ms": [
+        452.481
+      ],
+      "service_advice_ms": [
+        428
+      ],
+      "submission": "parallel",
+      "completion_ms": 452.573,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.255082971416414,
+        7.001666002906859
+      ],
+      "advice_ms": [
+        425.498,
+        419.415
+      ],
+      "service_advice_ms": [
+        408,
+        409
+      ],
+      "submission": "serial",
+      "completion_ms": 851.197,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.924791960045695
+      ],
+      "advice_ms": [
+        419.207
+      ],
+      "service_advice_ms": [
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 419.216,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.892915979027748,
+        12.42362498305738,
+        12.081041000783443,
+        12.513917055912316,
+        12.505959020927548
+      ],
+      "advice_ms": [
+        418.923,
+        423.581,
+        423.726,
+        422.253,
+        422.272
+      ],
+      "service_advice_ms": [
+        409,
+        405,
+        405,
+        408,
+        408
+      ],
+      "submission": "parallel",
+      "completion_ms": 467.221,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.416583015583456,
+        7.584625040180981,
+        5.534374970011413,
+        7.384166005067527,
+        7.3831669287756085
+      ],
+      "advice_ms": [
+        442.339,
+        439.621,
+        429.685,
+        440.029,
+        443.241
+      ],
+      "service_advice_ms": [
+        422,
+        426,
+        423,
+        426,
+        426
+      ],
+      "submission": "serial",
+      "completion_ms": 2220.166,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.229209062643349,
+        7.55229196511209
+      ],
+      "advice_ms": [
+        442.517,
+        437.731
+      ],
+      "service_advice_ms": [
+        423,
+        426
+      ],
+      "submission": "serial",
+      "completion_ms": 886.582,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        5.36958291195333,
+        7.509791990742087,
+        7.484083063900471,
+        7.436458021402359,
+        7.363540935330093
+      ],
+      "advice_ms": [
+        433.006,
+        442.572,
+        443.705,
+        440.8,
+        442.908
+      ],
+      "service_advice_ms": [
+        421,
+        426,
+        426,
+        426,
+        423
+      ],
+      "submission": "serial",
+      "completion_ms": 2228.215,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.2821670435369015,
+        6.572999991476536,
+        6.4848329639062285,
+        7.322791963815689,
+        6.375958910211921
+      ],
+      "advice_ms": [
+        417.123,
+        418.389,
+        417.399,
+        419.779,
+        416.523
+      ],
+      "service_advice_ms": [
+        405,
+        408,
+        408,
+        406,
+        404
+      ],
+      "submission": "serial",
+      "completion_ms": 2113.397,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.275959011167288,
+        12.439000071026385
+      ],
+      "advice_ms": [
+        443.981,
+        436.679
+      ],
+      "service_advice_ms": [
+        426,
+        424
+      ],
+      "submission": "parallel",
+      "completion_ms": 444.021,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.224500015377998,
+        6.572208018042147,
+        7.76654202491045,
+        7.00216693803668,
+        6.418124889023602
+      ],
+      "advice_ms": [
+        416.776,
+        417.239,
+        423.233,
+        422.25,
+        417.118
+      ],
+      "service_advice_ms": [
+        408,
+        409,
+        411,
+        410,
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 2121.809,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.359209004789591,
+        7.602875004522502,
+        7.557832985185087,
+        8.09925002977252,
+        6.153249996714294
+      ],
+      "advice_ms": [
+        442.621,
+        435.909,
+        439.923,
+        444.406,
+        444.24
+      ],
+      "service_advice_ms": [
+        423,
+        424,
+        426,
+        427,
+        426
+      ],
+      "submission": "serial",
+      "completion_ms": 2233.26,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.995458018034697
+      ],
+      "advice_ms": [
+        441.519
+      ],
+      "service_advice_ms": [
+        428
+      ],
+      "submission": "parallel",
+      "completion_ms": 441.657,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.300624999217689
+      ],
+      "advice_ms": [
+        451.429
+      ],
+      "service_advice_ms": [
+        430
+      ],
+      "submission": "parallel",
+      "completion_ms": 451.641,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.636874983087182,
+        12.51858298201114,
+        12.405375018715858,
+        12.491749948821962,
+        12.501916964538395
+      ],
+      "advice_ms": [
+        416.866,
+        422.733,
+        422.76,
+        422.862,
+        423.023
+      ],
+      "service_advice_ms": [
+        403,
+        408,
+        408,
+        408,
+        404
+      ],
+      "submission": "parallel",
+      "completion_ms": 467.144,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.242167019285262
+      ],
+      "advice_ms": [
+        438.989
+      ],
+      "service_advice_ms": [
+        427
+      ],
+      "submission": "serial",
+      "completion_ms": 439.067,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.598083095625043,
+        11.662542005069554
+      ],
+      "advice_ms": [
+        444.696,
+        446.288
+      ],
+      "service_advice_ms": [
+        431,
+        431
+      ],
+      "submission": "serial",
+      "completion_ms": 897.69,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.135457941330969,
+        10.425375076010823
+      ],
+      "advice_ms": [
+        425.927,
+        430.475
+      ],
+      "service_advice_ms": [
+        411,
+        411
+      ],
+      "submission": "parallel",
+      "completion_ms": 437.683,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.781042044982314,
+        9.75291698705405,
+        12.117124977521598,
+        11.606583022512496,
+        12.181833037175238
+      ],
+      "advice_ms": [
+        452.881,
+        454.746,
+        444.88,
+        445.374,
+        445.225
+      ],
+      "service_advice_ms": [
+        430,
+        431,
+        429,
+        429,
+        428
+      ],
+      "submission": "parallel",
+      "completion_ms": 490.049,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        5.947917001321912
+      ],
+      "advice_ms": [
+        439.054
+      ],
+      "service_advice_ms": [
+        430
+      ],
+      "submission": "serial",
+      "completion_ms": 439.182,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.987290922552347,
+        8.007250027731061,
+        8.338875020854175,
+        7.63683405239135,
+        7.844333071261644
+      ],
+      "advice_ms": [
+        421.885,
+        423.859,
+        426.326,
+        422.698,
+        431.249
+      ],
+      "service_advice_ms": [
+        412,
+        411,
+        411,
+        411,
+        411
+      ],
+      "submission": "serial",
+      "completion_ms": 2151.355,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.711333990097046
+      ],
+      "advice_ms": [
+        420.653
+      ],
+      "service_advice_ms": [
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 420.7,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.965500048361719,
+        11.501958011649549,
+        11.638791998848319,
+        12.045374955050647,
+        12.490791967138648
+      ],
+      "advice_ms": [
+        447.542,
+        449.205,
+        450.14,
+        451.098,
+        439.017
+      ],
+      "service_advice_ms": [
+        431,
+        430,
+        428,
+        428,
+        423
+      ],
+      "submission": "parallel",
+      "completion_ms": 483.564,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.353707984089851,
+        7.027707993984222
+      ],
+      "advice_ms": [
+        426.105,
+        418.82
+      ],
+      "service_advice_ms": [
+        410,
+        410
+      ],
+      "submission": "serial",
+      "completion_ms": 851.282,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.553042055107653,
+        12.056041043251753
+      ],
+      "advice_ms": [
+        443.52,
+        450.309
+      ],
+      "service_advice_ms": [
+        429,
+        430
+      ],
+      "submission": "serial",
+      "completion_ms": 899.979,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.858792039565742
+      ],
+      "advice_ms": [
+        423.761
+      ],
+      "service_advice_ms": [
+        411
+      ],
+      "submission": "serial",
+      "completion_ms": 423.809,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.930707979947329,
+        10.059958905912936,
+        12.304583913646638,
+        11.727417004294693,
+        12.106750044040382
+      ],
+      "advice_ms": [
+        446.78,
+        448.187,
+        450.528,
+        438.113,
+        451.553
+      ],
+      "service_advice_ms": [
+        427,
+        430,
+        429,
+        423,
+        428
+      ],
+      "submission": "parallel",
+      "completion_ms": 496.069,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 48135,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.733000045642257,
+        10.39591699372977,
+        12.221124954521656,
+        12.879833928309381,
+        12.569041922688484
+      ],
+      "advice_ms": [
+        420.095,
+        424.223,
+        425.837,
+        424.369,
+        436.335
+      ],
+      "service_advice_ms": [
+        411,
+        410,
+        410,
+        406,
+        410
+      ],
+      "submission": "parallel",
+      "completion_ms": 478.79,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 6330,
+      "output_bytes": 1215,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.04616597108543,
+        12.983042048290372
+      ],
+      "advice_ms": [
+        445.36,
+        445.939
+      ],
+      "service_advice_ms": [
+        426,
+        427
+      ],
+      "submission": "parallel",
+      "completion_ms": 455.29,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.202084033749998
+      ],
+      "advice_ms": [
+        418.142
+      ],
+      "service_advice_ms": [
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 418.187,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.883750044740736,
+        12.391792028211057
+      ],
+      "advice_ms": [
+        443.3,
+        445.006
+      ],
+      "service_advice_ms": [
+        426,
+        428
+      ],
+      "submission": "parallel",
+      "completion_ms": 456.108,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.99983402248472
+      ],
+      "advice_ms": [
+        425.773
+      ],
+      "service_advice_ms": [
+        410
+      ],
+      "submission": "parallel",
+      "completion_ms": 425.809,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.820582948625088,
+        6.7284159595146775
+      ],
+      "advice_ms": [
+        429.216,
+        417.572
+      ],
+      "service_advice_ms": [
+        410,
+        407
+      ],
+      "submission": "serial",
+      "completion_ms": 853.177,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.542875082232058,
+        10.950625059194863
+      ],
+      "advice_ms": [
+        424.473,
+        430.596
+      ],
+      "service_advice_ms": [
+        411,
+        410
+      ],
+      "submission": "parallel",
+      "completion_ms": 437.212,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.565749925561249,
+        12.120041996240616
+      ],
+      "advice_ms": [
+        427.539,
+        432.672
+      ],
+      "service_advice_ms": [
+        409,
+        411
+      ],
+      "submission": "parallel",
+      "completion_ms": 440.375,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.085292065516114
+      ],
+      "advice_ms": [
+        425.348
+      ],
+      "service_advice_ms": [
+        407
+      ],
+      "submission": "serial",
+      "completion_ms": 425.392,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.254208046011627
+      ],
+      "advice_ms": [
+        451.154
+      ],
+      "service_advice_ms": [
+        431
+      ],
+      "submission": "serial",
+      "completion_ms": 451.266,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.467582964338362
+      ],
+      "advice_ms": [
+        443.55
+      ],
+      "service_advice_ms": [
+        426
+      ],
+      "submission": "parallel",
+      "completion_ms": 443.633,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.658209000714123,
+        9.021291974931955
+      ],
+      "advice_ms": [
+        430.887,
+        431.61
+      ],
+      "service_advice_ms": [
+        410,
+        410
+      ],
+      "submission": "serial",
+      "completion_ms": 868.851,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.89720895793289
+      ],
+      "advice_ms": [
+        422.292
+      ],
+      "service_advice_ms": [
+        410
+      ],
+      "submission": "parallel",
+      "completion_ms": 422.335,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        9.397124988026917,
+        12.51199992839247,
+        9.675416979007423,
+        9.67258308082819,
+        10.994917014613748
+      ],
+      "advice_ms": [
+        431.087,
+        435.15,
+        422.583,
+        424.488,
+        427.553
+      ],
+      "service_advice_ms": [
+        411,
+        409,
+        409,
+        409,
+        408
+      ],
+      "submission": "parallel",
+      "completion_ms": 469.061,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.00966692622751,
+        10.325166978873312,
+        10.24937501642853,
+        11.431291932240129,
+        9.781167027540505
+      ],
+      "advice_ms": [
+        443.093,
+        449.66,
+        446.127,
+        444.342,
+        442.748
+      ],
+      "service_advice_ms": [
+        428,
+        426,
+        423,
+        426,
+        428
+      ],
+      "submission": "serial",
+      "completion_ms": 2250.996,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.149333975277841,
+        10.18074993044138
+      ],
+      "advice_ms": [
+        441.477,
+        438.76
+      ],
+      "service_advice_ms": [
+        426,
+        426
+      ],
+      "submission": "serial",
+      "completion_ms": 886.822,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.198750020004809,
+        10.356334038078785,
+        8.801041985861957,
+        9.311582893133163,
+        10.642667068168521
+      ],
+      "advice_ms": [
+        439.32,
+        436.478,
+        438.226,
+        434.941,
+        445.523
+      ],
+      "service_advice_ms": [
+        424,
+        425,
+        425,
+        424,
+        425
+      ],
+      "submission": "serial",
+      "completion_ms": 2219.302,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.9887080462649465,
+        8.259291062131524,
+        4.860416054725647,
+        6.338292034342885,
+        7.2822090005502105
+      ],
+      "advice_ms": [
+        416.56,
+        428.022,
+        416.751,
+        422.692,
+        422.163
+      ],
+      "service_advice_ms": [
+        406,
+        408,
+        408,
+        407,
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 2131.558,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.57237503118813,
+        10.780208045616746
+      ],
+      "advice_ms": [
+        449.642,
+        438.982
+      ],
+      "service_advice_ms": [
+        427,
+        427
+      ],
+      "submission": "parallel",
+      "completion_ms": 449.837,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.774915964342654,
+        5.225084023550153,
+        7.737832958810031,
+        6.344915949739516,
+        7.068458013236523
+      ],
+      "advice_ms": [
+        425.433,
+        414.257,
+        423.831,
+        425.472,
+        424.803
+      ],
+      "service_advice_ms": [
+        409,
+        405,
+        410,
+        408,
+        404
+      ],
+      "submission": "serial",
+      "completion_ms": 2139.036,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.847457986325026,
+        10.654875077307224,
+        10.814166977070272,
+        10.000917012803257,
+        10.700375074520707
+      ],
+      "advice_ms": [
+        439.064,
+        446.84,
+        446.109,
+        448.992,
+        445.348
+      ],
+      "service_advice_ms": [
+        423,
+        427,
+        428,
+        426,
+        430
+      ],
+      "submission": "serial",
+      "completion_ms": 2252.118,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.974959095008671
+      ],
+      "advice_ms": [
+        445.817
+      ],
+      "service_advice_ms": [
+        426
+      ],
+      "submission": "parallel",
+      "completion_ms": 445.916,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.940208052285016
+      ],
+      "advice_ms": [
+        445.497
+      ],
+      "service_advice_ms": [
+        422
+      ],
+      "submission": "parallel",
+      "completion_ms": 445.643,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.313292076811194,
+        11.457917047664523,
+        12.16179202310741,
+        10.537790949456394,
+        13.390624895691872
+      ],
+      "advice_ms": [
+        420.177,
+        426.352,
+        426.136,
+        426.386,
+        426.786
+      ],
+      "service_advice_ms": [
+        407,
+        408,
+        408,
+        407,
+        410
+      ],
+      "submission": "parallel",
+      "completion_ms": 467.476,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.00433396641165
+      ],
+      "advice_ms": [
+        442.97
+      ],
+      "service_advice_ms": [
+        425
+      ],
+      "submission": "serial",
+      "completion_ms": 443.111,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.976084111258388,
+        7.99870805349201
+      ],
+      "advice_ms": [
+        441.09,
+        442.269
+      ],
+      "service_advice_ms": [
+        424,
+        427
+      ],
+      "submission": "serial",
+      "completion_ms": 889.865,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.8032909873872995,
+        12.800124939531088
+      ],
+      "advice_ms": [
+        423.391,
+        429.999
+      ],
+      "service_advice_ms": [
+        409,
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 435.936,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.32250002026558,
+        9.572833077982068,
+        12.818166986107826,
+        10.229625040665269,
+        11.362708057276905
+      ],
+      "advice_ms": [
+        451.159,
+        440.701,
+        441.972,
+        440.778,
+        443.032
+      ],
+      "service_advice_ms": [
+        427,
+        425,
+        422,
+        424,
+        422
+      ],
+      "submission": "parallel",
+      "completion_ms": 486.529,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.489708019420505
+      ],
+      "advice_ms": [
+        437.914
+      ],
+      "service_advice_ms": [
+        426
+      ],
+      "submission": "serial",
+      "completion_ms": 438.039,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.841624970547855,
+        7.464459049515426,
+        6.827332894317806,
+        6.131166941486299,
+        5.8170410338789225
+      ],
+      "advice_ms": [
+        425.589,
+        424.905,
+        418.553,
+        423.615,
+        428.24
+      ],
+      "service_advice_ms": [
+        407,
+        405,
+        405,
+        404,
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 2145.229,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.045416976325214
+      ],
+      "advice_ms": [
+        416.649
+      ],
+      "service_advice_ms": [
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 416.714,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.554792010225356,
+        9.79270797688514,
+        9.757000021636486,
+        12.101041967980564,
+        12.404750101268291
+      ],
+      "advice_ms": [
+        447.388,
+        449.38,
+        439.479,
+        442.269,
+        441.869
+      ],
+      "service_advice_ms": [
+        429,
+        427,
+        427,
+        427,
+        427
+      ],
+      "submission": "parallel",
+      "completion_ms": 484.901,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.846542025916278,
+        5.842874990776181
+      ],
+      "advice_ms": [
+        424.902,
+        418.617
+      ],
+      "service_advice_ms": [
+        409,
+        405
+      ],
+      "submission": "serial",
+      "completion_ms": 850.04,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.749291977845132,
+        11.384750017896295
+      ],
+      "advice_ms": [
+        444.433,
+        437.949
+      ],
+      "service_advice_ms": [
+        427,
+        425
+      ],
+      "submission": "serial",
+      "completion_ms": 889.074,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.918582948856056
+      ],
+      "advice_ms": [
+        427.131
+      ],
+      "service_advice_ms": [
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 427.183,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.69979094993323,
+        10.1112499833107,
+        10.195082984864712,
+        12.767833075486124,
+        10.362499975599349
+      ],
+      "advice_ms": [
+        440.46,
+        441.408,
+        443.989,
+        446.389,
+        446.15
+      ],
+      "service_advice_ms": [
+        427,
+        425,
+        427,
+        427,
+        426
+      ],
+      "submission": "parallel",
+      "completion_ms": 491.528,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 46795,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 5,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.719166063703597,
+        11.364915990270674,
+        12.308042030781507,
+        12.764500104822218,
+        13.226499897427857
+      ],
+      "advice_ms": [
+        425.243,
+        431.006,
+        432.006,
+        432.508,
+        431.732
+      ],
+      "service_advice_ms": [
+        409,
+        408,
+        409,
+        409,
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 475.101,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 5,
+      "input_bytes": 5075,
+      "output_bytes": 330,
+      "max_in_flight": 5
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.80862504709512,
+        10.238999966531992
+      ],
+      "advice_ms": [
+        445.83,
+        449.501
+      ],
+      "service_advice_ms": [
+        425,
+        426
+      ],
+      "submission": "parallel",
+      "completion_ms": 458.528,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.5354579128324986
+      ],
+      "advice_ms": [
+        417.813
+      ],
+      "service_advice_ms": [
+        408
+      ],
+      "submission": "parallel",
+      "completion_ms": 417.826,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.418042027391493,
+        11.903916951268911
+      ],
+      "advice_ms": [
+        437.375,
+        440.138
+      ],
+      "service_advice_ms": [
+        427,
+        426
+      ],
+      "submission": "parallel",
+      "completion_ms": 449.689,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.916000020690262
+      ],
+      "advice_ms": [
+        420.754
+      ],
+      "service_advice_ms": [
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 420.831,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.039291948080063,
+        9.019333054311574
+      ],
+      "advice_ms": [
+        424.576,
+        422.678
+      ],
+      "service_advice_ms": [
+        410,
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 853.023,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.036000072024763,
+        11.560749961063266
+      ],
+      "advice_ms": [
+        429.944,
+        421.854
+      ],
+      "service_advice_ms": [
+        410,
+        409
+      ],
+      "submission": "parallel",
+      "completion_ms": 429.995,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.779291994869709,
+        11.064750025980175
+      ],
+      "advice_ms": [
+        421.483,
+        423.68
+      ],
+      "service_advice_ms": [
+        405,
+        408
+      ],
+      "submission": "parallel",
+      "completion_ms": 432.569,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132,
+      "max_in_flight": 2
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.178082993254066
+      ],
+      "advice_ms": [
+        421.695
+      ],
+      "service_advice_ms": [
+        408
+      ],
+      "submission": "serial",
+      "completion_ms": 421.746,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.793166002258658
+      ],
+      "advice_ms": [
+        448.644
+      ],
+      "service_advice_ms": [
+        427
+      ],
+      "submission": "serial",
+      "completion_ms": 448.843,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66,
+      "max_in_flight": 1
+    }
+  ],
+  "limitations": "Pipeline compatibility, timings, concurrency, batching and payload sizes only. Does not measure model accuracy, token usage, billing, or real provider latency. Debug binaries; polling adds <= 5 ms and later submissions can delay observing earlier results."
+}

@@ -1,0 +1,214 @@
+{
+  "kind": "fresh_live_service_recorder_and_installed_renderer",
+  "tested_at": "2026-11-09T04:52:28.170Z",
+  "service_version": "0.5.9",
+  "installed_extension_version": "0.5.10",
+  "max_model_requests": 5,
+  "observed_peak_model_requests": 5,
+  "candidate_commands_executed": false,
+  "rounds": [
+    {
+      "round": 1,
+      "session_id": "distill-live-retest-c7988cb02f13-1",
+      "session_title": "Distill live retest 1 (no execution)",
+      "submitted": 5,
+      "advisory_responses": 5,
+      "wall_ms": 1889,
+      "peak_model_requests": 5,
+      "rendering": {
+        "stable": {
+          "rendered_rows": 5,
+          "refetched_after_snapshot": 0
+        },
+        "forced_snapshot_race": {
+          "rendered_rows": 5,
+          "refetched_after_snapshot": 5
+        }
+      },
+      "success": true,
+      "results": [
+        {
+          "probe": "probe-1",
+          "command_bytes": 52,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1249,
+          "cached": false,
+          "request_digest": "3539f98fb1b3a66d204d09eeb9d619ca1ef62a1548d501c89bf3d92f23bc11d5",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-2",
+          "command_bytes": 51,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1265,
+          "cached": false,
+          "request_digest": "f0ec48ba3544b092494eeff08fdd401f5e2bceba1b83e9d7ad9f5130df33278d",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-3",
+          "command_bytes": 10060,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1403,
+          "cached": false,
+          "request_digest": "59a793949408fd55ff14145ab06ed651b54698745aea338e8c5568dc924f16e8",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-4",
+          "command_bytes": 74,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1370,
+          "cached": false,
+          "request_digest": "b9b846a5b361c93afad8ebb9a9c9fe717e900ba1f1deec80f53d785e05869ee7",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-5",
+          "command_bytes": 52,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1122,
+          "cached": false,
+          "request_digest": "c70b24ea537bafc8172718e0ddcc96c8b2b202c51de88d7274fedf1da4c78b71",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "session_id": "distill-live-retest-c7988cb02f13-2",
+      "session_title": "Distill live retest 2 (no execution)",
+      "submitted": 5,
+      "advisory_responses": 5,
+      "wall_ms": 3493,
+      "peak_model_requests": 5,
+      "rendering": {
+        "stable": {
+          "rendered_rows": 5,
+          "refetched_after_snapshot": 0
+        },
+        "forced_snapshot_race": {
+          "rendered_rows": 5,
+          "refetched_after_snapshot": 5
+        }
+      },
+      "success": true,
+      "results": [
+        {
+          "probe": "probe-1",
+          "command_bytes": 52,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 996,
+          "cached": false,
+          "request_digest": "194042165ae5ee5cfcea2351e82883380c7d73f827a92f0adce8b742209493b1",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-2",
+          "command_bytes": 51,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 823,
+          "cached": false,
+          "request_digest": "5da553472f4d0f03699329037b65dd9a7a86ad230eaf442e5363b677dd98319b",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-3",
+          "command_bytes": 10060,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 3311,
+          "cached": false,
+          "request_digest": "857a1a293ff1633b8fbb2d842eae68c457103143fce36409438e683e4fb70b38",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-4",
+          "command_bytes": 74,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 842,
+          "cached": false,
+          "request_digest": "28bd9f9275e63491edf114cb491d0f64212c421575094321ae32daecf78a9dff",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        },
+        {
+          "probe": "probe-5",
+          "command_bytes": 52,
+          "status": "advisory",
+          "severity": "high",
+          "model": "gpt-6-luna",
+          "elapsed_ms": 1732,
+          "cached": false,
+          "request_digest": "2e9f2eb28295517b9f9a7cdb8ca90d790126bf06d2389eebc35a12ad41ba7d4e",
+          "reason": null,
+          "detail": null,
+          "decision": "ask",
+          "completed_at": null,
+          "stderr": null
+        }
+      ]
+    }
+  ],
+  "submitted": 10,
+  "advisory_responses": 10,
+  "latency_ms": {
+    "min": 823,
+    "median": 1257,
+    "max": 3311
+  },
+  "distinct_request_digests": 10,
+  "success": true
+}

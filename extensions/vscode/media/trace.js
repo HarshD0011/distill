@@ -10,11 +10,12 @@ let selected = '';
 let page = { offset: 0, limit: 100, total: 0, hasMore: false };
 let capture = {};
 let recordingWarning = '';
+let routerState;
 let searchTimer;
 const openCommands = new Set();
 const detailsCache = new Map();
 const outputCache = new Map();
-const pending = new Set();
+const pending = new Map();
 const severities = ['safe', 'low', 'medium', 'high', 'critical', 'unknown'];
 function node(tag, text, className) {
   const element = document.createElement(tag);
@@ -27,7 +28,7 @@ function currentEntry(sessionKey, id) { return sessions.find(session => session.
 function loadDetails(session, entry) {
   const key = keyFor(session.key, entry.id);
   if (detailsCache.get(key)?.version === entry.version || pending.has(key)) return;
-  pending.add(key);
+  pending.set(key, entry.version);
   vscode.postMessage({ type: 'command', sessionKey: session.key, id: entry.id });
 }
 function commandDetails(session, entry) {
@@ -41,12 +42,7 @@ function commandDetails(session, entry) {
   }
   section.append(node('p', detail.reason, 'reason'));
   if (detail.assessmentState === 'unknown') section.append(node('p', 'The analyzer could not establish an impact rating.', 'muted'));
-  if (detail.unknowns?.length) {
-    section.append(node('p', 'Unresolved behavior', 'output-label'));
-    const gaps = node('ul', null, 'analysis-gaps');
-    for (const reason of detail.unknowns) gaps.append(node('li', reason));
-    section.append(gaps);
-  }
+  if (detail.assessmentState === 'advisory') section.append(node('p', 'Rating from model advice. Approval still required.', 'muted'));
   const meta = node('dl', null, 'metadata');
   const status = detail.status === 'proposed' ? 'No completion observed' : detail.status;
   for (const [label, value] of [
@@ -56,6 +52,28 @@ function commandDetails(session, entry) {
     meta.append(node('dt', label), node('dd', String(value)));
   }
   section.append(meta);
+  const feedback = node('div', null, 'toolbar');
+  for (const [kind, label] of [['over', 'Rating too high'], ['under', 'Rating too low']]) {
+    const button = node('button', label, 'quiet');
+    button.addEventListener('click', () => { button.disabled = true; vscode.postMessage({ type: 'feedback', sessionKey: session.key, id: entry.id, kind }); });
+    feedback.append(button);
+  }
+  section.append(feedback);
+  if (detail.feedback?.length) section.append(node('p', 'Feedback recorded. It does not change policy automatically.', 'muted small'));
+  if (detail.judge) {
+    const failure = String(detail.judge.detail || detail.judge.reason || '');
+    const connectionFailed = /Broken pipe|Resource temporarily unavailable|Service (?:connect|write|read)|Local model service connection/i.test(failure);
+    const model = node('details', null, 'provenance');
+    model.append(node('summary', `Model advice · ${connectionFailed ? 'connection failed' : detail.judge.status || 'unavailable'}${detail.judge.severity ? ` · ${detail.judge.severity}` : ''}`));
+    model.append(node('p', connectionFailed ? 'The local service connection failed before review completed. Update Distill and reload the window.' : detail.judge.proposal?.explanation || detail.judge.reason || 'Static policy remains in control.'));
+    if (detail.judge.detail) model.append(node('p', detail.judge.detail, 'muted small'));
+    if (detail.judge.source_review?.inspected_files > 0 || detail.judge.source_review?.missing_source) {
+      const source = detail.judge.source_review;
+      model.append(node('p', source.missing_source ? 'Script source was unavailable; file contents could not be reviewed.' : source.sharing_enabled ? `Script source: ${source.shared_files} file(s) shared${source.omitted_files ? `, ${source.omitted_files} omitted` : ''}.` : 'Script source was not shared. Enable Include inspected script excerpts to review file contents.', 'muted'));
+    }
+    if (detail.judge.model) model.append(node('p', `Model: ${detail.judge.model} · prompt ${detail.judge.prompt_version || 'unknown'}${detail.judge.cached ? ' · cached' : ''}`, 'muted'));
+    section.append(model);
+  }
   const output = node('div', null, 'output');
   output.append(node('div', 'Output', 'output-label'));
   if (detail.outputTruncated) output.append(node('p', 'Capture limit reached. Showing retained output.', 'capture-note'));
@@ -85,6 +103,34 @@ function commandDetails(session, entry) {
     if (value != null && value !== '') context.append(node('dt', label), node('dd', String(value)));
   }
   advanced.append(context);
+  if (detail.coverageGaps?.length || detail.unknowns?.length) {
+    advanced.append(node('p', 'Analysis limits', 'output-label'));
+    const gaps = node('ul', null, 'analysis-gaps');
+    if (detail.coverageGaps?.length) {
+      const labels = { host_metadata: 'Host metadata', invocation: 'Invocation', dependency: 'Dependency', language: 'Language analysis', budget: 'Analysis budget', shell_semantics: 'Shell semantics', context: 'Context', runtime_environment: 'Runtime startup', unmodeled: 'Unmodeled behavior' };
+      for (const gap of detail.coverageGaps) gaps.append(node('li', `${labels[gap.code] || 'Analysis'} · ${gap.message}`));
+    } else for (const reason of detail.unknowns) gaps.append(node('li', reason));
+    advanced.append(gaps);
+  }
+  if (detail.timings?.stages) {
+    const timings = node('dl', null, 'metadata');
+    for (const [stage, ms] of Object.entries(detail.timings.stages)) timings.append(node('dt', `${stage} (ms)`), node('dd', String(ms)));
+    advanced.append(timings);
+  }
+  if (detail.contextEvidence?.length) {
+    advanced.append(node('p', 'Context evidence', 'output-label'));
+    const evidence = node('ul', null, 'analysis-gaps');
+    for (const item of detail.contextEvidence) evidence.append(node('li', `${item.source}${item.value ? ` · ${item.value}` : ''} · ${item.status}`));
+    advanced.append(evidence);
+  }
+  if (detail.graph?.nodes?.length) {
+    const graph = node('details', null, 'provenance'); graph.append(node('summary', 'Parsed command structure'));
+    const nodes = node('ol', null, 'analysis-gaps');
+    for (const item of detail.graph.nodes) nodes.append(node('li', `${item.kind}${item.program ? ` · ${item.program}` : ''} · ${item.span?.line || '?'}:${item.span?.column || '?'} · bytes ${item.span?.start_byte ?? '?'}–${item.span?.end_byte ?? '?'}`));
+    graph.append(nodes);
+    if (detail.graph.truncated) graph.append(node('p', 'Additional command structure exceeded the detail limit.', 'muted'));
+    advanced.append(graph);
+  }
   if (detail.behaviors?.length) {
     advanced.append(node('p', 'Modeled effects', 'output-label'));
     const effects = node('ul', null, 'analysis-gaps');
@@ -107,7 +153,19 @@ function commandDetails(session, entry) {
   section.append(provenance);
   return section;
 }
+function renderRouter() {
+  const label = document.getElementById('router-status');
+  if (!label) return;
+  label.textContent = !routerState || routerState.status === 'checking' ? 'Checking LLM router…'
+    : routerState.status === 'error' ? 'LLM status unavailable · open settings'
+    : !routerState.enabled ? 'Static analysis only · LLM router off'
+    : !routerState.running ? `LLM service unavailable · static fallback · ${routerState.model}`
+    : `Static analysis + LLM advice · ${routerState.model}`;
+}
 function render() {
+  renderRouter();
+  const historyNote = document.getElementById('history-note');
+  if (historyNote) historyNote.textContent = 'Temporary · clears on window reload';
   chat.replaceChildren();
   for (const session of sessions) {
     const option = node('option', `${session.title || 'Untitled chat'} (${session.commandCount ?? session.commands.length})`);
@@ -132,8 +190,8 @@ function render() {
     const severity = severities.includes(entry.severity) ? entry.severity : 'unknown';
     const cached = detailsCache.get(key);
     const assessmentState = (cached?.version === entry.version ? cached.assessmentState : null) || entry.assessmentState;
-    const badge = node('span', assessmentState === 'missing' ? 'unassessed' : severity, `badge severity-${severity}`);
-    badge.title = assessmentState === 'missing' ? 'No pre-command assessment was received.' : severity === 'unknown' ? 'The analyzer could not establish an impact rating.' : `Known impact: ${severity}`;
+    const badge = node('span', assessmentState === 'missing' ? 'unassessed' : assessmentState === 'advisory' ? `${severity} · model` : severity, `badge severity-${severity}`);
+    badge.title = assessmentState === 'missing' ? 'No pre-command assessment was received.' : assessmentState === 'advisory' ? `Model advice: ${severity}. Static analysis is unresolved.` : severity === 'unknown' ? 'The analyzer could not establish an impact rating.' : `Known impact: ${severity}`;
     summary.append(badge);
     summary.append(node('span', entry.command.replace(/\s+/g, ' ').trim(), 'command-preview'));
     summary.title = entry.command;
@@ -162,16 +220,22 @@ chat.addEventListener('change', () => { selected = chat.value; openCommands.clea
 search.addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => vscode.postMessage({ type: 'page', sessionKey: selected, offset: 0, query: search.value }), 200); });
 document.getElementById('setup').addEventListener('click', () => vscode.postMessage({ type: 'setup' }));
 document.getElementById('clear').addEventListener('click', () => vscode.postMessage({ type: 'clear' }));
+document.getElementById('export')?.addEventListener('click', () => vscode.postMessage({ type: 'export', sessionKey: selected }));
+document.getElementById('router-settings')?.addEventListener('click', () => vscode.postMessage({ type: 'configure-router' }));
 window.addEventListener('message', ({ data }) => {
-  if (data.type === 'snapshot') {
+  if (data.type === 'router-state') {
+    routerState = data.router; renderRouter();
+  } else if (data.type === 'snapshot') {
     document.getElementById('clear').textContent = 'Clear logs';
     document.getElementById('clear').title = data.scopedClear ? 'Clear temporary command logs for this workspace.' : 'Clear all temporary command logs.';
-    sessions = data.sessions; page = data.page; capture = data.capture || {}; recordingWarning = data.recordingWarning || ''; selected = page.sessionKey;
+    sessions = data.sessions; page = data.page; capture = { ...(data.capture || {}), historyEnabled: !!data.historyEnabled }; recordingWarning = data.recordingWarning || ''; selected = page.sessionKey;
     const valid = new Map(sessions.flatMap(session => session.commands.map(entry => [keyFor(session.key, entry.id), entry.version])));
     for (const key of openCommands) if (!valid.has(key)) openCommands.delete(key);
     for (const [key, detail] of detailsCache) if (valid.get(key) !== detail.version) detailsCache.delete(key);
     for (const [key, output] of outputCache) if (valid.get(key) !== output.version) outputCache.delete(key);
-    for (const key of pending) if (!valid.has(key)) pending.delete(key);
+    // A model result can advance a command between a snapshot and its detail
+    // reply. A request for the older version must not block the newer fetch.
+    for (const [key, version] of pending) if (valid.get(key) !== version) pending.delete(key);
     render();
   } else if (data.type === 'cleared') {
     clearTimeout(searchTimer); search.value = '';

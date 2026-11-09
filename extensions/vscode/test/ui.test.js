@@ -34,6 +34,22 @@ test('incoming commands preserve an expanded row and do not refetch unchanged de
   assert.equal(ui.messages.filter(message => message.type === 'command').length, 1);
 });
 
+test('a model response ahead of its snapshot cannot leave command details permanently loading', () => {
+  const ui = app(); ui.receive(snapshot);
+  const row = ui.elements.get('commands').children[0]; row.open = true; row.dispatch('toggle');
+  const updated = { ...detail, command: { ...detail.command, version: 2, assessmentState: 'advisory', judge: { status: 'advisory', severity: 'low', proposal: { explanation: 'Live model response' } } } };
+  ui.receive(updated); // Broker has advanced while the visible snapshot is older.
+  assert.equal(ui.messages.filter(message => message.type === 'command').length, 1);
+  ui.receive({ ...snapshot, version: 2, sessions: [{ ...snapshot.sessions[0], commands: [{ ...snapshot.sessions[0].commands[0], version: 2, assessmentState: 'advisory' }] }] });
+  assert.equal(ui.messages.filter(message => message.type === 'command').length, 2, 'The new command version must get a fresh detail request');
+  ui.receive(detail); // Old replies cannot clear or replace the current request.
+  assert.doesNotMatch(ui.elements.get('commands').textContent, /Live model response/);
+  ui.receive(updated);
+  assert.match(ui.elements.get('commands').textContent, /Model advice · advisory · low/);
+  assert.match(ui.elements.get('commands').textContent, /Live model response/);
+  assert.doesNotMatch(ui.elements.get('commands').textContent, /Loading command details/);
+});
+
 test('expanded rows keep the full command and technical context behind More details', () => {
   const ui = app(); ui.receive(snapshot);
   const row = ui.elements.get('commands').children[0]; row.open = true; row.dispatch('toggle'); ui.receive(detail);
@@ -46,7 +62,7 @@ test('expanded rows keep the full command and technical context behind More deta
   assert.match(section.children.find(child => child.className === 'metadata').textContent, /Decision.*allow.*Status.*completed/);
 });
 
-test('unassessed completions have a separate badge while actual UNKNOWN shows its unresolved behavior', () => {
+test('unassessed completions have a separate badge and analysis limits stay behind More details', () => {
   const ui = app();
   const rows = [
     { id: 'missing', version: 1, command: 'echo missed pre-hook', severity: 'unknown', assessmentState: 'missing' },
@@ -59,7 +75,12 @@ test('unassessed completions have a separate badge while actual UNKNOWN shows it
   const row = commands.children[1]; row.open = true; row.dispatch('toggle');
   ui.receive({ ...detail, command: { ...detail.command, ...rows[1], assessmentState: 'unknown', unknowns: ['Executable behavior is not modeled'], behaviorPolicyVersion: 7 } });
   assert.match(commands.textContent, /could not establish an impact rating/);
-  assert.match(commands.textContent, /Unresolved behavior.*Executable behavior is not modeled/);
+  assert.doesNotMatch(commands.textContent, /Unresolved behavior/);
+  const section = commands.children[1].children[1];
+  assert.ok(!section.children.some(child => child.className === 'analysis-gaps'));
+  const more = section.children.find(child => child.tagName === 'details' && child.children[0].textContent === 'More details');
+  assert.ok(!more.open);
+  assert.match(more.textContent, /Analysis limits.*Executable behavior is not modeled/);
   assert.match(commands.textContent, /Behavior policy.*7/);
 });
 

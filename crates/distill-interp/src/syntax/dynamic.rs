@@ -33,7 +33,10 @@ pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bo
                 }
                 asserted = true;
             }
-            (Language::JavaScript, "lexical_declaration" | "variable_declaration") => {
+            (
+                Language::JavaScript | Language::TypeScript,
+                "lexical_declaration" | "variable_declaration",
+            ) => {
                 for declaration in children(statement) {
                     if declaration.kind() != "variable_declarator"
                         || !binding(declaration, "name", "value", source, &mut symbols)
@@ -42,7 +45,7 @@ pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bo
                     }
                 }
             }
-            (Language::JavaScript, "expression_statement") => {
+            (Language::JavaScript | Language::TypeScript, "expression_statement") => {
                 let parts = children(statement);
                 if parts.len() != 1 || !js_print(parts[0], source, &symbols) {
                     return false;
@@ -50,7 +53,7 @@ pub(super) fn print_only(language: Language, root: Node<'_>, source: &str) -> bo
                 printed = true;
             }
             // Empty statements do not hide other statements; all siblings are checked.
-            (Language::JavaScript, "empty_statement") => {}
+            (Language::JavaScript | Language::TypeScript, "empty_statement") => {}
             _ => return false,
         }
     }

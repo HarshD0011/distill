@@ -74,6 +74,46 @@ test('editor quit terminates the broker and removes its endpoint and lock', asyn
   await assert.rejects(rpc(endpoint, { action: 'snapshot' }));
 });
 
+test('a new extension activation clears prior trace data while same-session reconnects keep it', async t => {
+  const { endpoint } = await launch(t);
+  const register = clientId => rpc(endpoint, { action: 'register', roots: [repository], clientId, clientPid: process.pid });
+  await register('activation-one');
+  const event = { protocol: 1, source: 'codex', kind: 'completion', session_id: 'chat', tool_use_id: 'tool', command: 'echo stale-reload-marker', session_cwd: repository, timestamp: 10 };
+  await rpc(endpoint, { action: 'record', event });
+  await register('activation-one');
+  assert.equal((await rpc(endpoint, { action: 'snapshot' })).sessions.length, 1);
+  await register('activation-two');
+  assert.deepEqual((await rpc(endpoint, { action: 'snapshot' })).sessions, []);
+  await rpc(endpoint, { action: 'record', event });
+  await rpc(endpoint, { action: 'release', clientId: 'activation-one' });
+  assert.equal((await rpc(endpoint, { action: 'snapshot' })).sessions.length, 1, 'Releasing an old shared-root lease must not clear the live activation');
+  assert.equal((await rpc(endpoint, { action: 'ping' })).historyEnabled, false);
+  assert.equal((await rpc(endpoint, { action: 'reload-history' })).historyEnabled, false);
+});
+
+test('an extension-host crash discards leased history and removes recorder metadata', async t => {
+  const { endpoint, file, broker } = await launch(t);
+  const host = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore' });
+  t.after(() => { if (host.exitCode === null) host.kill(); });
+  await once(host, 'spawn');
+  await rpc(endpoint, { action: 'register', roots: [repository], clientId: 'crashing-host', clientPid: host.pid });
+  host.kill(); await once(host, 'exit');
+  await waitFor(() => broker.exitCode !== null, 'Recorder retained a dead host session');
+  assert.equal(fs.existsSync(file), false);
+});
+
+test('a verified old Unix recorder is replaced automatically without retaining stale history', async t => {
+  const { endpoint, file, owner, directory } = await launch(t);
+  fs.writeFileSync(file, JSON.stringify({ ...endpoint, broker_version: 7 }), { mode: 0o600 });
+  const previous = { directory: process.env.DISTILL_TRACE_DIR, pid: process.env.VSCODE_PID };
+  process.env.DISTILL_TRACE_DIR = directory; process.env.VSCODE_PID = String(owner.pid);
+  t.after(() => { for (const [name, value] of [['DISTILL_TRACE_DIR', previous.directory], ['VSCODE_PID', previous.pid]]) { if (value === undefined) delete process.env[name]; else process.env[name] = value; } });
+  const upgraded = await require('../src/client').connectBroker([repository], binary, 'upgraded-host');
+  assert.equal(upgraded.broker_version, 9); assert.notEqual(upgraded.broker_pid, endpoint.broker_pid);
+  assert.deepEqual((await rpc(upgraded, { action: 'snapshot' })).sessions, []);
+  await rpc(upgraded, { action: 'release', clientId: 'upgraded-host' });
+});
+
 test('real CLI joins assessments to large completion output and keeps native hook responses', { skip: !fs.existsSync(binary) }, async t => {
   const { endpoint, directory, owner } = await launch(t);
   const policy = path.join(directory, 'test-policy.toml');

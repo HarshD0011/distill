@@ -7,20 +7,25 @@ use tree_sitter::{Language as Grammar, Node, ParseOptions, Parser, Tree};
 mod dynamic;
 mod flow;
 mod java;
+mod javascript;
 mod native;
 mod operations;
+mod python;
 
 pub(super) use operations::Observation;
 
 pub(super) struct Analysis {
     pub print_only: bool,
     pub observations: Vec<Observation>,
+    pub imports: Vec<javascript::Import>,
+    pub python: Option<python::Analysis>,
 }
 
 #[derive(Clone, Copy, Debug)]
 pub(super) enum Language {
     Python,
     JavaScript,
+    TypeScript,
     Java,
     Go,
     C,
@@ -33,6 +38,7 @@ impl Language {
         match self {
             Self::Python => tree_sitter_python::LANGUAGE.into(),
             Self::JavaScript => tree_sitter_javascript::LANGUAGE.into(),
+            Self::TypeScript => tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
             Self::Java => tree_sitter_java::LANGUAGE.into(),
             Self::Go => tree_sitter_go::LANGUAGE.into(),
             Self::C => tree_sitter_c::LANGUAGE.into(),
@@ -121,11 +127,20 @@ pub(super) fn analyze_with_limit(
         }
     }
     let print_only = match language {
-        Language::Python | Language::JavaScript => dynamic::print_only(language, root, source),
+        Language::Python | Language::JavaScript | Language::TypeScript => {
+            dynamic::print_only(language, root, source)
+        }
         _ => native::print_only(language, root, source),
     };
     Ok(Analysis {
         print_only,
+        python: (matches!(language, Language::Python) && !print_only)
+            .then(|| python::analyze(root, source, budget)),
+        imports: if matches!(language, Language::JavaScript | Language::TypeScript) {
+            javascript::imports(root, source)
+        } else {
+            Vec::new()
+        },
         observations: if print_only {
             Vec::new()
         } else {

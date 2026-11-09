@@ -5,3 +5,9 @@ mode = "advisory"
 
 [agents.claude]
 mode = "advisory"
+
+[ledger]
+enabled = false
+
+[service]
+history_enabled = false

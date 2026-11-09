@@ -40,12 +40,12 @@ database_modify = "high"
 database_all_rows = "critical"
 database_unknown_scope = "high"
 
-# Temporary editor tracing has its own output controls. No history is written to disk.
+# Temporary editor tracing has its own output controls.
 [editor_trace]
 enabled = true
 
 [history]
-# Reserved for persistent history; the current CLI does not persist history.
+# Legacy enabled is retained for compatibility. Only service.history_enabled opts in.
 enabled = true
 retention_days = 7
 
@@ -70,3 +70,47 @@ timeout_ms = 30000
 
 [agents.claude]
 mode = "advisory"
+
+[service]
+# Independent opt-in. The security ledger above is not command history.
+history_enabled = false
+max_events = 10000
+max_bytes = 67108864
+# Optional absolute path to a private classifier produced from reviewed labels.
+# classifier_path = "/absolute/private/model.json"
+classifier_min_support = 20
+classifier_min_probability = 0.99
+
+[judge]
+# Extension users configure these through Distill: Configure LLM Router.
+enabled = false
+provider = "openai_compatible" # or gemini / claude / llama_cpp / vllm
+# These explicit endpoint/model/key values belong to OpenAI. Update or omit all
+# three when changing provider so the selected provider's defaults can apply.
+endpoint = "https://api.openai.com/v1/chat/completions"
+model = "gpt-6-luna" # No automatic fallback or model upgrade.
+api_key_env = "OPENAI_API_KEY"
+max_output_tokens = 512
+# Omitted by default for every model. OpenAI-compatible APIs (also llama_cpp/vllm)
+# can use an explicit none/minimal/low/medium/high/xhigh/max when supported.
+# No model-name inference, retries, or fallback. Omit for Gemini and Claude.
+# reasoning_effort = "none"
+deadline_ms = 800 # Legacy synchronous RPC budget; hook handoff is at most 40 ms.
+background_deadline_ms = 5000 # Model work runs outside the hook wait.
+review_format = "severity" # Or "effects" for the legacy structured JSON protocol.
+batch_window_ms = 0 # Optional 0..500 ms; severity only, counts against background timeout.
+send_script_contents = false
+max_script_bytes = 8192
+# Local example: provider="llama_cpp", endpoint="http://127.0.0.1:8080/v1/chat/completions",
+# model="your-served-model-alias", api_key_env="". vLLM defaults to port 8000.
+# Gemini: provider="gemini", endpoint="https://generativelanguage.googleapis.com/v1beta",
+# model="gemini-3.1-flash-lite", api_key_env="GEMINI_API_KEY".
+# Claude: provider="claude", endpoint="https://api.anthropic.com/v1/messages",
+# model="claude-haiku-5-5", api_key_env="ANTHROPIC_API_KEY".
+
+# User-owned regex overrides match the entire command. Incomplete and critical
+# operations retain their floors. Workspace .distill-policy.toml uses [[raise]].
+# [[override]]
+# pattern = "git push origin feature/.*"
+# severity = "medium"
+# note = "Explicit user policy for feature branches"

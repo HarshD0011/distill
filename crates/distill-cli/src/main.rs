@@ -15,7 +15,9 @@ use std::{
 mod approval;
 mod coverage;
 mod gate;
+mod hook_debug;
 mod hook_sources;
+mod service_commands;
 mod setup;
 mod watchdog;
 
@@ -32,6 +34,80 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Fetch completed background model advice for request digests on stdin.
+    Advice {
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
+    /// Apply user-selected extension router settings from bounded JSON on stdin.
+    ConfigureRouter {
+        host: Host,
+        /// Disable durable history and the approval ledger for editor sessions.
+        #[arg(long)]
+        memory_only: bool,
+    },
+    /// Manage the optional local history/model service.
+    Service {
+        action: service_commands::Action,
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        binary: Option<PathBuf>,
+        /// Receive a route-bound credential over an inherited pipe, never argv/env.
+        #[arg(long)]
+        credential_stdin: bool,
+    },
+    /// Query explicitly enabled durable history.
+    Query {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        root: Option<PathBuf>,
+        #[arg(long)]
+        session_key: Option<String>,
+        #[arg(long, default_value_t = 1000)]
+        limit: usize,
+        #[arg(long, default_value_t = 0)]
+        offset: usize,
+    },
+    /// Export explicitly enabled durable history as JSON or Markdown.
+    Export {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        root: Option<PathBuf>,
+        #[arg(long)]
+        session_key: Option<String>,
+        #[arg(long, default_value = "json")]
+        format: String,
+    },
+    /// Record feedback without modifying policy.
+    Feedback {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        session_key: String,
+        #[arg(long)]
+        tool_id: String,
+        #[arg(long)]
+        kind: String,
+        #[arg(long, default_value = "")]
+        note: String,
+    },
+    /// Show retained observation statistics, not detection accuracy.
+    Stats {
+        #[arg(long)]
+        config: Option<PathBuf>,
+    },
+    /// Purge durable history for one root or explicitly all sessions.
+    Purge {
+        #[arg(long)]
+        config: Option<PathBuf>,
+        #[arg(long)]
+        root: Option<PathBuf>,
+        #[arg(long)]
+        all: bool,
+    },
     /// Statically inspect literal Dockerfile/CI recipes or SQL/awk/sed source.
     Inspect {
         #[arg(long)]
@@ -78,6 +154,9 @@ enum Commands {
         check: bool,
         #[arg(long)]
         labels: bool,
+        /// Append private hook metadata and verdicts to this absolute JSONL path.
+        #[arg(long)]
+        debug_log: Option<PathBuf>,
         /// Use the editor's Node/Electron runtime for hooks, without requiring Python.
         #[arg(long)]
         node_runtime: Option<PathBuf>,
@@ -168,6 +247,9 @@ enum Commands {
         no_prompt: bool,
         #[arg(long, hide = true)]
         internal_report: bool,
+        /// Append private hook metadata and verdicts; omits command text and output.
+        #[arg(long)]
+        debug_log: Option<PathBuf>,
     },
     /// Report embedded-analyzer health and integration translation.
     Doctor {
@@ -240,6 +322,94 @@ fn main() {
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
     match cli.command {
+        Commands::ConfigureRouter { host, memory_only } => {
+            let input = read_bounded_stdin(16384)?;
+            let judge = serde_json::from_str::<distill_core::JudgeConfig>(&input)
+                .map_err(|e| format!("Invalid router settings: {e}"))?;
+            print_json(&setup::configure_router(
+                match host {
+                    Host::Codex => "codex",
+                    Host::Claude => "claude",
+                },
+                judge,
+                memory_only,
+            )?)?;
+        }
+        Commands::Service {
+            action,
+            config,
+            binary,
+            credential_stdin,
+        } => print_json(&service_commands::manage(
+            action,
+            config,
+            binary,
+            credential_stdin,
+        )?)?,
+        Commands::Query {
+            config,
+            root,
+            session_key,
+            limit,
+            offset,
+        } => print_json(&service_commands::call(
+            config,
+            "query",
+            serde_json::json!({"root":root,"session_key":session_key,"limit":limit,"offset":offset}),
+        )?)?,
+        Commands::Export {
+            config,
+            root,
+            session_key,
+            format,
+        } => {
+            let result = service_commands::export_data(
+                config,
+                serde_json::json!({"root":root,"session_key":session_key,"limit":100000}),
+            )?;
+            match format.as_str() {
+                "json" => print_json(&result)?,
+                "markdown" => println!("{}", service_commands::markdown(&result)),
+                _ => return Err("Export format must be json or markdown".into()),
+            }
+        }
+        Commands::Feedback {
+            config,
+            session_key,
+            tool_id,
+            kind,
+            note,
+        } => print_json(&service_commands::call(
+            config,
+            "feedback",
+            serde_json::json!({"session_key":session_key,"tool_id":tool_id,"kind":kind,"note":note}),
+        )?)?,
+        Commands::Advice { config } => {
+            let input = read_bounded_stdin(16384)?;
+            let mut params: serde_json::Value =
+                serde_json::from_str(&input).map_err(|_| "Invalid advice query")?;
+            let policy = service_commands::configuration(config)?;
+            if !params.is_object() {
+                return Err("Advice query must be an object".into());
+            }
+            params["model_policy_digest"] = serde_json::json!(policy.model_digest());
+            print_json(&distill_core::service_ipc::request(
+                &policy,
+                "judge_results",
+                params,
+                std::time::Duration::from_millis(100),
+            )?)?;
+        }
+        Commands::Stats { config } => print_json(&service_commands::call(
+            config,
+            "stats",
+            serde_json::json!({}),
+        )?)?,
+        Commands::Purge { config, root, all } => print_json(&service_commands::call(
+            config,
+            "purge",
+            serde_json::json!({"root":root,"all":all}),
+        )?)?,
         Commands::Inspect {
             format,
             file,
@@ -299,6 +469,7 @@ fn run() -> Result<(), String> {
             config,
             check,
             labels,
+            debug_log,
             node_runtime,
             workspace_roots,
         } => {
@@ -313,6 +484,7 @@ fn run() -> Result<(), String> {
                 check,
                 labels,
                 node_runtime.as_deref(),
+                debug_log.as_deref(),
             )?)?;
         }
         Commands::Coverage { input, editor } => {
@@ -402,6 +574,7 @@ fn run() -> Result<(), String> {
             workspace_roots,
             no_prompt: _,
             internal_report,
+            debug_log: _,
         } => {
             let mut input = read_bounded_stdin(trace::MAX_EVENT_BYTES);
             if !workspace_roots.is_empty() {
@@ -447,7 +620,7 @@ fn run() -> Result<(), String> {
                     } else {
                         print_json(&output)?;
                     }
-                    if config.editor_trace.enabled
+                    if config.recording_enabled()
                         && (!internal_report || report.severity != distill_core::Severity::Critical)
                         && let Err(error) = trace::assessment(
                             host.into(),
@@ -469,7 +642,7 @@ fn run() -> Result<(), String> {
                         options,
                     );
                     print_json(&output)?;
-                    if config.editor_trace.enabled
+                    if config.recording_enabled()
                         && let Ok(input) = &input
                         && let Err(error) =
                             trace::failure(host.into(), input, &error, &output, &config)
@@ -498,8 +671,9 @@ fn run() -> Result<(), String> {
                     "executable": std::env::current_exe().ok(),
                     "executable_sha256": std::env::current_exe().ok().and_then(|p| std::fs::read(p).ok()).map(|b| distill_core::sha256(&b)),
                     "trace_protocol": 1, "output_capture": config.capture_editor_output(), "behavior_policy_version": distill_core::BEHAVIOR_POLICY_VERSION,
+                    "model_policy_digest": config.model_digest(),
                     "sandbox": gate::backend(&config).ok(), "session_ledger": config.ledger.enabled, "hooks": {"codex": codex_hooks, "claude": claude_hooks},
-                    "capabilities": ["assessments", "completion", "memory-only", "analysis-context", "shared-deadline", "workspace-context", "hook-source-inspection", "user-hook-setup", "unix-peer-credentials", "execution-gate", "file-bindings", "session-ledger", "coverage-report", "signed-labels", "hard-watchdog", "critical-hook-block", "shell-context-coverage", "node-hook-launcher", "coding-workflows", "native-critical-approval", "foreground-critical-approval"]
+                    "capabilities": ["assessments", "completion", "memory-only", "analysis-context", "shared-deadline", "workspace-context", "hook-source-inspection", "user-hook-setup", "unix-peer-credentials", "execution-gate", "file-bindings", "session-ledger", "coverage-report", "signed-labels", "hard-watchdog", "critical-hook-block", "shell-context-coverage", "node-hook-launcher", "coding-workflows", "native-critical-approval", "foreground-critical-approval", "conditional-shell-impact", "hook-debug-log", "node-module-analysis", "structured-diagnostics", "direct-file-hooks", "optional-service", "configurable-router", "versioned-hook-policy", "native-gemini-claude", "session-only-router", "background-model-advice", "model-agnostic-router", "pipe-credentials", "severity-batching"]
                 }))?;
                 return Ok(());
             }
@@ -613,12 +787,9 @@ fn analyze_command(
         },
     };
     let draft = interpret(&request, config);
-    Ok(score(
-        &request,
-        draft,
-        config,
-        started.elapsed().as_millis(),
-    ))
+    let mut report = score(&request, draft, config, started.elapsed().as_millis());
+    distill_agents::advisory::enrich(&request, &mut report, config, started);
+    Ok(report)
 }
 
 fn colored_severity(severity: &str) -> String {

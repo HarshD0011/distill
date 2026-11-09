@@ -90,6 +90,10 @@ impl Environment {
                     Value::Unknown
                 }
             }
+            "await_expression" => children(node)
+                .first()
+                .map(|v| self.value(*v, source))
+                .unwrap_or(Value::Unknown),
             "reference_expression" => node
                 .child_by_field_name("value")
                 .map(|value| self.value(value, source))
@@ -165,7 +169,10 @@ impl Environment {
                 ) {
                     return Some("process_builder".into());
                 }
-                if function != "require" || self.0.contains_key("require") {
+                let import = node
+                    .child_by_field_name("function")
+                    .is_some_and(|v| v.kind() == "import");
+                if !import && (function != "require" || self.0.contains_key("require")) {
                     return None;
                 }
                 let args = children(node.child_by_field_name("arguments")?);
@@ -173,10 +180,9 @@ impl Environment {
                     return None;
                 }
                 let module = self.string(args[0], source)?;
-                let module = module.strip_prefix("node:").unwrap_or(&module);
-                matches!(module, "fs" | "child_process" | "http" | "https")
-                    .then(|| module.to_owned())
+                super::javascript::builtin(&module).map(str::to_owned)
             }
+            "import" => Some("import".into()),
             "call"
                 if node
                     .child_by_field_name("function")

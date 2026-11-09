@@ -2,6 +2,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
+const crypto = require('node:crypto');
 const { spawn, execFileSync } = require('node:child_process');
 const { traceDirectory, processIdentity, endpointPath, secureDirectory, readEndpoint, rpc } = require('./transport');
 
@@ -20,7 +21,23 @@ function resolveBinary(configured = '') {
   throw new Error('Install Distill in a trusted user/system location or set distill.binaryPath to an absolute executable path');
 }
 
-async function connectBroker(roots, binary = '') {
+const defaultClientId = crypto.randomUUID();
+async function retireBroker(file, endpoint, ownerPid) {
+  if (!Number.isSafeInteger(endpoint.broker_pid) || endpoint.broker_pid <= 1 || [process.pid, ownerPid].includes(endpoint.broker_pid)) throw new Error('Cannot verify the previous recorder process.');
+  const lock = `${file}.lock`;
+  const stat = fs.lstatSync(lock);
+  if (!stat.isFile() || stat.size > 16384 || stat.uid !== process.getuid() || stat.mode & 0o077) throw new Error('Invalid recorder lock.');
+  const holder = JSON.parse(fs.readFileSync(lock, 'utf8'));
+  if (holder.pid !== endpoint.broker_pid || processIdentity(holder.pid) !== holder.identity) throw new Error('Previous recorder identity changed.');
+  process.kill(holder.pid, 'SIGTERM');
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (!fs.existsSync(file) && !fs.existsSync(lock)) return;
+    await new Promise(resolve => setTimeout(resolve, 50));
+  }
+  throw new Error('Previous recorder is still stopping. Reconnect Distill to retry.');
+}
+
+async function connectBroker(roots, binary = '', clientId = defaultClientId) {
   binary = resolveBinary(binary);
   const health = JSON.parse(execFileSync(binary, ['doctor', '--json'], { encoding: 'utf8', timeout: 5000 }));
   const peerBinary = health.executable;
@@ -34,12 +51,14 @@ async function connectBroker(roots, binary = '') {
   const directory = traceDirectory();
   secureDirectory(directory);
   const file = endpointPath(directory, ownerPid, ownerIdentity, roots);
+  const register = { action: 'register', roots, clientId, clientPid: process.pid };
   try {
     const endpoint = readEndpoint(file);
-    await rpc(endpoint, { action: 'register', roots });
-    return endpoint;
+    await rpc(endpoint, { action: 'ping' });
+    if ((endpoint.broker_version || 1) < 9) await retireBroker(file, endpoint, ownerPid);
+    else { await rpc(endpoint, register); return endpoint; }
   } catch (error) {
-    if (error.code === 'DISTILL_RECORDER_UPGRADE') throw error;
+    if (error.code === 'DISTILL_RECORDER_UPGRADE' || fs.existsSync(file + '.lock') && /previous recorder|recorder lock|identity changed/i.test(error.message)) throw error;
   }
 
   const child = spawn(process.execPath, [path.join(__dirname, 'broker.js')], {
@@ -55,7 +74,8 @@ async function connectBroker(roots, binary = '') {
     if (launchError) throw launchError;
     try {
       const endpoint = readEndpoint(file);
-      await rpc(endpoint, { action: 'register', roots }, 250);
+      if ((endpoint.broker_version || 1) < 9) throw new Error('Recorder upgrade still pending');
+      await rpc(endpoint, register, 500);
       return endpoint;
     } catch {}
     await new Promise(resolve => setTimeout(resolve, 100));

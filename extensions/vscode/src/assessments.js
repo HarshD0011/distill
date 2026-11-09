@@ -17,6 +17,11 @@ function reportKey(report) {
 function revisionKey(revision) {
   return JSON.stringify([revision.hook, !!revision.blocked, revision.report?.assessment_key || reportKey(revision.report)]);
 }
+const ratings = new Set(['safe', 'low', 'medium', 'high', 'critical']);
+function modelFallback(report) {
+  return !report?.impact_severity && report?.judge?.status === 'advisory' && ratings.has(report.judge.severity);
+}
+function displaySeverity(report) { return report?.impact_severity || (modelFallback(report) ? report.judge.severity : 'unknown'); }
 
 // Also applies to retained history in older brokers, without restarting them.
 function normalizeDetails(command) {
@@ -36,7 +41,12 @@ function normalizeDetails(command) {
     assessmentState, unknowns: command.unknowns ?? report?.unknowns ?? [],
     behaviors: command.behaviors ?? report?.behaviors ?? [],
     behaviorsTruncated: command.behaviorsTruncated ?? report?.behaviorsTruncated ?? false,
-    behaviorPolicyVersion: command.behaviorPolicyVersion ?? report?.behavior_policy_version };
+    behaviorPolicyVersion: command.behaviorPolicyVersion ?? report?.behavior_policy_version,
+    coverageGaps: command.coverageGaps ?? report?.coverage_gaps ?? [],
+    graph: command.graph ?? report?.graph,
+    contextEvidence: command.contextEvidence ?? report?.context_evidence ?? [],
+    judge: command.judge ?? report?.judge,
+    timings: command.timings ?? report?.timings_ms };
 }
 
-module.exports = { reasonText, reportKey, revisionKey, normalizeDetails };
+module.exports = { reasonText, reportKey, revisionKey, normalizeDetails, modelFallback, displaySeverity };

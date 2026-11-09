@@ -1,0 +1,20 @@
+[package]
+name = "distill-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Opt-in local history and advisory model service for Distill"
+
+[dependencies]
+distill-core = { workspace = true }
+distill-interp = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+clap = { workspace = true }
+libc = { workspace = true }
+rusqlite = { version = "0.38", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+
+[dev-dependencies]
+distill-agents = { workspace = true }
+toml = { workspace = true }

@@ -77,13 +77,16 @@ fn analyze_rm_root_is_deny() {
 #[test]
 fn impact_and_uncertainty_are_separate_without_auto_allowing_partial_programs() {
     for (command, impact) in [
-        ("python3 -c 'print(1); import os'", serde_json::Value::Null),
         (
-            "python3 -c 'path = \"/etc/passwd\"; print(open(path).read())'",
+            "python3 -c 'print(1); import unmodeled_dependency'",
+            serde_json::Value::Null,
+        ),
+        (
+            "python3 -c 'path = \"/etc/passwd\"; print(open(path).read()); unresolved()'",
             serde_json::json!("low"),
         ),
         (
-            "python3 -c 'path = \".env\"; open(path)'",
+            "python3 -c 'path = \".env\"; open(path); unresolved()'",
             serde_json::json!("high"),
         ),
     ] {

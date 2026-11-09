@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
+pub mod credentials;
+pub mod diagnostics;
 pub mod integrity;
+pub use diagnostics::{CommandGraph, CommandNode, ContextEvidence, CoverageGap, GapCode, Span};
 pub mod privacy;
 pub mod recoverability;
+pub mod service_ipc;
 pub mod session;
 pub use integrity::{FileSnapshot, read_snapshot, sha256};
 use std::{
@@ -12,7 +16,7 @@ use std::{
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Included in report provenance and the policy digest when built-in semantics change.
-pub const BEHAVIOR_POLICY_VERSION: &str = "9";
+pub const BEHAVIOR_POLICY_VERSION: &str = "10";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -412,6 +416,13 @@ pub struct CommandForm {
     pub dialect: ShellDialect,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileEdit {
+    pub path: PathBuf,
+    pub content: Option<String>,
+    pub full_write: bool,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Report {
     pub protocol_version: u32,
@@ -433,6 +444,11 @@ pub struct Report {
     pub coverage: Coverage,
     pub trace_status: TraceStatus,
     pub unknowns: Vec<String>,
+    pub coverage_gaps: Vec<CoverageGap>,
+    pub graph: CommandGraph,
+    pub context_evidence: Vec<ContextEvidence>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub judge: Option<serde_json::Value>,
     pub policy_digest: String,
     pub behavior_policy_version: &'static str,
     pub analysis_context: ExecutionContext,
@@ -459,6 +475,7 @@ impl Report {
 #[derive(Debug, Clone, Serialize)]
 pub struct Timings {
     pub total: u128,
+    pub stages: std::collections::BTreeMap<String, u128>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -467,6 +484,8 @@ pub struct AnalysisDraft {
     pub effects: Vec<Effect>,
     pub behaviors: Vec<Behavior>,
     pub unknowns: Vec<String>,
+    pub graph: CommandGraph,
+    pub context_evidence: Vec<ContextEvidence>,
     pub coverage: Coverage,
     pub max_severity: Option<Severity>,
     pub inspected_files: Vec<FileSnapshot>,
@@ -486,6 +505,10 @@ pub struct Config {
     pub security: SecurityConfig,
     pub ledger: LedgerConfig,
     pub sandbox: SandboxConfig,
+    pub service: ServiceConfig,
+    pub judge: JudgeConfig,
+    #[serde(rename = "override")]
+    pub overrides: Vec<PolicyOverride>,
 }
 
 impl Default for Config {
@@ -502,6 +525,9 @@ impl Default for Config {
             security: SecurityConfig::default(),
             ledger: LedgerConfig::default(),
             sandbox: SandboxConfig::default(),
+            service: ServiceConfig::default(),
+            judge: JudgeConfig::default(),
+            overrides: Vec::new(),
         }
     }
 }
@@ -513,6 +539,192 @@ pub struct AnalysisConfig {
     pub command_bytes_max: usize,
     pub expansion_depth_max: usize,
     pub graph_nodes_max: usize,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct ServiceConfig {
+    /// Separate from the legacy reserved history.enabled setting: no implicit migration.
+    pub history_enabled: bool,
+    pub directory: Option<PathBuf>,
+    pub max_events: usize,
+    pub max_bytes: u64,
+    pub classifier_path: Option<PathBuf>,
+    pub classifier_min_support: usize,
+    pub classifier_min_probability: f64,
+}
+impl Default for ServiceConfig {
+    fn default() -> Self {
+        Self {
+            history_enabled: false,
+            directory: None,
+            max_events: 10000,
+            max_bytes: 64 * 1024 * 1024,
+            classifier_path: None,
+            classifier_min_support: 20,
+            classifier_min_probability: 0.99,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(from = "JudgeOptions")]
+pub struct JudgeConfig {
+    pub enabled: bool,
+    pub provider: JudgeProvider,
+    pub endpoint: String,
+    pub model: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reasoning_effort: Option<ReasoningEffort>,
+    pub api_key_env: String,
+    pub max_output_tokens: u32,
+    pub deadline_ms: u64,
+    pub send_script_contents: bool,
+    pub max_script_bytes: usize,
+    pub background_deadline_ms: u64,
+    pub review_format: ReviewFormat,
+    pub batch_window_ms: u64,
+}
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewFormat {
+    #[default]
+    Effects,
+    Severity,
+}
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum JudgeProvider {
+    #[default]
+    OpenaiCompatible,
+    Gemini,
+    #[serde(alias = "anthropic")]
+    Claude,
+    LlamaCpp,
+    Vllm,
+}
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ReasoningEffort {
+    None,
+    Minimal,
+    Low,
+    Medium,
+    High,
+    Xhigh,
+    Max,
+}
+impl Default for JudgeConfig {
+    fn default() -> Self {
+        Self::for_provider(JudgeProvider::OpenaiCompatible)
+    }
+}
+impl JudgeConfig {
+    pub fn for_provider(provider: JudgeProvider) -> Self {
+        let (endpoint, model, api_key_env) = match provider {
+            JudgeProvider::OpenaiCompatible => (
+                "https://api.openai.com/v1/chat/completions",
+                "gpt-6-luna",
+                "OPENAI_API_KEY",
+            ),
+            JudgeProvider::Gemini => (
+                "https://generativelanguage.googleapis.com/v1beta",
+                "gemini-3.1-flash-lite",
+                "GEMINI_API_KEY",
+            ),
+            JudgeProvider::Claude => (
+                "https://api.anthropic.com/v1/messages",
+                "claude-haiku-5-5",
+                "ANTHROPIC_API_KEY",
+            ),
+            JudgeProvider::LlamaCpp => ("http://127.0.0.1:8080/v1/chat/completions", "", ""),
+            JudgeProvider::Vllm => ("http://127.0.0.1:8000/v1/chat/completions", "", ""),
+        };
+        Self {
+            enabled: false,
+            provider,
+            endpoint: endpoint.into(),
+            model: model.into(),
+            reasoning_effort: None,
+            api_key_env: api_key_env.into(),
+            max_output_tokens: 512,
+            deadline_ms: 800,
+            send_script_contents: false,
+            max_script_bytes: 8192,
+            background_deadline_ms: 5000,
+            review_format: ReviewFormat::Effects,
+            batch_window_ms: 0,
+        }
+    }
+}
+
+// Provider-specific defaults prevent a partial Gemini/Claude configuration from
+// accidentally reusing OpenAI's model, endpoint, or credential variable.
+#[derive(Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct JudgeOptions {
+    enabled: Option<bool>,
+    provider: Option<JudgeProvider>,
+    endpoint: Option<String>,
+    model: Option<String>,
+    reasoning_effort: Option<ReasoningEffort>,
+    api_key_env: Option<String>,
+    max_output_tokens: Option<u32>,
+    deadline_ms: Option<u64>,
+    send_script_contents: Option<bool>,
+    max_script_bytes: Option<usize>,
+    background_deadline_ms: Option<u64>,
+    review_format: Option<ReviewFormat>,
+    batch_window_ms: Option<u64>,
+}
+impl From<JudgeOptions> for JudgeConfig {
+    fn from(options: JudgeOptions) -> Self {
+        let mut result = Self::for_provider(options.provider.unwrap_or_default());
+        if let Some(v) = options.enabled {
+            result.enabled = v;
+        }
+        if let Some(v) = options.endpoint {
+            result.endpoint = v;
+        }
+        if let Some(v) = options.model {
+            result.model = v;
+        }
+        result.reasoning_effort = options.reasoning_effort;
+        if let Some(v) = options.api_key_env {
+            result.api_key_env = v;
+        }
+        if let Some(v) = options.max_output_tokens {
+            result.max_output_tokens = v;
+        }
+        if let Some(v) = options.deadline_ms {
+            result.deadline_ms = v;
+        }
+        if let Some(v) = options.send_script_contents {
+            result.send_script_contents = v;
+        }
+        if let Some(v) = options.max_script_bytes {
+            result.max_script_bytes = v;
+        }
+        if let Some(v) = options.background_deadline_ms {
+            result.background_deadline_ms = v;
+        }
+        if let Some(v) = options.review_format {
+            result.review_format = v;
+        }
+        if let Some(v) = options.batch_window_ms {
+            result.batch_window_ms = v;
+        }
+        result
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct PolicyOverride {
+    pub pattern: String,
+    pub severity: Severity,
+    #[serde(default)]
+    pub note: String,
 }
 
 impl Default for AnalysisConfig {
@@ -737,6 +949,21 @@ impl Default for SandboxConfig {
 }
 
 impl Config {
+    pub fn model_digest(&self) -> String {
+        sha256(
+            serde_json::json!([
+                self.judge,
+                self.service.classifier_path,
+                self.service.classifier_min_support,
+                self.service.classifier_min_probability
+            ])
+            .to_string()
+            .as_bytes(),
+        )
+    }
+    pub fn recording_enabled(&self) -> bool {
+        self.editor_trace.enabled || self.service.history_enabled
+    }
     pub fn capture_editor_output(&self) -> bool {
         self.privacy.capture_output.unwrap_or(false) && self.editor_trace.capture_output
     }
@@ -761,6 +988,92 @@ impl Config {
     }
 
     pub fn validate(&self) -> Result<(), String> {
+        if self
+            .service
+            .classifier_path
+            .as_ref()
+            .is_some_and(|v| !v.is_absolute())
+            || self.service.classifier_min_support == 0
+            || !self.service.classifier_min_probability.is_finite()
+            || !(0.5..=1.0).contains(&self.service.classifier_min_probability)
+        {
+            return Err("Invalid local classifier path or abstention thresholds".into());
+        }
+        if self
+            .service
+            .directory
+            .as_ref()
+            .is_some_and(|v| !v.is_absolute() || v.as_os_str().len() > 80)
+            || self.service.max_events == 0
+            || self.service.max_events > 100000
+            || !(1024 * 1024..=1024 * 1024 * 1024).contains(&self.service.max_bytes)
+        {
+            return Err("Service directory or retention limits are invalid".into());
+        }
+        if self.history.retention_days == 0 || self.history.retention_days > 3650 {
+            return Err("History retention must be 1..3650 days".into());
+        }
+        if !(100..=15000).contains(&self.judge.background_deadline_ms) {
+            return Err("judge.background_deadline_ms must be between 100 and 15000".into());
+        }
+        if self.judge.batch_window_ms > 500
+            || self.judge.batch_window_ms >= self.judge.background_deadline_ms
+        {
+            return Err(
+                "judge.batch_window_ms must be 0..500 and shorter than the background deadline"
+                    .into(),
+            );
+        }
+        if self.judge.batch_window_ms > 0 && self.judge.review_format != ReviewFormat::Severity {
+            return Err("Batching requires judge.review_format = severity".into());
+        }
+        if self.judge.reasoning_effort.is_some()
+            && matches!(
+                self.judge.provider,
+                JudgeProvider::Gemini | JudgeProvider::Claude
+            )
+        {
+            return Err("judge.reasoning_effort requires an OpenAI-compatible provider; omit it for Gemini or Claude".into());
+        }
+        if self.judge.deadline_ms == 0
+            || self.judge.deadline_ms > 800
+            || self.judge.max_script_bytes > 8192
+            || !(64..=2048).contains(&self.judge.max_output_tokens)
+            || self.judge.model.len() > 256
+            || self.judge.endpoint.len() > 2048
+            || !self
+                .judge
+                .api_key_env
+                .bytes()
+                .all(|v| v.is_ascii_uppercase() || v.is_ascii_digit() || v == b'_')
+        {
+            return Err(
+                "Judge deadline, payload, endpoint or key-variable limits are invalid".into(),
+            );
+        }
+        if self.judge.enabled && self.judge.model.trim().is_empty() {
+            return Err("An enabled judge requires an explicit model".into());
+        }
+        if self.judge.enabled
+            && matches!(
+                self.judge.provider,
+                JudgeProvider::Gemini | JudgeProvider::Claude
+            )
+            && self.judge.api_key_env.is_empty()
+        {
+            return Err("Gemini and Claude require an API key environment-variable name".into());
+        }
+        if self.overrides.len() > 128 {
+            return Err("Too many policy overrides".into());
+        }
+        for rule in &self.overrides {
+            if rule.pattern.len() > 1024
+                || rule.note.len() > 1024
+                || regex::Regex::new(&format!("^(?:{})$", rule.pattern)).is_err()
+            {
+                return Err("Invalid policy override regex or note".into());
+            }
+        }
         if self.schema_version != 1 {
             return Err(format!(
                 "unsupported config schema_version {}",
@@ -903,6 +1216,62 @@ mod tests {
     #[test]
     fn default_config_validates() {
         Config::default().validate().unwrap();
+    }
+
+    #[test]
+    fn reasoning_effort_is_explicit_and_changes_model_cache_policy() {
+        let default = Config::default();
+        assert!(default.judge.reasoning_effort.is_none());
+        assert!(
+            !toml::to_string(&default)
+                .unwrap()
+                .contains("reasoning_effort")
+        );
+        for provider in ["openai_compatible", "llama_cpp", "vllm"] {
+            for effort in ["none", "minimal", "low", "medium", "high", "xhigh", "max"] {
+                let input = format!(
+                    "[judge]\nprovider='{provider}'\nmodel='custom-model'\nreasoning_effort='{effort}'\n"
+                );
+                let config = Config::from_toml_bytes(input.as_bytes()).unwrap();
+                config.validate().unwrap();
+                let mut without = config.clone();
+                without.judge.reasoning_effort = None;
+                assert_ne!(config.model_digest(), without.model_digest());
+                let roundtrip: Config = toml::from_str(&toml::to_string(&config).unwrap()).unwrap();
+                assert_eq!(roundtrip.model_digest(), config.model_digest());
+            }
+        }
+        assert!(Config::from_toml_bytes(b"[judge]\nreasoning_effort='invented'\n").is_err());
+        for provider in ["gemini", "claude"] {
+            let input = format!("[judge]\nprovider='{provider}'\nreasoning_effort='none'\n");
+            assert!(
+                Config::from_toml_bytes(input.as_bytes())
+                    .unwrap()
+                    .validate()
+                    .unwrap_err()
+                    .contains("OpenAI-compatible")
+            );
+        }
+    }
+
+    #[test]
+    fn partial_provider_config_uses_its_own_model_endpoint_and_key_variable() {
+        for (provider, model, key) in [
+            ("gemini", "gemini-3.1-flash-lite", "GEMINI_API_KEY"),
+            ("claude", "claude-haiku-5-5", "ANTHROPIC_API_KEY"),
+        ] {
+            let input = format!("[judge]\nprovider='{provider}'\nenabled=true\n");
+            let config = Config::from_toml_bytes(input.as_bytes()).unwrap();
+            config.validate().unwrap();
+            assert_eq!(config.judge.model, model);
+            assert_eq!(config.judge.api_key_env, key);
+            assert!(!config.judge.endpoint.contains("openai.com"));
+            let roundtrip: Config = toml::from_str(&toml::to_string(&config).unwrap()).unwrap();
+            assert_eq!(roundtrip.model_digest(), config.model_digest());
+        }
+        assert!(
+            Config::from_toml_bytes(b"[judge]\nprovider='gemini'\nunrecognized=true\n").is_err()
+        );
     }
 
     #[test]

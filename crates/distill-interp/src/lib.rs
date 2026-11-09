@@ -10,6 +10,7 @@ mod build_tools;
 mod capabilities;
 mod class;
 mod client;
+mod context;
 mod curl;
 mod dialect;
 mod docker;
@@ -20,6 +21,7 @@ mod hardening_tests;
 mod macos_commands;
 mod macos_syscalls;
 mod makefile;
+mod node_cli;
 mod packages;
 mod profiles;
 mod program;
@@ -47,6 +49,12 @@ struct Analyzer<'a> {
     effects: Vec<Effect>,
     behaviors: Vec<Behavior>,
     unknowns: Vec<String>,
+    node_imports: Vec<PathBuf>,
+    node_import_depth: usize,
+    python_imports: Vec<PathBuf>,
+    python_command_depth: usize,
+    graph: distill_core::CommandGraph,
+    context_evidence: Vec<distill_core::ContextEvidence>,
     syntax_partial: bool,
     command_unknown: bool,
     context_partial: bool,
@@ -429,6 +437,10 @@ impl Analyzer<'_> {
             }
         }
         self.check_stream_consumer(name, args);
+        if name == "node" {
+            self.node(args, input);
+            return;
+        }
         if self.inspect_stdin(name, args, input, depth) {
             return;
         }
@@ -538,8 +550,21 @@ impl Analyzer<'_> {
             "curl" => self.curl(args),
             "wget" => self.curl(args),
             name if is_python(name) => self.python(args, depth, input),
-            "node" => self.node(args),
             "go" => self.go_tool(args),
+            "ts-node" | "tsx" => {
+                self.unresolved_program(
+                    "TypeScript runner startup, plugins and transformation are unresolved",
+                );
+                if let Some(file) = args.first().filter(|v| {
+                    !v.dynamic
+                        && !v.text.starts_with('-')
+                        && [".ts", ".mts", ".cts"]
+                            .iter()
+                            .any(|ext| v.text.ends_with(ext))
+                }) {
+                    self.inspect_file(syntax::Language::TypeScript, file);
+                }
+            }
             "rustc" => self.rustc(args),
             "cargo" => self.cargo(args),
             "javac" | "java" | "jar" | "mvn" | "mvnw" | "gradle" | "gradlew" => {
@@ -1662,8 +1687,8 @@ impl Analyzer<'_> {
     }
 }
 
-pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
-    let mut analyzer = Analyzer {
+fn analyzer_for<'a>(request: &AnalyzeRequest, config: &'a Config) -> Analyzer<'a> {
+    Analyzer {
         config,
         cwd: request
             .cwd
@@ -1675,6 +1700,12 @@ pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
         effects: Vec::new(),
         behaviors: Vec::new(),
         unknowns: Vec::new(),
+        node_imports: Vec::new(),
+        node_import_depth: 0,
+        python_imports: Vec::new(),
+        python_command_depth: 0,
+        graph: Default::default(),
+        context_evidence: Vec::new(),
         syntax_partial: false,
         command_unknown: false,
         context_partial: false,
@@ -1699,7 +1730,12 @@ pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
         shell_options: request.context.shell_options.clone(),
         secret_targets: Vec::new(),
         remote_targets: Vec::new(),
-    };
+    }
+}
+
+pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
+    let mut analyzer = analyzer_for(request, config);
+    analyzer.context_evidence(&request.command.text);
     if analyzer.cwd.is_none() {
         analyzer.context_partial = true;
         analyzer.unknown("Execution working directory is unresolved");
@@ -1728,6 +1764,120 @@ pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
     } else {
         analyzer.analyze(&request.command.text, 0);
     }
+    finish(analyzer)
+}
+
+/// Path/content assessment for direct editor operations, without interpreting
+/// their contents as shell commands or executing the proposed source.
+pub fn interpret_file_edits(
+    request: &AnalyzeRequest,
+    edits: &[distill_core::FileEdit],
+    config: &Config,
+) -> AnalysisDraft {
+    let mut analyzer = analyzer_for(request, config);
+    if edits.is_empty() || edits.len() > 128 {
+        analyzer.stop_analysis("Direct file edit count is missing or exceeds its limit");
+    } else {
+        for edit in edits {
+            if !analyzer.within_budget() {
+                break;
+            }
+            let path = if edit.path.is_absolute() {
+                edit.path.clone()
+            } else {
+                request.cwd.join(&edit.path)
+            };
+            let word = Word {
+                text: path.to_string_lossy().into_owned(),
+                dynamic: false,
+                tilde_expansion: false,
+                substitutions: vec![],
+            };
+            analyzer.write_destination(&word, edit.full_write);
+            let protected = analyzer
+                .resolve(&word)
+                .unwrap_or_else(|| crate::normalize_path(&path))
+                .to_string_lossy()
+                .replace('\\', "/");
+            if [
+                "/.config/distill/",
+                "/.codex/hooks",
+                "/.codex/config.toml",
+                "/.claude/settings",
+                "/.cursor/hooks",
+            ]
+            .iter()
+            .any(|v| protected.contains(v))
+            {
+                analyzer.finding(
+                    Severity::Critical,
+                    EffectKind::FileWrite,
+                    "file.policy-tamper",
+                    "Direct edit modifies agent hooks or security policy",
+                );
+            }
+            if edit
+                .content
+                .as_ref()
+                .is_some_and(|v| v.len() > config.analysis.command_bytes_max)
+            {
+                analyzer.unresolved_program("Direct edit contents exceed the analysis size limit");
+            }
+            // Editing code is not executing it. Path policy applies now; a later
+            // execution re-inspects the new source and its dependency snapshots.
+        }
+    }
+    finish(analyzer)
+}
+
+/// Model proposals use the shared effect policy but remain separate evidence.
+/// Callers may raise approval risk; this does not establish static impact.
+pub fn proposed_effects(
+    request: &AnalyzeRequest,
+    effects: &[serde_json::Value],
+    config: &Config,
+) -> AnalysisDraft {
+    let mut analyzer = analyzer_for(request, config);
+    for effect in effects.iter().take(32) {
+        let kind = match effect["kind"].as_str() {
+            Some("file_read") => EffectKind::FileRead,
+            Some("file_write") => EffectKind::FileWrite,
+            Some("file_delete") => EffectKind::FileDelete,
+            Some("execute") => EffectKind::Execute,
+            Some("connect") => EffectKind::Connect,
+            Some("privilege") => EffectKind::Privilege,
+            Some("persistence") => EffectKind::Persistence,
+            _ => continue,
+        };
+        let path = effect["target"]
+            .as_str()
+            .filter(|v| v.len() <= 4096 && !v.contains(['$', '\0']))
+            .and_then(|v| {
+                analyzer.resolve(&Word {
+                    text: v.into(),
+                    dynamic: false,
+                    tilde_expansion: false,
+                    substitutions: vec![],
+                })
+            });
+        analyzer.record_behavior(
+            Behavior {
+                kind,
+                operation: "judge.proposed".into(),
+                target: path.as_ref().map(|v| v.to_string_lossy().into_owned()),
+                target_class: analyzer.target_class(path.as_deref()),
+                recursive: effect["recursive"] == true,
+                append: false,
+                location: None,
+                database: None,
+            },
+            Some("judge.proposed"),
+        );
+    }
+    finish(analyzer)
+}
+
+fn finish(mut analyzer: Analyzer<'_>) -> AnalysisDraft {
     analyzer.within_budget();
     let incomplete = !analyzer.unknowns.is_empty()
         || analyzer.syntax_partial
@@ -1758,6 +1908,8 @@ pub fn interpret(request: &AnalyzeRequest, config: &Config) -> AnalysisDraft {
         CoverageSummary::Partial
     };
     AnalysisDraft {
+        graph: analyzer.graph,
+        context_evidence: analyzer.context_evidence,
         findings: analyzer.findings,
         effects: analyzer.effects,
         behaviors: analyzer.behaviors,
@@ -2182,11 +2334,11 @@ mod tests {
         );
         assert_eq!(
             draft("python3 -c 'print(open(\"/etc/passwd\").read())'").max_severity,
-            Some(Severity::High)
+            Some(Severity::Low)
         );
         assert_eq!(
             draft("python3 -c 'print(1); import os'").max_severity,
-            Some(Severity::High)
+            Some(Severity::Low)
         );
         assert_eq!(
             draft("node -e 'console.log(\"Distill approval test: Node.js inline\")'").max_severity,

@@ -6,6 +6,7 @@ const crypto = require('node:crypto');
 const { spawn } = require('node:child_process');
 const { redactValue } = require('./privacy');
 const { TraceStore } = require('./store');
+const { advicePoller } = require('./advice');
 const { MAX_BYTES, secureDirectory, processIdentity, endpointPath } = require('./transport');
 
 function contains(root, cwd) {
@@ -45,6 +46,17 @@ async function startBroker(config) {
   }
 
   const store = new TraceStore();
+  const refreshAdvice = advicePoller(store, config.peerBinary);
+  const historyEnabled = false;
+  const clients = new Map();
+  let leased = false;
+  const release = id => {
+    const client = clients.get(id);
+    if (!client) return;
+    clients.delete(id);
+    const uncovered = client.roots.filter(root => ![...clients.values()].some(other => other.roots.includes(root)));
+    if (uncovered.length) store.clear(uncovered);
+  };
   const token = crypto.randomBytes(32).toString('hex');
   const sockets = new Set();
   let endpoint;
@@ -76,7 +88,7 @@ async function startBroker(config) {
     const chunks = [];
     let size = 0;
     let handled = false;
-    socket.on('data', chunk => {
+    socket.on('data', async chunk => {
       if (handled) return;
       size += chunk.length;
       if (size > MAX_BYTES) { handled = true; socket.end('{"ok":false,"error":"Event exceeds 32 MiB"}\n'); return; }
@@ -90,15 +102,28 @@ async function startBroker(config) {
         if (supplied.length !== expected.length || !crypto.timingSafeEqual(supplied, expected)) throw new Error('Unauthorized trace request');
         let response = {};
         switch (request.action) {
-          case 'ping': response = { protocol: 1, capabilities: ['assessments', 'completion', 'paged-snapshots', 'memory-only', 'compact-commands', 'assessment-state', 'modeled-effects'] }; break;
+          case 'ping': response = { protocol: 1, capabilities: ['assessments', 'completion', 'paged-snapshots', 'memory-only', 'compact-commands', 'assessment-state', 'modeled-effects', 'structured-diagnostics', 'feedback', 'session-export'], historyEnabled }; break;
           case 'register': {
             if (!Array.isArray(request.roots) || request.roots.some(root => typeof root !== 'string' || !path.isAbsolute(root))) throw new Error('Invalid workspace roots');
             for (const root of request.roots) {
               const real = fs.realpathSync(root);
               if (!roots.includes(real)) roots.push(real);
             }
+            if (request.clientId !== undefined) {
+              if (typeof request.clientId !== 'string' || !/^[\w-]{1,80}$/.test(request.clientId) || !Number.isSafeInteger(request.clientPid) || request.clientPid <= 1) throw new Error('Invalid recorder session');
+              const identity = processIdentity(request.clientPid);
+              if (!identity) throw new Error('Editor host has exited');
+              if (!clients.has(request.clientId)) {
+                if (clients.size >= 64) throw new Error('Too many recorder sessions');
+                // A new extension activation must never inherit old command data.
+                store.clear(request.roots.map(root => fs.realpathSync(root)));
+              }
+              clients.set(request.clientId, { pid: request.clientPid, identity, roots: request.roots.map(root => fs.realpathSync(root)) });
+              leased = true;
+            }
             roots.sort(); endpoint.roots = roots; publish(); break;
           }
+          case 'release': release(request.clientId); break;
           case 'record':
             if (typeof request.event?.session_cwd !== 'string'
                 || !path.isAbsolute(request.event.session_cwd)
@@ -107,9 +132,15 @@ async function startBroker(config) {
             store.record(redactValue(request.event));
             break;
           case 'coverage': response = store.coverage(); break;
-          case 'snapshot': response = request.version === store.version ? { unchanged: true } : store.snapshot(request); break;
+          case 'snapshot': response = request.version === store.version ? { unchanged: true } : { ...store.snapshot(request), historyEnabled }; break;
           case 'command': response = { command: store.readCommand(request.sessionKey, request.id) }; break;
           case 'output': response = { text: store.readOutput(request.sessionKey, request.id), version: store.readCommand(request.sessionKey, request.id).version }; break;
+          case 'reload-history': response = { historyEnabled }; break;
+          case 'feedback': {
+            response = store.feedback(request.sessionKey, request.id, request);
+            break;
+          }
+          case 'export': response = { export: store.exportSession(request.sessionKey) }; break;
           case 'clear': store.clear(request.roots); break;
           default: throw new Error('Unknown trace action');
         }
@@ -135,12 +166,19 @@ async function startBroker(config) {
       server.listen(socketPath, resolve);
     });
     fs.chmodSync(socketPath, 0o600);
-    endpoint = { protocol: 1, socket: socketPath, token, editor_pid: ownerPid, broker_pid: process.pid, broker_version: 6, instance_id: crypto.randomUUID(), roots };
+    endpoint = { protocol: 1, socket: socketPath, token, editor_pid: ownerPid, broker_pid: process.pid, broker_version: 9, instance_id: crypto.randomUUID(), roots };
     // Only rendezvous metadata is persisted. History lives exclusively in `store`.
     publish();
     timer = setInterval(() => {
-      try { if (processIdentity(ownerPid) === ownerIdentity) return; } catch {}
-      stop();
+      try {
+        if (processIdentity(ownerPid) !== ownerIdentity) { stop(); return; }
+        for (const [id, client] of clients) {
+          try { if (processIdentity(client.pid) === client.identity) continue; } catch {}
+          release(id);
+        }
+        if (leased && !clients.size) stop();
+        if (!stopped) void refreshAdvice();
+      } catch { stop(); }
     }, 500);
     return { endpoint, file, stop, store };
   } catch (error) { stop(); throw error; }

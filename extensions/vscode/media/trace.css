@@ -5,6 +5,10 @@ header { margin-bottom: 10px; }
 h1 { font-size: 14px; font-weight: 600; margin: 0 0 3px; }
 p { line-height: 1.5; }
 header p { margin: 0; font-size: 11px; }
+.heading-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.heading-row h1 { margin: 0; }
+#router-status { margin-top: 5px; overflow-wrap: anywhere; }
+.extension-version { font-size: 10px; font-weight: 400; color: var(--vscode-descriptionForeground); }
 .muted { color: var(--vscode-descriptionForeground); }
 #connection { font-size: 10px; color: var(--vscode-descriptionForeground); margin-bottom: 10px; overflow-wrap: anywhere; }
 #connection.error { color: var(--vscode-errorForeground); }
