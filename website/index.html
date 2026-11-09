@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f7f6f2">
+  <meta name="theme-color" content="#080c0b">
   <meta name="description" content="Local command analysis for Codex, Claude Code, and VS Code, with optional advice from OpenAI, Anthropic Claude, or local models through llama.cpp and vLLM.">
   <meta property="og:title" content="Distill — Know what runs. Before it does.">
   <meta property="og:description" content="Local command analysis with optional OpenAI, Claude, and local model advice. Choose your provider and keep analysis coverage visible.">
@@ -13,6 +13,7 @@
   <title>Distill — Know what runs. Before it does.</title>
   <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./story.css">
   <script src="./app.js" defer></script>
 </head>
 <body id="top">
@@ -32,16 +33,48 @@
   </header>
 
   <main id="main">
-    <section class="hero container" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> LOCAL COMMAND ANALYSIS FOR CODING AGENTS</p>
-        <h1 id="hero-title">Know what runs.<br>Before it <em>does.</em></h1>
-        <p class="hero-description">Your agent moves fast. Get a clearer view of what its shell commands could do—before execution.</p>
-        <p class="hero-detail">Local analysis in Rust, with optional model advice from OpenAI, Claude, or your own local models. Command impact, coverage, and policy stay visible.</p>
-        <div class="hero-actions"><a class="button button-orange" href="#install">Start with Distill <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/HarshD0011/distill/blob/HEAD/docs/static-analysis.md">Read the model <span aria-hidden="true">→</span></a></div>
-        <div class="hero-compatibility"><span class="tiny-label">WORKS ALONGSIDE</span><span>Codex</span><span>Claude Code</span><span>VS Code</span></div>
+    <section class="intro-story" id="command-story" aria-labelledby="hero-title">
+      <div class="story-stage">
+        <div class="story-frame">
+          <div class="frame-topbar" aria-hidden="true"><span>DISTILL / A SECOND LOOK</span><span><i></i> LOCAL BY DEFAULT</span></div>
+          <div class="story-grid" aria-hidden="true"></div>
+          <div class="story-hero">
+            <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> A SAFETY LAYER FOR YOUR AI AGENT</p>
+            <h1 id="hero-title">Know what runs.<br>Before it <em>does.</em></h1>
+            <p class="story-description">Your agent moves fast.<br> Catch risky commands before they run.</p>
+            <div class="hero-actions"><a class="button button-mint" href="#install">Start with Distill <span aria-hidden="true">↗</span></a><a class="story-watch" href="#examples">Explore the analyzer <span aria-hidden="true">↓</span></a></div>
+            <div class="story-compatible"><span>BUILT FOR YOUR WORKFLOW</span><div><span>Codex</span><i></i><span>Claude Code</span><i></i><span>VS Code</span></div></div>
+          </div>
+          <div class="story-chapter" aria-hidden="true">
+            <p class="eyebrow">THE MOMENT BEFORE EXECUTION</p>
+            <h2>A small pause.<br>A big <em>difference.</em></h2>
+            <p>One command can change everything. Distill takes a closer look, so you can decide what happens next.</p>
+            <div class="chapter-steps"><span><b>01</b> Understand the impact</span><span><b>02</b> See the uncertainty</span><span><b>03</b> Make the call</span></div>
+          </div>
+          <div class="command-journey" id="command-journey" data-phase="blocked">
+            <div class="journey-orbit" aria-hidden="true"></div>
+            <div class="agent-presence">
+              <span class="agent-avatar" aria-hidden="true"><svg viewBox="0 0 48 48" fill="none"><path d="M24 8v6M21 8h6M11 23H7v10h4m26-10h4v10h-4"/><rect x="11" y="15" width="26" height="24" rx="8"/><path d="M18 32h12"/><circle cx="19" cy="24" r="2"/><circle cx="29" cy="24" r="2"/></svg></span>
+              <div><span class="agent-name">AI agent <span class="agent-live" aria-hidden="true"></span></span><span class="agent-activity" id="agent-activity">Waiting for your decision</span></div>
+              <span class="agent-tool">&gt;_ shell</span>
+            </div>
+            <div class="agent-connector" aria-hidden="true"><span></span><i></i></div>
+            <div class="story-terminal">
+              <div class="story-terminal-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>agent / terminal</span><span class="terminal-proposal">PROPOSED</span></div>
+              <div class="story-terminal-body"><div class="proposal-label"><span>EXECUTE COMMAND</span><span>BASH</span></div><div class="story-command" id="story-command"><span aria-hidden="true">$</span><code id="typed-command">rm -rf /</code><span class="typing-cursor" aria-hidden="true"></span><svg class="command-danger" aria-hidden="true" viewBox="0 0 24 24"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg></div><div class="command-file-context"><span>cwd <b>/tmp</b></span><span class="execution-label" id="execution-label">Execution paused</span></div></div>
+              <div class="distill-check"><span class="check-logo" aria-hidden="true">d.</span><span>distill / critical impact · deny</span><span class="check-loading" aria-hidden="true">↳</span></div>
+            </div>
+            <div class="unsafe-banner" id="unsafe-banner"><span class="unsafe-icon" aria-hidden="true">!</span><div><strong>This command is not safe.</strong><p>Recursive deletion targets a protected path.</p></div><span class="unsafe-severity">CRITICAL</span></div>
+            <div class="journey-resolution"><span aria-hidden="true">✓</span><p><strong>Caught before execution.</strong> The decision stays with you.</p></div>
+            <div class="journey-controls"><span class="scene-label">ILLUSTRATIVE AGENT SEQUENCE · NO COMMANDS RUN</span><button type="button" class="replay-story" id="replay-story" aria-label="Replay the command safety animation"><span aria-hidden="true">↻</span> Replay</button></div>
+          </div>
+          <div class="story-bottom"><span class="story-scroll"><span aria-hidden="true">↓</span> SCROLL TO FOLLOW THE COMMAND</span><div class="story-progress" aria-label="Animation progress"><span id="story-step">01</span><i><b></b></i><span>03</span></div><span class="story-signoff">FAST AGENTS. THOUGHTFUL DECISIONS.</span></div>
+        </div>
       </div>
+    </section>
 
+    <section class="section container demo-section" id="examples" aria-labelledby="examples-title">
+      <div class="demo-section-copy"><p class="eyebrow">A COMMAND. A CLEARER PICTURE.</p><h2 id="examples-title">See what’s<br>under the <em>command.</em></h2><p>Try three recorded examples. Explore the impact, analysis coverage, and policy decision before a command runs.</p><a class="text-link" href="https://github.com/HarshD0011/distill/blob/HEAD/docs/static-analysis.md">Read the analysis model <span aria-hidden="true">→</span></a></div>
       <div class="demo-wrap">
         <div class="demo-caption"><span class="tiny-label">A COMMAND. A CLEARER PICTURE.</span><span class="demo-index" aria-hidden="true">01 / 03</span></div>
         <section class="inspector" aria-label="Recorded command analysis examples">

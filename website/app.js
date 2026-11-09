@@ -1,5 +1,135 @@
 'use strict';
 
+// A presentation only: command text is never evaluated or sent anywhere.
+function initCommandStory() {
+  const story = document.getElementById('command-story');
+  story.classList.add('story-ready');
+  const stage = story.querySelector('.story-stage');
+  const frame = story.querySelector('.story-frame');
+  const hero = story.querySelector('.story-hero');
+  const chapter = story.querySelector('.story-chapter');
+  const journey = document.getElementById('command-journey');
+  const command = document.getElementById('typed-command');
+  const activity = document.getElementById('agent-activity');
+  const execution = document.getElementById('execution-label');
+  const checkText = story.querySelector('.distill-check>span:nth-child(2)');
+  const checkIndicator = story.querySelector('.check-loading');
+  const replay = document.getElementById('replay-story');
+  const step = document.getElementById('story-step');
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const narrow = window.matchMedia('(max-width: 820px)');
+  const fullCommand = 'rm -rf /';
+  const announcement = document.createElement('p');
+  announcement.className = 'story-announcement';
+  announcement.setAttribute('role', 'status');
+  story.append(announcement);
+  let timers = [];
+  let pendingFrame = false;
+
+  function clearSequence() {
+    timers.forEach(clearTimeout);
+    timers = [];
+  }
+
+  function phase(name) {
+    journey.dataset.phase = name;
+    activity.textContent = {
+      arriving: 'Preparing a tool call',
+      typing: 'Proposing a shell command',
+      checking: 'Requesting execution',
+      danger: 'Risk detected by Distill',
+      blocked: 'Waiting for your decision'
+    }[name];
+    const blocked = name === 'blocked';
+    execution.textContent = blocked || name === 'danger' ? 'Execution paused' : 'Not executed';
+    checkText.textContent = blocked ? 'distill / critical impact · deny' : 'distill is checking this command';
+    checkIndicator.textContent = blocked ? '↳' : '···';
+    replay.disabled = !blocked;
+    if (blocked) announcement.textContent = 'Distill: this command is not safe. Recursive deletion targets a protected path. Execution paused.';
+  }
+
+  function finishSequence() {
+    clearSequence();
+    command.textContent = fullCommand;
+    phase('blocked');
+  }
+
+  function playSequence() {
+    clearSequence();
+    announcement.textContent = '';
+    if (motion.matches) {
+      finishSequence();
+      return;
+    }
+    command.textContent = '';
+    phase('arriving');
+    timers.push(setTimeout(() => phase('typing'), 650));
+    [...fullCommand].forEach((_, index) => {
+      timers.push(setTimeout(() => {
+        command.textContent = fullCommand.slice(0, index + 1);
+      }, 850 + index * 120));
+    });
+    timers.push(setTimeout(() => phase('checking'), 1900));
+    timers.push(setTimeout(() => phase('danger'), 2700));
+    timers.push(setTimeout(finishSequence, 3350));
+  }
+
+  const clamp = value => Math.max(0, Math.min(1, value));
+  const range = (value, start, end) => clamp((value - start) / (end - start));
+  const ease = value => value * value * (3 - 2 * value);
+
+  function renderScroll() {
+    pendingFrame = false;
+    if (motion.matches) {
+      hero.inert = false;
+      chapter.setAttribute('aria-hidden', 'true');
+      frame.classList.remove('is-light');
+      step.textContent = '03';
+      return;
+    }
+    const bounds = story.getBoundingClientRect();
+    const progress = clamp(-bounds.top / Math.max(1, story.offsetHeight - stage.offsetHeight));
+    const shrink = ease(range(progress, 0, .28));
+    const reveal = ease(range(progress, .18, .74));
+    const fade = ease(range(progress, .07, .28));
+    const resolution = ease(range(progress, .68, .9));
+    frame.style.setProperty('--frame-scale', (1 - shrink * (narrow.matches ? .07 : .12)).toFixed(4));
+    frame.style.setProperty('--frame-radius', `${shrink * 32}px`);
+    frame.style.setProperty('--hero-opacity', (1 - fade).toFixed(3));
+    frame.style.setProperty('--hero-y', `${-fade * 65}px`);
+    frame.style.setProperty('--chapter-y', `${103 * (1 - reveal)}%`);
+    frame.style.setProperty('--journey-y', `${ease(range(progress, .12, .8)) * (narrow.matches ? 24 : 48)}px`);
+    frame.style.setProperty('--journey-scale', (1 - reveal * .025).toFixed(4));
+    frame.style.setProperty('--resolution-opacity', resolution.toFixed(3));
+    frame.style.setProperty('--frame-label-opacity', ease(range(progress, .62, .82)).toFixed(3));
+    frame.style.setProperty('--scroll-opacity', (1 - ease(range(progress, 0, .18))).toFixed(3));
+    frame.style.setProperty('--progress', progress.toFixed(3));
+    frame.classList.toggle('is-light', reveal > .7);
+    hero.inert = fade > .95;
+    chapter.setAttribute('aria-hidden', String(reveal < .65));
+    step.textContent = progress < .25 ? '01' : progress < .7 ? '02' : '03';
+    // Scrolling early still leaves a complete, readable verdict in the next scene.
+    if (progress > .08 && journey.dataset.phase !== 'blocked') finishSequence();
+  }
+
+  function requestScrollFrame() {
+    if (pendingFrame) return;
+    pendingFrame = true;
+    requestAnimationFrame(renderScroll);
+  }
+
+  replay.addEventListener('click', playSequence);
+  window.addEventListener('scroll', requestScrollFrame, { passive: true });
+  window.addEventListener('resize', requestScrollFrame);
+  motion.addEventListener('change', () => {
+    finishSequence();
+    renderScroll();
+  });
+  playSequence();
+  renderScroll();
+}
+initCommandStory();
+
 // Examples are recorded CLI reports, not a browser implementation of the analyzer.
 const examples = {
   safe: { command: 'echo hello', impact: 'Safe', decision: 'Allow', coverage: 'Accounted', risk: 'Safe', symbol: '✓', index: '01', reason: 'No modeled hazardous effect was found in the supported static semantics.' },

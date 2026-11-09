@@ -39,6 +39,14 @@ Official reference:
 
 ## Content and interactions
 
+- A dark opening shows an AI agent proposing a command. The command types in,
+  shakes and turns red, then a warning appears. Scrolling contracts the scene
+  into a rounded frame with a green backdrop and carries the command panel down
+  into a light section, following the supplied `inspiration.mp4` reference.
+  The sequence can be replayed. Reduced-motion preferences show the final
+  warning without animation or a pinned scroll section; without JavaScript,
+  the opening still displays the command and warning. Scene styles live in
+  `story.css`; timing and scroll progress are handled in `app.js`.
 - Three recorded command examples, installation tabs with arrow-key support,
   copy buttons, mobile navigation, and native FAQ disclosures.
 - An accessible **AI-assisted review** demo switch selects the unknown-script
