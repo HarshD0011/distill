@@ -9,6 +9,7 @@ use std::{
 };
 
 pub const MAX_EVENT_BYTES: usize = 32 * 1024 * 1024;
+const DELIVERY_TIMEOUT: Duration = Duration::from_millis(250);
 
 pub fn directory() -> Option<PathBuf> {
     if let Some(path) = std::env::var_os("DISTILL_TRACE_DIR") {
@@ -273,7 +274,7 @@ fn envelope(
 }
 
 fn deliver(trace: Value) -> Result<(), String> {
-    let started = Instant::now();
+    let deadline = Instant::now() + DELIVERY_TIMEOUT;
     let Some(directory) = directory() else {
         return Ok(());
     };
@@ -294,7 +295,7 @@ fn deliver(trace: Value) -> Result<(), String> {
         .and_then(|pid| pid.parse::<u64>().ok());
     let mut candidates = Vec::new();
     for file in files.flatten().take(128) {
-        remaining(started)?;
+        remaining(deadline)?;
         let path = file.path();
         if path.extension().and_then(|s| s.to_str()) != Some("json") {
             continue;
@@ -353,34 +354,38 @@ fn deliver(trace: Value) -> Result<(), String> {
             "Ambiguous editor routing; trace was not sent to another editor instance".into(),
         );
     }
-    send(endpoint, &trace, started)
+    send(endpoint, &trace, deadline)
 }
 
 /// The recorder has its own small deadline and cannot consume the analysis budget.
-fn remaining(started: Instant) -> Result<Duration, String> {
-    Duration::from_millis(250)
-        .checked_sub(started.elapsed())
+fn remaining(deadline: Instant) -> Result<Duration, String> {
+    remaining_at(deadline, Instant::now())
+}
+
+fn remaining_at(deadline: Instant, now: Instant) -> Result<Duration, String> {
+    deadline
+        .checked_duration_since(now)
         .filter(|duration| !duration.is_zero())
         .ok_or_else(|| "Trace delivery deadline exhausted".into())
 }
 
-fn send(endpoint: &Value, trace: &Value, started: Instant) -> Result<(), String> {
+fn send(endpoint: &Value, trace: &Value, deadline: Instant) -> Result<(), String> {
     exchange(
         endpoint,
         json!({"action": "record", "event": trace}),
-        started,
+        deadline,
     )
     .map(|_| ())
 }
-fn exchange(endpoint: &Value, message: Value, started: Instant) -> Result<Value, String> {
+fn exchange(endpoint: &Value, message: Value, deadline: Instant) -> Result<Value, String> {
     let directory = directory().ok_or("Trace directory unavailable")?;
-    exchange_in_directory(endpoint, message, started, &directory)
+    exchange_in_directory(endpoint, message, deadline, &directory)
 }
 
 fn exchange_in_directory(
     endpoint: &Value,
     mut message: Value,
-    started: Instant,
+    deadline: Instant,
     directory: &Path,
 ) -> Result<Value, String> {
     let socket = endpoint["socket"].as_str().ok_or("Trace broker requires the authenticated Unix-socket transport; restart the editor after upgrading")?;
@@ -395,9 +400,9 @@ fn exchange_in_directory(
         return Err("trace event exceeds 32 MiB; output was not recorded".into());
     }
     bytes.push(b'\n');
-    remaining(started)?;
+    remaining(deadline)?;
     #[cfg(unix)]
-    let mut stream = connect_socket(path, remaining(started)?)?;
+    let mut stream = connect_socket(path, remaining(deadline)?)?;
     #[cfg(unix)]
     {
         use std::os::fd::AsRawFd;
@@ -406,7 +411,7 @@ fn exchange_in_directory(
     let mut offset = 0;
     while offset < bytes.len() {
         stream
-            .set_write_timeout(Some(remaining(started)?))
+            .set_write_timeout(Some(remaining(deadline)?))
             .map_err(|e| e.to_string())?;
         let end = (offset + 64 * 1024).min(bytes.len());
         let written = stream.write(&bytes[offset..end]).map_err(trace_io_error)?;
@@ -418,7 +423,7 @@ fn exchange_in_directory(
     let mut ack = Vec::new();
     loop {
         stream
-            .set_read_timeout(Some(remaining(started)?))
+            .set_read_timeout(Some(remaining(deadline)?))
             .map_err(|e| e.to_string())?;
         let mut chunk = [0; 512];
         let size = stream.read(&mut chunk).map_err(trace_io_error)?;
@@ -532,7 +537,11 @@ pub fn coverage() -> Result<Value, String> {
     if endpoints.len() != 1 {
         return Err("Coverage requires one unambiguous editor broker; supply report JSON with --input instead".into());
     }
-    exchange(&endpoints[0], json!({"action": "coverage"}), Instant::now())
+    exchange(
+        &endpoints[0],
+        json!({"action": "coverage"}),
+        Instant::now() + DELIVERY_TIMEOUT,
+    )
 }
 
 #[cfg(unix)]
@@ -574,16 +583,17 @@ pub fn verify_peer(_: i32) -> Result<(), String> {
 #[cfg(all(test, unix))]
 mod tests {
     use super::*;
-    fn delayed_ack(delay: Duration) -> (Result<Value, String>, Duration) {
+    fn recorder_ack(delay: Option<Duration>, timeout: Duration) -> Result<Value, String> {
         use std::os::unix::{fs::DirBuilderExt, net::UnixListener};
         let dir = std::env::temp_dir().join(distill_core::new_id("trace-ack"));
         std::fs::DirBuilder::new().mode(0o700).create(&dir).unwrap();
         let socket = dir.join("ack.sock");
         let listener = UnixListener::bind(&socket).unwrap();
+        let (release, released) = std::sync::mpsc::channel();
         let worker = std::thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
             stream
-                .set_read_timeout(Some(Duration::from_secs(1)))
+                .set_read_timeout(Some(Duration::from_secs(5)))
                 .unwrap();
             let mut request = Vec::new();
             loop {
@@ -597,27 +607,56 @@ mod tests {
                     break;
                 }
             }
-            std::thread::sleep(delay);
+            if let Some(delay) = delay {
+                std::thread::sleep(delay);
+            } else {
+                // Keep the connection open without an acknowledgement until
+                // delivery returns. No sleep needs to outrun the client timer.
+                released.recv_timeout(Duration::from_secs(5)).unwrap();
+            }
             let _ = stream.write_all(b"{\"ok\":true}\n");
         });
-        let started = Instant::now();
         let result = exchange_in_directory(
             &json!({"socket":socket,"token":"fixture-token"}),
             json!({"action":"record","event":{}}),
-            started,
+            Instant::now() + timeout,
             &dir,
         );
-        let elapsed = started.elapsed();
+        let _ = release.send(());
         worker.join().unwrap();
         std::fs::remove_dir_all(dir).unwrap();
-        (result, elapsed)
+        result
     }
+
     #[test]
-    fn recorder_accepts_delayed_ack_and_reports_a_bounded_timeout() {
-        let (result, _) = delayed_ack(Duration::from_millis(150));
-        assert_eq!(result.unwrap()["ok"], true);
-        let (result, elapsed) = delayed_ack(Duration::from_millis(400));
-        assert!(result.unwrap_err().contains("deadline exhausted"));
-        assert!(elapsed < Duration::from_millis(380));
+    fn recorder_accepts_delayed_ack() {
+        // Verify delayed transport separately from the production budget: a
+        // busy runner may deschedule either peer for more than 100 ms.
+        let ack = recorder_ack(Some(Duration::from_millis(150)), Duration::from_secs(5));
+        assert_eq!(ack.unwrap()["ok"], true);
+    }
+
+    #[test]
+    fn recorder_times_out_while_acknowledgement_is_withheld() {
+        let error = recorder_ack(None, DELIVERY_TIMEOUT).unwrap_err();
+        assert_eq!(error, "Trace delivery deadline exhausted");
+    }
+
+    #[test]
+    fn recorder_budget_expires_at_250ms_without_resetting() {
+        let started = Instant::now();
+        let deadline = started + DELIVERY_TIMEOUT;
+        for (elapsed, expected) in [(0, 250), (150, 100), (249, 1)] {
+            assert_eq!(
+                remaining_at(deadline, started + Duration::from_millis(elapsed)).unwrap(),
+                Duration::from_millis(expected)
+            );
+        }
+        for elapsed in [250, 400] {
+            assert_eq!(
+                remaining_at(deadline, started + Duration::from_millis(elapsed)).unwrap_err(),
+                "Trace delivery deadline exhausted"
+            );
+        }
     }
 }
