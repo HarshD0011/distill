@@ -2,14 +2,14 @@
 
 A responsive, dependency-free product website for Distill. It is plain HTML, CSS,
 and JavaScript, with relative asset paths that work at a GitHub Pages project URL
-such as `https://HarshD0011.github.io/distill/` or at a domain root.
+or at a domain root. Public URL: <https://harshd0011.github.io/distill/>.
 
 ## Preview
 
 From the repository root:
 
 ```sh
-python3 -m http.server 8000 --directory website --bind 127.0.0.1
+make website-serve
 ```
 
 Open <http://127.0.0.1:8000>. No installation or build is needed.
@@ -41,15 +41,9 @@ Official reference:
 
 - Three recorded command examples, installation tabs with arrow-key support,
   copy buttons, mobile navigation, and native FAQ disclosures.
-- **Get extension** uses `vscode:extension/distill.distill-trace`, matching the
-  extension manifest. The click asks the browser to open the extension in desktop
-  VS Code. The browser controls its external-app confirmation and may remember a
-  prior choice; the website does not create a fake confirmation dialog. Installing
-  for new users requires the extension to be published under that Marketplace ID.
-  The public Marketplace query returned no listing for this ID on 2026-11-07;
-  publish the extension before promising Marketplace installs to new visitors.
-  A VSIX installation guide remains available as a fallback.
-  Official URL format: <https://code.visualstudio.com/docs/configure/command-line#_opening-vs-code-with-urls>.
+- **Extension install guide** links to the public VSIX build and installation
+  instructions. The Marketplace listing and release packages were unavailable
+  when checked on 2026-11-09, so the site describes the source-build path.
 - Examples are actual CLI 0.4.6 reports recorded on macOS with explicit Bash
   context and `/tmp` as the working directory. The page does not execute or
   analyze user-supplied commands. See `assets/example-reports.json` for their
@@ -63,9 +57,16 @@ Official reference:
 Check after changes:
 
 ```sh
-node --check website/app.js
-python3 website/validate.py
+make website-check
+make website-check-links
+python3 website/validate.py --online --base-url https://harshd0011.github.io/distill/
 ```
+
+The default check is offline and runs in the Pages workflow. The online check
+verifies public HTTP destinations and linked documentation anchors. With
+`--base-url`, it also verifies deployed assets and compares the served HTML to
+the local source. Run the deployment check after Pages has finished publishing.
+These checks require Python 3.9+ and Node.js; they do not require Rust or Cargo.
 
 Keep the version text, captured examples, and setup instructions aligned with
 the CLI when releasing. `analyze` and hook assessment do not execute commands;
