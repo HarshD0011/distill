@@ -47,15 +47,22 @@ Official reference:
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
   `story.css`; timing and scroll progress are handled in `app.js`.
+- The rest of the page continues the opening's charcoal, mint, and light palette
+  in rounded chapters. Panels enter in stages as they reach the viewport; the
+  surrounding color follows the active chapter. Verdict changes, installation
+  tabs, FAQ answers, and copy notifications use the same motion language.
+  `journey.css` contains the shared chapter and panel styles. Intersection
+  observers reveal each panel once; reduced motion and missing observer support
+  keep all content visible. A desktop chapter rail tracks the current section.
 - Three recorded command examples, installation tabs with arrow-key support,
   copy buttons, mobile navigation, and native FAQ disclosures.
-- An accessible **AI-assisted review** demo switch selects the unknown-script
-  example and immediately changes its displayed severity from **Unknown** to
-  **High**. Turning it off restores the recorded static verdict. The illustrative
+- The **AI-assisted review** demo switch keeps the currently selected command.
+  Safe and critical examples retain their static verdicts when toggled. For the
+  unknown-script example, advice changes the displayed severity from **Unknown**
+  to **High**; turning it off restores **Unknown**. The illustrative
   AI rating refers to the displayed production deployment script context; it is
   not a captured or live model response. Coverage stays opaque and the policy
-  decision remains review. Known safe and critical findings retain their static
-  verdicts while the switch is enabled.
+  decision remains review.
 - A model support section covering OpenAI-compatible APIs, Anthropic Claude,
   and local servers through llama.cpp, vLLM, or compatible endpoints. It includes
   VS Code router setup and describes disabled-by-default routing, provider data

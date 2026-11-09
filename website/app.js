@@ -130,6 +130,16 @@ function initCommandStory() {
 }
 initCommandStory();
 
+const panelAnimations = new WeakMap();
+function animatePanel(panel) {
+  if (!panel.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  panelAnimations.get(panel)?.cancel();
+  panelAnimations.set(panel, panel.animate([
+    { opacity: .45, transform: 'translateY(9px) scale(.985)' },
+    { opacity: 1, transform: 'translateY(0) scale(1)' }
+  ], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }));
+}
+
 // Examples are recorded CLI reports, not a browser implementation of the analyzer.
 const examples = {
   safe: { command: 'echo hello', impact: 'Safe', decision: 'Allow', coverage: 'Accounted', risk: 'Safe', symbol: '✓', index: '01', reason: 'No modeled hazardous effect was found in the supported static semantics.' },
@@ -145,6 +155,7 @@ const illustrativeReview = { impact: 'High', risk: 'High', symbol: '!', reason: 
 let selectedExample = 'safe';
 
 function renderExample() {
+  const previousTone = inspector.dataset.tone;
   const assisted = aiReviewToggle.checked && selectedExample === 'unknown';
   const example = assisted ? { ...examples.unknown, ...illustrativeReview } : examples[selectedExample];
   inspector.dataset.tone = assisted ? 'high' : selectedExample;
@@ -163,8 +174,11 @@ function renderExample() {
   if (!assisted) source.open = false;
   document.getElementById('ai-review-state').textContent = aiReviewToggle.checked ? 'On' : 'Off';
   document.getElementById('ai-review-hint').textContent = assisted ? 'Illustrative advice. Static coverage stays visible.' :
-    aiReviewToggle.checked ? 'AI advice is enabled for the unknown-script example.' : 'Turn on to see Unknown become High.';
+    aiReviewToggle.checked ? 'AI advice is on. This command keeps its static verdict.' : 'Optional illustrative advice for the selected command.';
   document.querySelector('.demo-index').textContent = `${example.index} / 03`;
+  if (previousTone && previousTone !== inspector.dataset.tone) {
+    animatePanel(document.getElementById('sample-result'));
+  }
 }
 
 exampleButtons.forEach(button => {
@@ -175,7 +189,6 @@ exampleButtons.forEach(button => {
   });
 });
 aiReviewToggle.addEventListener('change', () => {
-  if (aiReviewToggle.checked) selectedExample = 'unknown';
   renderExample();
 });
 renderExample();
@@ -188,6 +201,7 @@ function selectTab(tab, focus = false) {
     item.tabIndex = selected ? 0 : -1;
     document.getElementById(item.getAttribute('aria-controls')).hidden = !selected;
   });
+  animatePanel(document.getElementById(tab.getAttribute('aria-controls')));
   if (focus) tab.focus();
 }
 tabs.forEach((tab, index) => {
@@ -245,5 +259,73 @@ document.querySelectorAll('[data-copy]').forEach(button => {
       selection.addRange(range);
       notify('Select and copy the highlighted commands');
     }
+  });
+});
+
+function initPageJourney() {
+  // Content stays visible when observers or JavaScript are unavailable.
+  if (!window.IntersectionObserver) return;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const targets = [...document.querySelectorAll([
+    '.demo-section-copy', '.demo-wrap', '.section-intro', '.approach-row',
+    '.workflow-heading>div', '.workflow-heading>p', '.trace-window',
+    '.integration-list>article', '.models-heading>div', '.model-card',
+    '.model-setup', '.boundaries>div:first-child', '.boundary-grid>article',
+    '.install-layout>div:first-child', '.install-panel',
+    '.faq-section>div:first-child', '.faq-list>details'
+  ].map(selector => `.chapter-shell ${selector}`).join(','))];
+  let revealObserver;
+
+  function setMotion() {
+    revealObserver?.disconnect();
+    if (motion.matches) {
+      document.documentElement.classList.remove('motion-ready');
+      targets.forEach(target => target.classList.add('is-revealed'));
+      return;
+    }
+    revealObserver = new window.IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-revealed');
+        revealObserver.unobserve(entry.target);
+      });
+    }, { threshold: .08, rootMargin: '0px 0px -7% 0px' });
+    targets.forEach((target, index) => {
+      target.dataset.reveal = '';
+      target.style.setProperty('--reveal-delay', `${index % 3 * 70}ms`);
+      revealObserver.observe(target);
+    });
+    document.documentElement.classList.add('motion-ready');
+  }
+  setMotion();
+  motion.addEventListener('change', setMotion);
+
+  const scenes = [...document.querySelectorAll('[data-scene-theme]')];
+  const railLinks = [...document.querySelectorAll('.chapter-rail a')];
+  const visibleScenes = new Set();
+  const sceneObserver = new window.IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) visibleScenes.add(entry.target);
+      else visibleScenes.delete(entry.target);
+    });
+    const active = [...visibleScenes].sort((a, b) =>
+      Math.abs(a.getBoundingClientRect().top) - Math.abs(b.getBoundingClientRect().top)
+    )[0];
+    document.body.classList.toggle('has-active-chapter', Boolean(active));
+    scenes.forEach(scene => scene.classList.toggle('is-active', scene === active));
+    if (active) document.body.dataset.sceneTheme = active.dataset.sceneTheme;
+    railLinks.forEach(link => {
+      if (active && link.getAttribute('href') === `#${active.dataset.sceneTarget}`) {
+        link.setAttribute('aria-current', 'location');
+      } else link.removeAttribute('aria-current');
+    });
+  }, { rootMargin: '-30% 0px -40% 0px', threshold: 0 });
+  scenes.forEach(scene => sceneObserver.observe(scene));
+}
+initPageJourney();
+
+document.querySelectorAll('.faq-list details').forEach(details => {
+  details.addEventListener('toggle', () => {
+    if (details.open) animatePanel(details.querySelector('p'));
   });
 });

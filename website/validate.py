@@ -10,6 +10,8 @@ import json
 import re
 
 ROOT = Path(__file__).resolve().parent
+VOID_ELEMENTS = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
+                 'link', 'meta', 'param', 'source', 'track', 'wbr'}
 
 
 class Document(HTMLParser):
@@ -19,8 +21,11 @@ class Document(HTMLParser):
         self.links = []
         self.relationships = []
         self.errors = []
+        self.open_tags = []
 
     def handle_starttag(self, tag, attrs):
+        if tag not in VOID_ELEMENTS:
+            self.open_tags.append(tag)
         attrs = dict(attrs)
         if 'id' in attrs:
             if attrs['id'] in self.ids:
@@ -32,6 +37,12 @@ class Document(HTMLParser):
         for attr in ('aria-controls', 'aria-labelledby', 'aria-describedby', 'data-copy'):
             if attrs.get(attr):
                 self.relationships.extend(attrs[attr].split())
+
+    def handle_endtag(self, tag):
+        if not self.open_tags or self.open_tags[-1] != tag:
+            self.errors.append(f'Misnested closing tag: </{tag}>')
+        else:
+            self.open_tags.pop()
 
 
 parser = argparse.ArgumentParser(description=__doc__)
@@ -46,8 +57,12 @@ if args.base_url and (urlsplit(args.base_url).scheme not in ('http', 'https') or
 
 page = Document()
 page.feed((ROOT / 'index.html').read_text())
-for asset in re.findall(r'url\(\s*[\'\"]?([^\s\)\'\"]+)', (ROOT / 'styles.css').read_text()):
-    page.links.append(asset)
+page.close()
+if page.open_tags:
+    page.errors.append('Unclosed HTML elements: ' + ', '.join(page.open_tags))
+for stylesheet in ROOT.glob('*.css'):
+    for asset in re.findall(r'url\(\s*[\'\"]?([^\s\)\'\"]+)', stylesheet.read_text()):
+        page.links.append(asset)
 for link in page.links:
     parts = urlsplit(link)
     if parts.scheme or parts.netloc:
