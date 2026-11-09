@@ -8,23 +8,47 @@ const examples = {
 };
 
 const inspector = document.querySelector('.inspector');
-document.querySelectorAll('[data-example]').forEach(button => {
+const exampleButtons = [...document.querySelectorAll('[data-example]')];
+const aiReviewToggle = document.getElementById('ai-review-toggle');
+// This is illustrative advice for the script context shown in the demo, not a live model response.
+const illustrativeReview = { impact: 'High', risk: 'High', symbol: '!', reason: 'The example script deploys files to a production server. Its --delete option can remove remote files that are missing locally.' };
+let selectedExample = 'safe';
+
+function renderExample() {
+  const assisted = aiReviewToggle.checked && selectedExample === 'unknown';
+  const example = assisted ? { ...examples.unknown, ...illustrativeReview } : examples[selectedExample];
+  inspector.dataset.tone = assisted ? 'high' : selectedExample;
+  exampleButtons.forEach(button => {
+    const selected = button.dataset.example === selectedExample;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  for (const [id, value] of Object.entries({ 'example-command': example.command, 'result-impact': example.impact, 'result-decision': example.decision, 'result-coverage': example.coverage, 'result-risk': example.risk, 'result-symbol': example.symbol, 'result-reason': example.reason })) {
+    document.getElementById(id).textContent = value;
+  }
+  document.getElementById('result-label').textContent = assisted ? 'AI-ASSISTED SEVERITY' : 'MODELED IMPACT';
+  document.getElementById('result-provenance').hidden = !assisted;
+  const source = document.getElementById('review-source');
+  source.hidden = !assisted;
+  if (!assisted) source.open = false;
+  document.getElementById('ai-review-state').textContent = aiReviewToggle.checked ? 'On' : 'Off';
+  document.getElementById('ai-review-hint').textContent = assisted ? 'Illustrative advice. Static coverage stays visible.' :
+    aiReviewToggle.checked ? 'AI advice is enabled for the unknown-script example.' : 'Turn on to see Unknown become High.';
+  document.querySelector('.demo-index').textContent = `${example.index} / 03`;
+}
+
+exampleButtons.forEach(button => {
   button.addEventListener('click', () => {
-    const key = button.dataset.example;
-    const example = examples[key];
-    if (!example) return;
-    inspector.dataset.tone = key;
-    document.querySelectorAll('[data-example]').forEach(item => {
-      const selected = item === button;
-      item.classList.toggle('active', selected);
-      item.setAttribute('aria-pressed', String(selected));
-    });
-    for (const [id, value] of Object.entries({ 'example-command': example.command, 'result-impact': example.impact, 'result-decision': example.decision, 'result-coverage': example.coverage, 'result-risk': example.risk, 'result-symbol': example.symbol, 'result-reason': example.reason })) {
-      document.getElementById(id).textContent = value;
-    }
-    document.querySelector('.demo-index').textContent = `${example.index} / 03`;
+    if (!examples[button.dataset.example]) return;
+    selectedExample = button.dataset.example;
+    renderExample();
   });
 });
+aiReviewToggle.addEventListener('change', () => {
+  if (aiReviewToggle.checked) selectedExample = 'unknown';
+  renderExample();
+});
+renderExample();
 
 const tabs = [...document.querySelectorAll('[role="tab"]')];
 function selectTab(tab, focus = false) {

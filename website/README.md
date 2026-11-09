@@ -41,6 +41,13 @@ Official reference:
 
 - Three recorded command examples, installation tabs with arrow-key support,
   copy buttons, mobile navigation, and native FAQ disclosures.
+- An accessible **AI-assisted review** demo switch selects the unknown-script
+  example and immediately changes its displayed severity from **Unknown** to
+  **High**. Turning it off restores the recorded static verdict. The illustrative
+  AI rating refers to the displayed production deployment script context; it is
+  not a captured or live model response. Coverage stays opaque and the policy
+  decision remains review. Known safe and critical findings retain their static
+  verdicts while the switch is enabled.
 - A model support section covering OpenAI-compatible APIs, Anthropic Claude,
   and local servers through llama.cpp, vLLM, or compatible endpoints. It includes
   VS Code router setup and describes disabled-by-default routing, provider data

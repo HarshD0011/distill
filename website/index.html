@@ -47,15 +47,18 @@
         <section class="inspector" aria-label="Recorded command analysis examples">
           <div class="window-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>distill / analyze</span><span class="local-indicator"><span aria-hidden="true">●</span> LOCAL</span></div>
           <div class="example-picker" role="group" aria-label="Choose a recorded command"><button type="button" class="example-button active" data-example="safe" aria-pressed="true">Simple command</button><button type="button" class="example-button" data-example="critical" aria-pressed="false">Protected deletion</button><button type="button" class="example-button" data-example="unknown" aria-pressed="false">Unknown script</button></div>
+          <label class="ai-review-control" for="ai-review-toggle"><span class="ai-review-copy"><span>AI-assisted review <span class="ai-demo-label">DEMO</span></span><span id="ai-review-hint">Turn on to see Unknown become High.</span></span><span class="ai-review-switch"><input type="checkbox" role="switch" id="ai-review-toggle" aria-label="AI-assisted review" aria-controls="sample-result" aria-describedby="ai-review-hint"><span class="ai-switch-track" aria-hidden="true"></span><span id="ai-review-state" class="ai-switch-state">Off</span></span></label>
           <div class="command-area"><span class="code-label">PROPOSED SHELL COMMAND</span><div class="command-line"><span class="prompt" aria-hidden="true">$</span><code id="example-command">echo hello</code></div><div class="command-context"><span>BASH</span><span>cwd: /tmp</span><span>STATIC ANALYSIS</span></div></div>
-          <div class="analysis-result" aria-live="polite" aria-atomic="true">
-            <div class="result-heading"><span class="result-symbol" id="result-symbol" aria-hidden="true">✓</span><div><span class="code-label">MODELED IMPACT</span><h2 id="result-impact">Safe</h2></div><span id="result-decision" class="decision-tag">Allow</span></div>
+          <div class="analysis-result" id="sample-result" aria-live="polite" aria-atomic="true">
+            <div class="result-heading"><span class="result-symbol" id="result-symbol" aria-hidden="true">✓</span><div><span class="code-label" id="result-label">MODELED IMPACT</span><h2 id="result-impact">Safe</h2></div><span id="result-decision" class="decision-tag">Allow</span></div>
+            <p class="result-provenance" id="result-provenance" hidden>Static verdict: Unknown · Illustrative AI review</p>
             <p id="result-reason" class="result-reason">No modeled hazardous effect was found in the supported static semantics.</p>
+            <details class="review-source" id="review-source" hidden><summary>Illustrative script context</summary><pre><code>rsync -az --delete ./dist/ deploy@production:/srv/app/</code></pre></details>
             <dl class="result-facts"><div><dt>Coverage</dt><dd id="result-coverage">Accounted</dd></div><div><dt>Approval risk</dt><dd id="result-risk">Safe</dd></div><div><dt>Execution</dt><dd>Not performed</dd></div></dl>
           </div>
           <div class="inspector-footer"><span class="code-label">ANALYZE ≠ EXECUTE</span><span aria-hidden="true">↳</span></div>
         </section>
-        <p class="demo-note">Recorded CLI 0.4.6 examples on macOS, with explicit Bash context. Policy and environment can change results. This page does not run the analyzer.</p>
+        <p class="demo-note">Static verdicts are recorded CLI 0.4.6 examples on macOS with explicit Bash context. AI review is an illustrative demo using the shown script context. This page makes no model requests and does not execute commands.</p>
       </div>
     </section>
 
