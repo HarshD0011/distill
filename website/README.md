@@ -12,7 +12,9 @@ From the repository root:
 make website-serve
 ```
 
-Open <http://127.0.0.1:8000>. No installation or build is needed.
+Open <http://127.0.0.1:8000>. No installation or build is needed. Stylesheet, script, and favicon URLs carry
+content hashes (`?v=…`) so a new deployment refreshes browser caches. Recompute
+these hashes in `index.html` when the corresponding asset changes.
 
 ## Publish on GitHub Pages
 
