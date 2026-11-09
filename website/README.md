@@ -16,6 +16,10 @@ Open <http://127.0.0.1:8000>. No installation or build is needed. Stylesheet, sc
 content hashes (`?v=…`) so a new deployment refreshes browser caches. Recompute
 these hashes in `index.html` when the corresponding asset changes.
 
+**Ink & Paper** is the fixed site palette, including without JavaScript. It uses
+true black, crisp white, and neutral grays. The temporary theme selector has been
+removed; warning colors stay distinct.
+
 ## Publish on GitHub Pages
 
 1. Commit `website/` and `.github/workflows/pages.yml` to the repository's default
@@ -43,17 +47,17 @@ Official reference:
 
 - A dark opening shows an AI agent proposing a command. The command types in,
   shakes and turns red, then a warning appears. Scrolling contracts the scene
-  into a rounded frame with a blue backdrop and carries the command panel down
+  into a rounded frame with a monochrome backdrop and carries the command panel down
   into a light section, following the supplied `inspiration.mp4` reference.
   The sequence can be replayed. Reduced-motion preferences show the final
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
   `story.css`; timing and scroll progress are handled in `app.js`.
-- The rest of the page continues the opening's single-hue blue palette
+- The rest of the page continues the opening's Ink & Paper palette
   in rounded chapters. Panels enter in stages as they reach the viewport; the
   surrounding color follows the active chapter. Verdict changes, installation
   tabs, FAQ answers, and copy notifications use the same motion language.
-  `palette.css` defines one 216-degree blue scale for surfaces, text, borders,
+  `palette.css` defines the neutral Ink & Paper scale for surfaces, text, borders,
   and accents. `journey.css` contains the shared chapter and panel styles. Intersection
   observers reveal each panel once; reduced motion and missing observer support
   keep all content visible. A desktop chapter rail tracks the current section.

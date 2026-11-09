@@ -1,18 +1,18 @@
-/* One blue hue. Every brand surface, accent, and text tone uses this scale. */
+/* Ink & Paper is the fixed palette: true black, crisp white, and neutral grays. */
 :root {
-  --blue-hue:216;
-  --blue-25:var(--blue-hue) 100% 99%;
-  --blue-50:var(--blue-hue) 90% 97%;
-  --blue-100:var(--blue-hue) 86% 94%;
-  --blue-200:var(--blue-hue) 82% 86%;
-  --blue-300:var(--blue-hue) 78% 77%;
-  --blue-400:var(--blue-hue) 78% 67%;
-  --blue-500:var(--blue-hue) 76% 57%;
-  --blue-600:var(--blue-hue) 72% 46%;
-  --blue-700:var(--blue-hue) 68% 35%;
-  --blue-800:var(--blue-hue) 62% 26%;
-  --blue-850:var(--blue-hue) 55% 18%;
-  --blue-900:var(--blue-hue) 52% 14%;
-  --blue-950:var(--blue-hue) 55% 9%;
-  --blue-975:var(--blue-hue) 60% 6%;
+  --palette-hue:0;
+  --tone-25:var(--palette-hue) 0% 100%;
+  --tone-50:var(--palette-hue) 0% 99%;
+  --tone-100:var(--palette-hue) 0% 97%;
+  --tone-200:var(--palette-hue) 0% 91%;
+  --tone-300:var(--palette-hue) 0% 80%;
+  --tone-400:var(--palette-hue) 0% 66%;
+  --tone-500:var(--palette-hue) 0% 50%;
+  --tone-600:var(--palette-hue) 0% 36%;
+  --tone-700:var(--palette-hue) 0% 25%;
+  --tone-800:var(--palette-hue) 0% 16%;
+  --tone-850:var(--palette-hue) 0% 10%;
+  --tone-900:var(--palette-hue) 0% 6%;
+  --tone-950:var(--palette-hue) 0% 2%;
+  --tone-975:var(--palette-hue) 0% 0%;
 }
