@@ -6,17 +6,25 @@ use std::{
     io::{Read, Write},
     path::PathBuf,
     process::{Child, Command, Stdio},
+    sync::{Condvar, Mutex, MutexGuard},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+
+// Hook acknowledgements deliberately have a 40 ms budget. Competing service
+// fixtures test the host scheduler rather than service behavior. Individual
+// tests still exercise multiple simultaneous IPC and provider requests.
+static SERVICE_FIXTURE: Mutex<()> = Mutex::new(());
 
 struct Fixture {
     dir: PathBuf,
     policy: PathBuf,
     config: Config,
     child: Option<Child>,
+    _exclusive: MutexGuard<'static, ()>,
 }
 impl Fixture {
     fn new(history: bool) -> Self {
+        let exclusive = SERVICE_FIXTURE.lock().unwrap_or_else(|e| e.into_inner());
         let dir = PathBuf::from("/tmp").join(distill_core::new_id("dst"));
         fs::create_dir_all(&dir).unwrap();
         let policy = dir.join("policy.toml");
@@ -30,6 +38,7 @@ impl Fixture {
             policy,
             config,
             child: None,
+            _exclusive: exclusive,
         }
     }
     fn start(&mut self) {
@@ -132,6 +141,7 @@ impl MockModel {
         let peak = Arc::new(AtomicUsize::new(0));
         let release = Arc::new(AtomicBool::new(!blocked));
         let completed = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let completion_ready = Arc::new(Condvar::new());
         let count = calls.clone();
         let captured = requests.clone();
         let stopped = stop.clone();
@@ -153,7 +163,12 @@ impl MockModel {
                 let peak_running = peak_running.clone();
                 let released = released.clone();
                 let completions = completions.clone();
+                let completion_ready = completion_ready.clone();
                 workers.push(std::thread::spawn(move || {
+                    // macOS may inherit O_NONBLOCK from the listener. Wait for
+                    // fragmented HTTP bodies instead of dropping a live request
+                    // on EAGAIN before the sender has finished writing it.
+                    stream.set_nonblocking(false).unwrap();
                     stream.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
                     let mut data = Vec::new();
                     let request: Value = loop {
@@ -180,9 +195,27 @@ impl MockModel {
                         let items: Value = serde_json::from_str(request["messages"][1]["content"].as_str().unwrap()).unwrap();
                         items[0]["command"].as_str().unwrap().rsplit(' ').next().unwrap().to_owned()
                     } else { String::new() };
-                    // First submitted safe response completes last, making
-                    // result-to-request mapping observable under overlap.
-                    let delay = if per_command { Duration::from_millis(match label.as_str() { "safe" => 250, "low" => 200, "medium" => 150, "high" => 100, _ => 50 }) } else { delay };
+                    // Coordinate reversed completion explicitly: sleep lengths
+                    // cannot establish response order on a busy CI runner.
+                    let predecessor = if per_command {
+                        match label.as_str() {
+                            "safe" => Some("low"),
+                            "low" => Some("medium"),
+                            "medium" => Some("high"),
+                            "high" => Some("critical"),
+                            _ => None,
+                        }
+                    } else { None };
+                    if let Some(predecessor) = predecessor {
+                        let (completed, _) = completion_ready.wait_timeout_while(
+                            completions.lock().unwrap(),
+                            Duration::from_secs(5),
+                            |completed| !completed.iter().any(|label| label == predecessor),
+                        ).unwrap();
+                        let ready = completed.iter().any(|label| label == predecessor);
+                        drop(completed);
+                        assert!(ready, "Mock response predecessor {predecessor} never completed");
+                    }
                     std::thread::sleep(delay);
                     let proposal = json!({"effects":effects,"intent_match":"unavailable","explanation":"Local delayed model fixture"});
                     let content = if per_command { label } else { effects.as_str().map(str::to_owned).unwrap_or_else(|| proposal.to_string()) };
@@ -190,6 +223,7 @@ impl MockModel {
                     let response = format!("HTTP/1.1 {status} Test\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}", body.len());
                     let _ = stream.write_all(response.as_bytes());
                     completions.lock().unwrap().push(content);
+                    completion_ready.notify_all();
                     running.fetch_sub(1, Ordering::SeqCst);
                 }));
             }
@@ -256,6 +290,10 @@ fn background_payload(f: &Fixture, command: &str) -> Value {
     json!({"model_policy_digest":f.config.model_digest(),"command":command,"cwd":f.dir,"shell":"bash","shell_context":{"workspace_roots":[f.dir]}})
 }
 fn finished_advice(f: &Fixture, key: &Value) -> Value {
+    assert!(
+        key.as_str().is_some(),
+        "Missing background request digest: {key}"
+    );
     let start = Instant::now();
     loop {
         let result = f
@@ -277,11 +315,73 @@ fn finished_advice(f: &Fixture, key: &Value) -> Value {
 }
 
 #[test]
+fn stalled_enqueue_acknowledgement_keeps_static_review() {
+    use std::os::unix::{fs::OpenOptionsExt, net::UnixListener};
+
+    let mut f = Fixture::new(false);
+    f.config.judge.enabled = true;
+    let directory = f.config.service.directory.as_ref().unwrap();
+    distill_core::integrity::private_directory(directory).unwrap();
+    let socket = directory.join("stalled.sock");
+    let listener = UnixListener::bind(&socket).unwrap();
+    listener.set_nonblocking(true).unwrap();
+    let endpoint = directory.join("endpoint.json");
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&endpoint)
+        .unwrap();
+    write!(
+        file,
+        "{}",
+        json!({"v":1,"socket":socket,"token":"a".repeat(64)})
+    )
+    .unwrap();
+
+    // Leave the request unacknowledged until the hook has returned. A slow
+    // local service is a supported failure path, not permission to run code.
+    let input = json!({"hook_event_name":"PreToolUse","tool_name":"Bash","cwd":f.dir,"tool_input":{"command":"node -e 'import(\"unknown-package\")'","shell":"/bin/bash"}}).to_string();
+    let started = Instant::now();
+    let (_, report) = distill_agents::assess_hook(
+        distill_core::Integration::Codex,
+        &input,
+        &f.config,
+        Default::default(),
+    )
+    .unwrap();
+    let elapsed = started.elapsed();
+    let (mut stream, _) = listener
+        .accept()
+        .expect("Hook never contacted the local service");
+    fs::remove_file(endpoint).unwrap();
+    let mut request = String::new();
+    stream.read_to_string(&mut request).unwrap();
+    let request: Value = serde_json::from_str(&request).unwrap();
+    assert_eq!(request["method"], "judge_enqueue");
+    assert!(
+        elapsed < Duration::from_millis(400),
+        "Hook waited for a stalled service: {elapsed:?}"
+    );
+    let judge = report.judge.as_ref().unwrap();
+    assert_eq!(judge["status"], "unavailable", "{judge}");
+    assert_eq!(judge["detail"], "Service deadline exhausted", "{judge}");
+    assert_eq!(report.decision, distill_core::Decision::Ask);
+    assert_eq!(report.impact_severity, None);
+    assert_eq!(
+        report.coverage.summary,
+        distill_core::CoverageSummary::Partial
+    );
+    assert!(!report.unknowns.is_empty());
+}
+
+#[test]
 fn background_model_does_not_block_hook_and_deduplicates_then_reuses_context_bound_advice() {
-    let mock = MockModel::new(
-        Duration::from_millis(1000),
+    let mock = MockModel::controlled(
+        Duration::ZERO,
         200,
         json!([{"kind":"file_delete","target":"/","recursive":true}]),
+        true,
     );
     let f = mock.fixture();
     let input = json!({"hook_event_name":"PreToolUse","tool_name":"Bash","cwd":f.dir,"tool_input":{"command":"python3 -c 'import unmodeled_package'","shell":"/bin/bash"}}).to_string();
@@ -295,7 +395,13 @@ fn background_model_does_not_block_hook_and_deduplicates_then_reuses_context_bou
     .unwrap();
     assert!(start.elapsed() < Duration::from_millis(400));
     assert_eq!(first.decision, distill_core::Decision::Ask);
-    assert_eq!(first.judge.as_ref().unwrap()["status"], "pending");
+    assert_eq!(
+        first.judge.as_ref().unwrap()["status"],
+        "pending",
+        "{:?}",
+        first.judge
+    );
+    mock.wait_active(1);
     for _ in 0..3 {
         let (_, next) = distill_agents::assess_hook(
             distill_core::Integration::Codex,
@@ -306,9 +412,12 @@ fn background_model_does_not_block_hook_and_deduplicates_then_reuses_context_bou
         .unwrap();
         assert_eq!(
             next.judge.as_ref().unwrap()["request_digest"],
-            first.judge.as_ref().unwrap()["request_digest"]
+            first.judge.as_ref().unwrap()["request_digest"],
+            "{:?}",
+            next.judge
         );
     }
+    mock.release();
     let advice = finished_advice(&f, &first.judge.as_ref().unwrap()["request_digest"]);
     assert_eq!(advice["status"], "advisory");
     assert_eq!(advice["severity"], "critical");
@@ -458,18 +567,18 @@ fn unsupported_explicit_effort_returns_provider_error_without_retry_or_model_fal
 
 #[test]
 fn background_queue_is_bounded_and_known_critical_static_findings_stay_denied() {
-    let mock = MockModel::new(Duration::from_millis(1000), 200, json!([]));
-    let f = mock.fixture();
+    let mock = MockModel::controlled(Duration::ZERO, 200, json!([]), true);
+    let f = mock.configured_fixture(|config| config.judge.background_deadline_ms = 5000);
     for n in 0..5 {
-        assert_eq!(
-            f.call(
+        let pending = f
+            .call(
                 "judge_enqueue",
-                background_payload(&f, &format!("unmodeled-command {n}"))
+                background_payload(&f, &format!("unmodeled-command {n}")),
             )
-            .unwrap()["status"],
-            "pending"
-        );
+            .unwrap();
+        assert_eq!(pending["status"], "pending", "{pending}");
     }
+    mock.wait_active(5);
     let overflow = f
         .call("judge_enqueue", background_payload(&f, "overflow"))
         .unwrap();
@@ -483,6 +592,7 @@ fn background_queue_is_bounded_and_known_critical_static_findings_stay_denied() 
     )
     .unwrap();
     assert_eq!(report.decision, distill_core::Decision::Deny);
+    mock.release();
     assert_eq!(
         report.impact_severity,
         Some(distill_core::Severity::Critical)
@@ -1102,18 +1212,30 @@ fn failed_and_timed_out_parallel_requests_release_their_slots() {
         });
         let keys: Vec<_> = (0..5)
             .map(|n| {
-                f.call(
-                    "judge_enqueue",
-                    background_payload(&f, &format!("unresolved {n}")),
-                )
-                .unwrap()["request_digest"]
-                    .clone()
+                let pending = f
+                    .call(
+                        "judge_enqueue",
+                        background_payload(&f, &format!("unresolved {n}")),
+                    )
+                    .unwrap();
+                assert_eq!(pending["status"], "pending", "{pending}");
+                pending["request_digest"].clone()
             })
             .collect();
         mock.wait_active(5);
         mock.release();
         for key in keys {
-            assert_eq!(finished_advice(&f, &key)["status"], "unavailable");
+            let advice = finished_advice(&f, &key);
+            assert_eq!(advice["status"], "unavailable", "{advice}");
+            let reason = advice["reason"].as_str().unwrap();
+            assert!(
+                reason.contains(if status == 429 {
+                    "HTTP 429"
+                } else {
+                    "deadline exceeded"
+                }),
+                "Unexpected background failure: {advice}"
+            );
         }
         assert_eq!(
             f.call("hello", json!({})).unwrap()["model_requests_in_flight"],

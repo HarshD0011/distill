@@ -738,7 +738,23 @@ fn serve(
                 });
             }
             Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                std::thread::sleep(Duration::from_millis(10))
+                // Wake as soon as a request arrives instead of spending part of
+                // the hook's 40 ms acknowledgement budget in a fixed sleep.
+                // Periodically recheck stop/owner state even without requests.
+                let mut descriptor = libc::pollfd {
+                    fd: listener.as_raw_fd(),
+                    events: libc::POLLIN,
+                    revents: 0,
+                };
+                if unsafe { libc::poll(&mut descriptor, 1, 100) } < 0 {
+                    let error = std::io::Error::last_os_error();
+                    if error.kind() != std::io::ErrorKind::Interrupted {
+                        return Err(error.to_string());
+                    }
+                }
+                if descriptor.revents & (libc::POLLERR | libc::POLLHUP | libc::POLLNVAL) != 0 {
+                    return Err("Service listener became unavailable".into());
+                }
             }
             Err(error) => return Err(error.to_string()),
         }
