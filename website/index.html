@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080c0b">
+  <meta name="theme-color" content="#080f20">
   <meta name="description" content="Local command analysis for Codex, Claude Code, and VS Code, with optional advice from OpenAI, Anthropic Claude, or local models through llama.cpp and vLLM.">
   <meta property="og:title" content="Distill — Know what runs. Before it does.">
   <meta property="og:description" content="Local command analysis with optional OpenAI, Claude, and local model advice. Choose your provider and keep analysis coverage visible.">
@@ -43,7 +43,7 @@
             <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> A SAFETY LAYER FOR YOUR AI AGENT</p>
             <h1 id="hero-title">Know what runs.<br>Before it <em>does.</em></h1>
             <p class="story-description">Your agent moves fast.<br> Catch risky commands before they run.</p>
-            <div class="hero-actions"><a class="button button-mint" href="#install">Start with Distill <span aria-hidden="true">↗</span></a><a class="story-watch" href="#examples">Explore the analyzer <span aria-hidden="true">↓</span></a></div>
+            <div class="hero-actions"><a class="button button-blue" href="#install">Start with Distill <span aria-hidden="true">↗</span></a><a class="story-watch" href="#examples">Explore the analyzer <span aria-hidden="true">↓</span></a></div>
             <div class="story-compatible"><span>BUILT FOR YOUR WORKFLOW</span><div><span>Codex</span><i></i><span>Claude Code</span><i></i><span>VS Code</span></div></div>
           </div>
           <div class="story-chapter" aria-hidden="true">
@@ -114,7 +114,7 @@
     </section>
     </div>
 
-    <div class="chapter-shell scene-mint" data-scene-theme="mint" data-scene-target="integrations" data-scene-number="03">
+    <div class="chapter-shell scene-blue" data-scene-theme="blue" data-scene-target="integrations" data-scene-number="03">
       <div class="container chapter-bar"><span><i aria-hidden="true"></i>03 / IN YOUR WORKFLOW</span><span>RIGHT WHERE YOU WORK</span></div>
       <section class="workflow-section" id="integrations" aria-labelledby="workflow-title">
       <div class="container">
@@ -164,12 +164,12 @@
     </section>
     </div>
 
-    <div class="chapter-shell scene-mint" data-scene-theme="mint" data-scene-target="install" data-scene-number="06">
+    <div class="chapter-shell scene-blue" data-scene-theme="blue" data-scene-target="install" data-scene-number="06">
       <div class="container chapter-bar"><span><i aria-hidden="true"></i>06 / MAKE THE CONNECTION</span><span>READY FOR YOUR NEXT COMMAND</span></div>
       <section class="install-section" id="install" aria-labelledby="install-title">
       <div class="container install-layout"><div><p class="eyebrow">A SMALL ADDITION TO YOUR WORKFLOW</p><h2 id="install-title">Make the next<br>command clearer.</h2><p>Start with the VS Code extension, or build the CLI from source. Local desktop support for macOS and Linux.</p><a class="install-doc-link" href="https://github.com/HarshD0011/distill/blob/HEAD/README.md">Full installation documentation <span aria-hidden="true">↗</span></a></div>
         <div class="install-panel"><div class="install-tabs" role="tablist" aria-label="Installation method"><button type="button" id="tab-extension" role="tab" aria-selected="true" aria-controls="panel-extension" tabindex="0">VS Code</button><button type="button" id="tab-cli" role="tab" aria-selected="false" aria-controls="panel-cli" tabindex="-1">CLI</button><button type="button" id="tab-hooks" role="tab" aria-selected="false" aria-controls="panel-hooks" tabindex="-1">Agent hooks</button></div>
-          <div id="panel-extension" class="install-content" role="tabpanel" aria-labelledby="tab-extension" tabindex="0"><span class="install-step-label">BUILD A LOCAL EXTENSION</span><h3>One extension. CLI included.</h3><ol><li>Follow the <strong>extension install guide</strong> to build a platform-specific VSIX from source.</li><li>In VS Code, run <strong>Extensions: Install from VSIX…</strong>, choose the package, then open a trusted local folder.</li><li>Review the generated hooks in your agent, then open the Distill sidebar.</li></ol><a id="get-extension" class="button button-orange" href="https://github.com/HarshD0011/distill/blob/HEAD/extensions/vscode/README.md#install-and-connect" aria-describedby="extension-open-hint">Extension install guide <span aria-hidden="true">↗</span></a><p id="extension-open-hint" class="install-small">Marketplace and prebuilt release packages are not published yet. Building a VSIX requires Rust, Node.js, and Python; the installed extension includes the CLI.</p></div>
+          <div id="panel-extension" class="install-content" role="tabpanel" aria-labelledby="tab-extension" tabindex="0"><span class="install-step-label">BUILD A LOCAL EXTENSION</span><h3>One extension. CLI included.</h3><ol><li>Follow the <strong>extension install guide</strong> to build a platform-specific VSIX from source.</li><li>In VS Code, run <strong>Extensions: Install from VSIX…</strong>, choose the package, then open a trusted local folder.</li><li>Review the generated hooks in your agent, then open the Distill sidebar.</li></ol><a id="get-extension" class="button button-accent" href="https://github.com/HarshD0011/distill/blob/HEAD/extensions/vscode/README.md#install-and-connect" aria-describedby="extension-open-hint">Extension install guide <span aria-hidden="true">↗</span></a><p id="extension-open-hint" class="install-small">Marketplace and prebuilt release packages are not published yet. Building a VSIX requires Rust, Node.js, and Python; the installed extension includes the CLI.</p></div>
           <div id="panel-cli" class="install-content" role="tabpanel" aria-labelledby="tab-cli" tabindex="0" hidden><span class="install-step-label">BUILD FROM SOURCE</span><h3>A small CLI. A closer look.</h3><div class="copy-block"><pre><code id="cli-command">git clone https://github.com/HarshD0011/distill.git
 cd distill
 cargo install --path crates/distill-cli --force

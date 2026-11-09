@@ -41,13 +41,13 @@ Official reference:
 
 - A dark opening shows an AI agent proposing a command. The command types in,
   shakes and turns red, then a warning appears. Scrolling contracts the scene
-  into a rounded frame with a green backdrop and carries the command panel down
+  into a rounded frame with a blue backdrop and carries the command panel down
   into a light section, following the supplied `inspiration.mp4` reference.
   The sequence can be replayed. Reduced-motion preferences show the final
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
   `story.css`; timing and scroll progress are handled in `app.js`.
-- The rest of the page continues the opening's charcoal, mint, and light palette
+- The rest of the page continues the opening's navy, blue, and ice palette
   in rounded chapters. Panels enter in stages as they reach the viewport; the
   surrounding color follows the active chapter. Verdict changes, installation
   tabs, FAQ answers, and copy notifications use the same motion language.
