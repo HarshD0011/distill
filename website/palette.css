@@ -1,0 +1,18 @@
+/* One blue hue. Every brand surface, accent, and text tone uses this scale. */
+:root {
+  --blue-hue:216;
+  --blue-25:var(--blue-hue) 100% 99%;
+  --blue-50:var(--blue-hue) 90% 97%;
+  --blue-100:var(--blue-hue) 86% 94%;
+  --blue-200:var(--blue-hue) 82% 86%;
+  --blue-300:var(--blue-hue) 78% 77%;
+  --blue-400:var(--blue-hue) 78% 67%;
+  --blue-500:var(--blue-hue) 76% 57%;
+  --blue-600:var(--blue-hue) 72% 46%;
+  --blue-700:var(--blue-hue) 68% 35%;
+  --blue-800:var(--blue-hue) 62% 26%;
+  --blue-850:var(--blue-hue) 55% 18%;
+  --blue-900:var(--blue-hue) 52% 14%;
+  --blue-950:var(--blue-hue) 55% 9%;
+  --blue-975:var(--blue-hue) 60% 6%;
+}

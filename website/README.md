@@ -49,11 +49,12 @@ Official reference:
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
   `story.css`; timing and scroll progress are handled in `app.js`.
-- The rest of the page continues the opening's navy, blue, and ice palette
+- The rest of the page continues the opening's single-hue blue palette
   in rounded chapters. Panels enter in stages as they reach the viewport; the
   surrounding color follows the active chapter. Verdict changes, installation
   tabs, FAQ answers, and copy notifications use the same motion language.
-  `journey.css` contains the shared chapter and panel styles. Intersection
+  `palette.css` defines one 216-degree blue scale for surfaces, text, borders,
+  and accents. `journey.css` contains the shared chapter and panel styles. Intersection
   observers reveal each panel once; reduced motion and missing observer support
   keep all content visible. A desktop chapter rail tracks the current section.
 - Three recorded command examples, installation tabs with arrow-key support,
