@@ -41,6 +41,11 @@ Official reference:
 
 - Three recorded command examples, installation tabs with arrow-key support,
   copy buttons, mobile navigation, and native FAQ disclosures.
+- A model support section covering OpenAI-compatible APIs, Anthropic Claude,
+  and local servers through llama.cpp, vLLM, or compatible endpoints. It includes
+  VS Code router setup and describes disabled-by-default routing, provider data
+  sharing, opt-in script excerpts, and encrypted API key storage. The website
+  itself does not connect to model providers or collect credentials.
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
