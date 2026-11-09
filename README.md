@@ -1,8 +1,8 @@
 # Distill
 
-Distill 0.4.5 is a local command analyzer for coding agents. It separates **known impact**, **analysis coverage**, and the **policy decision**. An UNKNOWN verdict means the analyzer cannot establish an impact rating; a known rating with partial coverage still requires review under the default policy. No model or network service runs in the analysis path.
+Distill 0.5.5 is a local command analyzer for coding agents. It separates **known impact**, **analysis coverage**, and the **policy decision**. An UNKNOWN verdict means the analyzer cannot establish an impact rating; a known rating with partial coverage still requires review under the default policy. Static analysis works locally without a service. Independently opt-in persistent history and advisory model analysis run in a separate local service.
 
-The workspace contains the embedded Rust analyzer, Codex/Claude hooks, a VS Code command trace extension, a bounded session policy ledger, and an opt-in execution gate. `analyze` and hook assessment never execute candidate commands. **`run` executes a command inside native containment.** Hooks remain analysis adapters: installing them does not automatically route host execution through the gate.
+The workspace contains the embedded Rust analyzer, Codex/Claude Bash and direct-file hooks, a VS Code command trace extension, a bounded session policy ledger, and an opt-in execution gate. `analyze` and hook assessment never execute candidate commands. **`run` executes a command inside native containment.** Hooks remain analysis adapters: installing them does not automatically route host execution through the gate.
 
 ## Build and install
 
@@ -40,7 +40,11 @@ Typed argument grammars bind Git diff outputs, no-index inputs, and database-cli
 
 Zsh uses a conservative dialect layer, not a complete Zsh grammar. Without a complete supported explicit option snapshot, it retains HIGH uncertainty. Unsupported expansion, aliases, options, modules, and grammar retain incomplete coverage. `run` establishes its own restricted shell options; ordinary hook calls do not infer a shell snapshot from the user's login environment.
 
-Codex's `Bash` hook name can represent other execution shells. If the host omits `tool_input.shell`, Distill uses the Bash subset only to discover conditional effects, marks coverage incomplete, and retains at least HIGH approval risk. It does not infer the execution shell or options from the hook process. Known CRITICAL effects still require the human dialog when shell metadata is missing.
+Codex's `Bash` hook name can represent other execution shells. If the host omits `tool_input.shell`, Distill uses the Bash subset to discover conditional effects, marks coverage incomplete, and retains at least HIGH approval risk. Fully accounted commands such as `pwd` and `git status --short` retain a conditional SAFE impact rating; unmodeled commands and syntax remain UNKNOWN. It does not infer the execution shell or options from the hook process. Known CRITICAL effects still require the human dialog when shell metadata is missing.
+
+This is a host-input limitation, separate from cached hook definitions or model advice. Some hosts normalize unified-exec calls to a `Bash` event containing only `tool_input.command`; setting shell/workdir on the execution call does not guarantee those fields reach the hook. Distill preserves supplied shell/workdir fields, but cannot reconstruct omitted execution facts from `$SHELL`, the launcher's shell, or a previous command. Metadata-only gaps skip the optional model service and record `judge.status = "skipped"`, retaining the coverage warning and HIGH review floor. Additional unresolved code or dependency gaps remain eligible for model advice.
+
+Opt-in hook diagnostics can be installed with `distill setup codex --debug-log /absolute/private/directory/hooks.jsonl`, or enabled for one invocation with `distill hook codex --debug-log /absolute/private/directory/hooks.jsonl`. The parent directory must exist. The JSONL log records hook entry before the analysis worker starts, the assessment, and the final response (including watchdog failures). Records contain session/tool IDs, incoming field names, shell/options/cwd metadata, input digests, and verdicts. Command text, tool output, and environment values are omitted. Files must be private and user-owned; logging stops at 8 MiB and diagnostic errors do not change hook decisions. Omit `--debug-log` on a subsequent setup to disable it. This observes the host-to-hook boundary; activity before hook dispatch requires host-side logging.
 
 ## Signed approval labels
 
@@ -54,7 +58,7 @@ The enabled ledger records bounded hashes, effect labels, timestamps, decisions,
 
 Defaults are a two-hour entry TTL, 1,000 entries per session, three prior equivalent review attempts before denial, 2 MiB per session file, and global caps of 256 files / 64 MiB. Corruption, contention, and capacity limits require review. TTL expiration removes entries on access, not idle files. `distill ledger-clear --session ID --source codex --cwd /absolute/workspace` clears a session, including corrupt state; administrators can remove obsolete ledger files when no hooks are using them. This is bounded effect correlation, not general interprocedural or byte-level taint analysis.
 
-Editor history stays in a bounded memory broker and disappears when the editor application quits. Its private Unix socket uses peer-UID verification and token authentication. Presentation redaction is best effort. **Output capture defaults off**; opt in with `[privacy] capture_output = true`. The ledger persists hashed policy state even when the extension is absent. See [the extension guide](extensions/vscode/README.md).
+Editor history stays in a bounded memory broker and clears when the extension host reloads or exits. The extension disables durable history and its managed approval ledger; API keys entered in its settings form are remembered in encrypted VS Code SecretStorage. Its private Unix socket uses peer-UID verification and token authentication. Presentation redaction is best effort. **Output capture defaults off**; opt in with `[privacy] capture_output = true`. The ledger persists hashed policy state even when the extension is absent. See [the extension guide](extensions/vscode/README.md).
 
 ## Contained execution
 
@@ -83,8 +87,10 @@ cd extensions/vscode && npm run package
 
 Tests include real hook schemas, signed-label forgery, session isolation/retries, stale dependency receipts, actual macOS containment, 3,600 hazard transformations, 2,048 deterministic fuzz inputs, and 200 literal shell-oracle cases. `fuzz/` supplies a cargo-fuzz target and retained non-shell-whitespace regression. CI runs Mac/Linux checks and instrumented nightly fuzzing. Local stable libFuzzer smoke runs are not coverage-guided evidence. Corpus scores are regression results, not general detection accuracy.
 
-`mine_specs.py` extracts syntax-only drafts from saved help text; every new capability requires explicit review and provenance. `coverage` ranks observed gaps without retaining raw argument values. There is no analysis daemon, automatic training, syscall tracer, or Endpoint Security helper.
+`mine_specs.py` extracts syntax-only drafts from saved help text; every new capability requires explicit review and provenance. `coverage` ranks observed gaps without retaining raw argument values. Optional `distill-service` supplies bounded SQLite history and OpenAI-compatible, Gemini and Claude advice. Offline tools support explicit-consent usage mining, reviewed corpus evaluation, abstaining local advisers and isolated trace collection; nothing trains or traces automatically. See [0.5 implementation and testing](docs/v05-implementation.md).
 
 License: [GPL-3.0](LICENSE).
 
 See the [October 22 verdict audit](docs/verdict-audit-20261022.md) for the signed-label correlation fix, independently stated verdict expectations, and measured classification corrections.
+
+Unresolved code automatically queues background model advice when routing is enabled. The hook waits at most 40 ms for local acknowledgement and retains the static review requirement while pending. The extension uses completed advice as a visibly labeled model rating when static impact is UNKNOWN; it preserves static coverage, known findings, and the original approval decision. Exact-context retries can reuse advice and raise approval risk. Work is deduplicated and bounded, with a five-second failure cooldown. Background requests default to five seconds without delaying the hook.

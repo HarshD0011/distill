@@ -1,0 +1,116 @@
+{
+  "kind": "live_service_and_recorder",
+  "service_version": "0.5.9",
+  "max_model_requests": 5,
+  "session_id": "distill-live-response-test-80cf1030-4726-4d30-8d3b-aa7b6b8bd859",
+  "session_title": "Distill live review test (no execution)",
+  "workspace": "/Users/harshdhiman/Code/distill",
+  "candidate_commands_executed": false,
+  "submitted": 5,
+  "responses": 5,
+  "advisory": 5,
+  "rendered_advice_rows": 5,
+  "wall_ms": 4499,
+  "success": true,
+  "results": [
+    {
+      "probe": "probe-1",
+      "command_bytes": 45,
+      "status": "advisory",
+      "severity": "high",
+      "model": "gpt-6-luna",
+      "elapsed_ms": 3980,
+      "cached": false,
+      "request_digest": "b2b5972fe6e52c5a33b66855fa6519aa16d444169bf8b3058ee659904554e1d5",
+      "reason": null,
+      "detail": null,
+      "trace_state": "advisory",
+      "decision": "ask",
+      "completed_at": null,
+      "stderr": null
+    },
+    {
+      "probe": "probe-2",
+      "command_bytes": 44,
+      "status": "advisory",
+      "severity": "high",
+      "model": "gpt-6-luna",
+      "elapsed_ms": 3437,
+      "cached": false,
+      "request_digest": "6561a2bc1a40818f20911d7882615be5fcad5cae8cda245020167ec8eff3109b",
+      "reason": null,
+      "detail": null,
+      "trace_state": "advisory",
+      "decision": "ask",
+      "completed_at": null,
+      "stderr": null
+    },
+    {
+      "probe": "probe-3",
+      "command_bytes": 10053,
+      "status": "advisory",
+      "severity": "high",
+      "model": "gpt-6-luna",
+      "elapsed_ms": 2855,
+      "cached": false,
+      "request_digest": "2055a52bca04aafc8f7f6165bdbf99cb88ed06fe6f8b6fd87b7caa6096c74b80",
+      "reason": null,
+      "detail": null,
+      "trace_state": "advisory",
+      "decision": "ask",
+      "completed_at": null,
+      "stderr": null
+    },
+    {
+      "probe": "probe-4",
+      "command_bytes": 67,
+      "status": "advisory",
+      "severity": "high",
+      "model": "gpt-6-luna",
+      "elapsed_ms": 3131,
+      "cached": false,
+      "request_digest": "a1551515eeda297d3e062f2b22a3f104778ebbc4f0e3c4c66db871d3cce25326",
+      "reason": null,
+      "detail": null,
+      "trace_state": "advisory",
+      "decision": "ask",
+      "completed_at": null,
+      "stderr": null
+    },
+    {
+      "probe": "probe-5",
+      "command_bytes": 45,
+      "status": "advisory",
+      "severity": "high",
+      "model": "gpt-6-luna",
+      "elapsed_ms": 2855,
+      "cached": false,
+      "request_digest": "59a0ed59150a7e4611824514e91aadd517d2df9f793b285f69fd450fd094f1e5",
+      "reason": null,
+      "detail": null,
+      "trace_state": "advisory",
+      "decision": "ask",
+      "completed_at": null,
+      "stderr": null
+    }
+  ],
+  "render_verification": {
+    "installed_version": "0.5.9",
+    "normal_snapshot": {
+      "rendered_rows": 5,
+      "initial_requests": 5,
+      "refetched_after_snapshot": 0
+    },
+    "old_renderer_race": {
+      "rendered_rows": 0,
+      "initial_requests": 5,
+      "refetched_after_snapshot": 0
+    },
+    "fixed_renderer_race": {
+      "rendered_rows": 5,
+      "initial_requests": 5,
+      "refetched_after_snapshot": 5
+    }
+  },
+  "initial_snapshot_rendered_rows": 3
+}

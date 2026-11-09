@@ -117,15 +117,15 @@ def main(binary: str) -> None:
                 "value = (1 + 2) * 3; print(value)",
             ]:
                 check(interpreter + " literal", f"{interpreter} -c {shlex.quote(script)}", "low")
-            for script in [
-                'print(open("/etc/passwd").read())',
-                "print(1); import os",
-                "print(__import__('os').getcwd())",
-                "print(f'{1+1}')",
-                "print(1, file=open('output.txt', 'w'))",
+            for script, expected in [
+                ('print(open("/etc/passwd").read())', "low"),
+                ("print(1); import os", "low"),
+                ("print(__import__('os').getcwd())", "high"),
+                ("print(f'{1+1}')", "low"),
+                ("print(1, file=open('output.txt', 'w'))", "medium"),
             ]:
-                check(interpreter + " extra code", f"{interpreter} -c {shlex.quote(script)}", "high")
-        check("python first -c wins", "python3 -c 'print(1); import os' -c 'print(2)'", "high")
+                check(interpreter + " source effects", f"{interpreter} -c {shlex.quote(script)}", expected)
+        check("python first -c wins", "python3 -c 'print(1); import os' -c 'print(2)'", "low")
         check("python arguments are inert", "python3 -c 'print(1)' -c 'import os'", "low")
         check("python script before -c", "python3 uninspected.py -c 'print(1)'", "high")
         check("python module before -c", "python3 -m uninspected -c 'print(1)'", "high")
@@ -135,15 +135,15 @@ def main(binary: str) -> None:
         py = fixture("hello.py", 'value = 1 + 2\nprint(value)\n')
         check("python source file", f"python3 {py}", "low")
         check("python file arguments are inert", f"python3 {py} -c 'import os'", "low")
-        check("python file read effect", "python3 -c 'print(open(\"/etc/passwd\").read())'", "high", "source.file-read")
-        check("python file write effect", "python3 -c 'open(\"output.txt\", \"w\")'", "high", "source.file-write")
+        check("python file read effect", "python3 -c 'print(open(\"/etc/passwd\").read())'", "low", "source.file-read")
+        check("python file write effect", "python3 -c 'open(\"output.txt\", \"w\")'", "medium", "source.file-write")
         check("python root deletion effect", "python3 -c 'import shutil; shutil.rmtree(\"/\")'", "critical", "source.file-delete")
         check("python strongest source finding", "python3 -c 'import os, shutil; os.remove(\"a\"); shutil.rmtree(\"/\")'", "critical", "source.file-delete")
         check("python shadowed print", "python3 -c 'print = 1; print(1)'", "high")
         check("python annotated expression", "python3 -c 'value: unknown() = 1; print(value)'", "high")
         check("python syntax error", "python3 -c 'print(1'", "high")
         check("unicode source and report", "python3 -c " + shlex.quote("print('" + "a" * 495 + "🟢" * 30 + "')"), "low")
-        check("literal tilde is not a home path", "python3 -c 'import shutil; shutil.rmtree(\"~\")'", "high", "source.file-delete")
+        check("literal tilde is not a home path", "python3 -c 'import shutil; shutil.rmtree(\"~\")'", "medium", "source.file-delete")
 
         js = fixture("hello.js", 'console.log("hello");\n')
         js_extra = fixture("extra.js", 'console.log("hello"); require("fs").readFileSync("data.txt");\n')

@@ -54,7 +54,7 @@ pub fn assessment_value(
     response: &Value,
     config: &distill_core::Config,
 ) -> Result<(), String> {
-    if !has_endpoints() {
+    if !has_endpoints() && !config.service.history_enabled {
         return Ok(());
     }
     let event: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
@@ -66,7 +66,14 @@ pub fn assessment_value(
     trace["kind"] = json!("assessment");
     trace["report"] = report.clone();
     trace["blocked"] = json!(blocked);
-    deliver(trace)
+    if let Err(error) = distill_core::service_ipc::record(config, trace.clone()) {
+        eprintln!("distill history: {error}");
+    }
+    if config.editor_trace.enabled && has_endpoints() {
+        deliver(trace)
+    } else {
+        Ok(())
+    }
 }
 
 pub fn completion(host: Integration, input: &str) -> Result<(), String> {
@@ -79,8 +86,12 @@ pub fn completion_with_config(
     config: &distill_core::Config,
 ) -> Result<(), String> {
     let event: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
-    if event["tool_name"] != "Bash" || !is_completion(input) {
-        return Err("Expected a Bash completion event".into());
+    if !matches!(
+        event["tool_name"].as_str(),
+        Some("Bash" | "Write" | "Edit" | "MultiEdit")
+    ) || !is_completion(input)
+    {
+        return Err("Expected a supported tool completion event".into());
     }
     if let (Some(session), Some(id), Some(cwd)) = (
         event["session_id"].as_str(),
@@ -99,15 +110,19 @@ pub fn completion_with_config(
             Path::new(cwd),
         )?;
     }
-    if !config.editor_trace.enabled {
+    if !config.editor_trace.enabled && !config.service.history_enabled {
         return Ok(());
     }
-    if !has_endpoints() {
+    if !has_endpoints() && !config.service.history_enabled {
         return Ok(());
     }
     let event: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
-    if event["tool_name"] != "Bash" || !is_completion(input) {
-        return Err("expected a Bash PostToolUse or PostToolUseFailure event".into());
+    if !matches!(
+        event["tool_name"].as_str(),
+        Some("Bash" | "Write" | "Edit" | "MultiEdit")
+    ) || !is_completion(input)
+    {
+        return Err("expected a supported tool completion event".into());
     }
     let mut trace = envelope(host, &event, config)?;
     trace["kind"] = json!("completion");
@@ -139,7 +154,14 @@ pub fn completion_with_config(
     );
     distill_core::privacy::redact_value(&mut trace["tool_response"]);
     distill_core::privacy::redact_value(&mut trace["error"]);
-    deliver(trace)
+    if let Err(error) = distill_core::service_ipc::record(config, trace.clone()) {
+        eprintln!("distill history: {error}");
+    }
+    if config.editor_trace.enabled && has_endpoints() {
+        deliver(trace)
+    } else {
+        Ok(())
+    }
 }
 
 pub fn failure(
@@ -149,7 +171,7 @@ pub fn failure(
     response: &Value,
     config: &distill_core::Config,
 ) -> Result<(), String> {
-    if !has_endpoints() {
+    if !has_endpoints() && !config.service.history_enabled {
         return Ok(());
     }
     let event: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
@@ -160,7 +182,14 @@ pub fn failure(
         response.pointer("/hookSpecificOutput/permissionDecision") == Some(&json!("deny"))
             || response.get("decision") == Some(&json!("block"))
     );
-    deliver(trace)
+    if let Err(error) = distill_core::service_ipc::record(config, trace.clone()) {
+        eprintln!("distill history: {error}");
+    }
+    if config.editor_trace.enabled && has_endpoints() {
+        deliver(trace)
+    } else {
+        Ok(())
+    }
 }
 
 fn has_endpoints() -> bool {
@@ -200,9 +229,24 @@ fn envelope(
             .map(str::to_owned)
             .ok_or_else(|| format!("trace requires {key}; chats are never grouped by cwd alone"))
     };
+    let direct = matches!(
+        event["tool_name"].as_str(),
+        Some("Write" | "Edit" | "MultiEdit")
+    );
+    let file_command = format!(
+        "{} {:?} content_sha256={}",
+        event["tool_name"].as_str().unwrap_or("Edit"),
+        event
+            .pointer("/tool_input/file_path")
+            .or_else(|| event.pointer("/tool_input/path"))
+            .and_then(Value::as_str)
+            .unwrap_or("<unresolved>"),
+        distill_core::sha256(event["tool_input"].to_string().as_bytes())
+    );
     let command = event
         .pointer("/tool_input/command")
         .and_then(Value::as_str)
+        .or_else(|| direct.then_some(file_command.as_str()))
         .ok_or("trace requires tool_input.command")?;
     let cwd = event["cwd"].as_str().ok_or("trace requires cwd")?;
     let cwd = std::fs::canonicalize(cwd).unwrap_or_else(|_| PathBuf::from(cwd));
@@ -314,7 +358,7 @@ fn deliver(trace: Value) -> Result<(), String> {
 
 /// The recorder has its own small deadline and cannot consume the analysis budget.
 fn remaining(started: Instant) -> Result<Duration, String> {
-    Duration::from_millis(100)
+    Duration::from_millis(250)
         .checked_sub(started.elapsed())
         .filter(|duration| !duration.is_zero())
         .ok_or_else(|| "Trace delivery deadline exhausted".into())
@@ -328,11 +372,20 @@ fn send(endpoint: &Value, trace: &Value, started: Instant) -> Result<(), String>
     )
     .map(|_| ())
 }
-fn exchange(endpoint: &Value, mut message: Value, started: Instant) -> Result<Value, String> {
-    let socket = endpoint["socket"].as_str().ok_or("Trace broker requires the authenticated Unix-socket transport; restart the editor after upgrading")?;
+fn exchange(endpoint: &Value, message: Value, started: Instant) -> Result<Value, String> {
     let directory = directory().ok_or("Trace directory unavailable")?;
+    exchange_in_directory(endpoint, message, started, &directory)
+}
+
+fn exchange_in_directory(
+    endpoint: &Value,
+    mut message: Value,
+    started: Instant,
+    directory: &Path,
+) -> Result<Value, String> {
+    let socket = endpoint["socket"].as_str().ok_or("Trace broker requires the authenticated Unix-socket transport; restart the editor after upgrading")?;
     let path = Path::new(socket);
-    if path.parent() != Some(directory.as_path()) {
+    if path.parent() != Some(directory) {
         return Err("Trace socket is outside its private directory".into());
     }
     let token = endpoint["token"].as_str().ok_or("missing trace token")?;
@@ -356,9 +409,7 @@ fn exchange(endpoint: &Value, mut message: Value, started: Instant) -> Result<Va
             .set_write_timeout(Some(remaining(started)?))
             .map_err(|e| e.to_string())?;
         let end = (offset + 64 * 1024).min(bytes.len());
-        let written = stream
-            .write(&bytes[offset..end])
-            .map_err(|e| e.to_string())?;
+        let written = stream.write(&bytes[offset..end]).map_err(trace_io_error)?;
         if written == 0 {
             return Err("Trace connection closed during delivery".into());
         }
@@ -370,7 +421,7 @@ fn exchange(endpoint: &Value, mut message: Value, started: Instant) -> Result<Va
             .set_read_timeout(Some(remaining(started)?))
             .map_err(|e| e.to_string())?;
         let mut chunk = [0; 512];
-        let size = stream.read(&mut chunk).map_err(|e| e.to_string())?;
+        let size = stream.read(&mut chunk).map_err(trace_io_error)?;
         if size == 0 {
             break;
         }
@@ -388,6 +439,17 @@ fn exchange(endpoint: &Value, mut message: Value, started: Instant) -> Result<Va
         return Err("trace broker rejected event".into());
     }
     Ok(ack)
+}
+
+fn trace_io_error(error: std::io::Error) -> String {
+    if matches!(
+        error.kind(),
+        std::io::ErrorKind::WouldBlock | std::io::ErrorKind::TimedOut
+    ) {
+        "Trace delivery deadline exhausted".into()
+    } else {
+        format!("Trace transport: {error}")
+    }
 }
 
 #[cfg(unix)]
@@ -507,4 +569,55 @@ pub fn verify_peer(fd: i32) -> Result<(), String> {
 #[cfg(not(unix))]
 pub fn verify_peer(_: i32) -> Result<(), String> {
     Err("Unix peer verification unavailable".into())
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    fn delayed_ack(delay: Duration) -> (Result<Value, String>, Duration) {
+        use std::os::unix::{fs::DirBuilderExt, net::UnixListener};
+        let dir = std::env::temp_dir().join(distill_core::new_id("trace-ack"));
+        std::fs::DirBuilder::new().mode(0o700).create(&dir).unwrap();
+        let socket = dir.join("ack.sock");
+        let listener = UnixListener::bind(&socket).unwrap();
+        let worker = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(1)))
+                .unwrap();
+            let mut request = Vec::new();
+            loop {
+                let mut chunk = [0; 4096];
+                let n = stream.read(&mut chunk).unwrap();
+                if n == 0 {
+                    return;
+                }
+                request.extend_from_slice(&chunk[..n]);
+                if request.contains(&b'\n') {
+                    break;
+                }
+            }
+            std::thread::sleep(delay);
+            let _ = stream.write_all(b"{\"ok\":true}\n");
+        });
+        let started = Instant::now();
+        let result = exchange_in_directory(
+            &json!({"socket":socket,"token":"fixture-token"}),
+            json!({"action":"record","event":{}}),
+            started,
+            &dir,
+        );
+        let elapsed = started.elapsed();
+        worker.join().unwrap();
+        std::fs::remove_dir_all(dir).unwrap();
+        (result, elapsed)
+    }
+    #[test]
+    fn recorder_accepts_delayed_ack_and_reports_a_bounded_timeout() {
+        let (result, _) = delayed_ack(Duration::from_millis(150));
+        assert_eq!(result.unwrap()["ok"], true);
+        let (result, elapsed) = delayed_ack(Duration::from_millis(400));
+        assert!(result.unwrap_err().contains("deadline exhausted"));
+        assert!(elapsed < Duration::from_millis(380));
+    }
 }

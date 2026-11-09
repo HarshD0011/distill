@@ -1,0 +1,15 @@
+body { max-width: 680px; padding: 20px; color: var(--vscode-foreground); font-family: var(--vscode-font-family); }
+h1 { font-size: 23px; font-weight: 500; }
+form { display: grid; gap: 10px; }
+label { margin-top: 10px; }
+input, select, button { box-sizing: border-box; font: inherit; border: 1px solid var(--vscode-input-border, transparent); border-radius: 3px; padding: 8px; }
+input, select { color: var(--vscode-input-foreground); background: var(--vscode-input-background); width: 100%; }
+input[type=checkbox] { width: auto; }
+.check { display: flex; align-items: center; gap: 8px; }
+button { color: var(--vscode-button-foreground); background: var(--vscode-button-background); cursor: pointer; }
+button.secondary { color: var(--vscode-button-secondaryForeground); background: var(--vscode-button-secondaryBackground); }
+button:disabled { opacity: .55; cursor: default; }
+.actions { display: flex; gap: 10px; margin-top: 12px; }
+.hint, #llm-key-status { color: var(--vscode-descriptionForeground); font-size: 12px; margin: 0 0 8px; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }

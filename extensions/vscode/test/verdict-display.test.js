@@ -45,7 +45,7 @@ test('real signed hooks and recorder preserve impact badges, separate approval r
     }
     if (id === 'sql-cte-delete' || id === 'sql-constant-delete') {
       const primary = command.assessments.find(revision => revision.hook === 'PreToolUse').report;
-      assert.equal(primary.behavior_policy_version, '9');
+      assert.equal(primary.behavior_policy_version, '10');
       assert.ok(primary.behaviors.some(behavior => behavior.kind === 'database' && behavior.database?.action === 'delete' && behavior.database.scope === 'all_rows'));
       assert.match(row.textContent, /Modeled effects.*all rows/);
     }

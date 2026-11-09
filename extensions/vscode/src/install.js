@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { promisify } = require('node:util');
 const execFile = promisify(require('node:child_process').execFile);
 const { resolveBinary } = require('./client');
-const REQUIRED = ['assessments', 'completion', 'memory-only', 'workspace-context', 'hook-source-inspection', 'user-hook-setup', 'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval'];
+const REQUIRED = ['assessments', 'completion', 'memory-only', 'workspace-context', 'hook-source-inspection', 'user-hook-setup', 'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval', 'conditional-shell-impact', 'hook-debug-log', 'node-module-analysis', 'structured-diagnostics', 'direct-file-hooks', 'optional-service', 'configurable-router', 'versioned-hook-policy', 'native-gemini-claude', 'session-only-router', 'background-model-advice', 'model-agnostic-router', 'pipe-credentials', 'severity-batching'];
 
 function digest(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function privateDirectory(directory) {
@@ -39,11 +39,20 @@ async function ensureBinary({ extensionPath, storagePath, configured = '', platf
     const bytes = fs.readFileSync(source);
     sha256 = digest(bytes);
     if (sha256 !== manifest.sha256) throw new Error('Bundled Distill checksum verification failed. Reinstall the extension.');
+    let serviceBytes;
+    if (manifest.service) {
+      if (!/^[0-9a-f]{64}$/.test(manifest.service.sha256)) throw new Error('Invalid bundled service manifest.');
+      const service = path.join(extensionPath, 'bin/distill-service');
+      const stat = fs.lstatSync(service);
+      if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 128 * 1024 * 1024) throw new Error('Invalid bundled service binary.');
+      serviceBytes = fs.readFileSync(service);
+      if (digest(serviceBytes) !== manifest.service.sha256) throw new Error('Bundled service checksum verification failed.');
+    }
     if (!path.isAbsolute(storagePath || '')) throw new Error('Distill needs local extension storage to install its CLI.');
     privateDirectory(storagePath);
     const versions = path.join(storagePath, 'cli');
     privateDirectory(versions);
-    const directory = path.join(versions, sha256);
+    const directory = path.join(versions, serviceBytes ? digest(Buffer.from(sha256 + manifest.service.sha256)) : sha256);
     privateDirectory(directory);
     binary = path.join(directory, 'distill');
     if (!fs.existsSync(binary)) {
@@ -54,6 +63,17 @@ async function ensureBinary({ extensionPath, storagePath, configured = '', platf
       } finally { fs.rmSync(temporary, { force: true }); }
     }
     validInstalled(binary, sha256);
+    if (serviceBytes) {
+      const service = path.join(directory, 'distill-service');
+      if (!fs.existsSync(service)) {
+        const temporary = path.join(directory, `.service-${process.pid}-${crypto.randomBytes(8).toString('hex')}`);
+        try {
+          fs.writeFileSync(temporary, serviceBytes, { mode: 0o700, flag: 'wx' });
+          try { fs.linkSync(temporary, service); } catch (error) { if (error.code !== 'EEXIST') throw error; }
+        } finally { fs.rmSync(temporary, { force: true }); }
+      }
+      validInstalled(service, manifest.service.sha256);
+    }
     managed = true;
   }
   const health = JSON.parse((await run(binary, ['doctor', '--json'], { timeout: 5000, maxBuffer: 1024 * 1024 })).stdout);
@@ -61,4 +81,6 @@ async function ensureBinary({ extensionPath, storagePath, configured = '', platf
   return { binary, managed, sha256, health };
 }
 
-module.exports = { ensureBinary, REQUIRED };
+function trustedBinarySetting(configuration) { return configuration.inspect('binaryPath')?.globalValue || ''; }
+
+module.exports = { trustedBinarySetting, ensureBinary, REQUIRED };

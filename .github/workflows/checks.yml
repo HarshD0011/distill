@@ -20,6 +20,8 @@ jobs:
       - run: cargo test -p distill-cli --test runtime -- --ignored
         env:
           DISTILL_SANDBOX_TESTS: 1
+      - run: python3 -m unittest discover -s scripts -p test_design_tools.py
+      - run: python3 scripts/evaluate_corpus.py corpus/reviewed-seed.jsonl --output /tmp/distill-evaluation.json --check
       - run: make smoke
       - run: npm run check && npm test
         working-directory: extensions/vscode

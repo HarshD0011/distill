@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f6f2">
+  <meta name="description" content="Understand what an agent's shell command could do before it runs. Distill is a local Rust analyzer for Codex, Claude Code, and VS Code.">
+  <meta property="og:title" content="Distill — Know what runs. Before it does.">
+  <meta property="og:description" content="Local command analysis for coding agents. Clear impact, honest coverage, explicit policy.">
+  <meta property="og:type" content="website">
+  <title>Distill — Know what runs. Before it does.</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="wordmark" href="#" aria-label="Distill home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8l3 3-3 3M13 14h3M8 18h8"/></svg></span>distill<span class="brand-period">.</span></a>
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button>
+      <nav id="site-nav" aria-label="Main navigation">
+        <a href="#approach">The approach</a>
+        <a href="#integrations">Integrations</a>
+        <a href="https://github.com/HarshD0011/distill" class="nav-source">GitHub <span aria-hidden="true">↗</span></a>
+        <a href="#install" class="button button-small button-dark">Get started <span aria-hidden="true">↗</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero container" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="status-dot" aria-hidden="true"></span> LOCAL COMMAND ANALYSIS FOR CODING AGENTS</p>
+        <h1 id="hero-title">Know what runs.<br>Before it <em>does.</em></h1>
+        <p class="hero-description">Your agent moves fast. Get a clearer view of what its shell commands could do—before execution.</p>
+        <p class="hero-detail">Distill separates command impact, analysis coverage, and the policy decision. Written in Rust. Run on your machine.</p>
+        <div class="hero-actions"><a class="button button-orange" href="#install">Start with Distill <span aria-hidden="true">↗</span></a><a class="text-link" href="https://github.com/HarshD0011/distill/blob/HEAD/docs/static-analysis.md">Read the model <span aria-hidden="true">→</span></a></div>
+        <div class="hero-compatibility"><span class="tiny-label">WORKS ALONGSIDE</span><span>Codex</span><span>Claude Code</span><span>VS Code</span></div>
+      </div>
+
+      <div class="demo-wrap">
+        <div class="demo-caption"><span class="tiny-label">A COMMAND. A CLEARER PICTURE.</span><span class="demo-index" aria-hidden="true">01 / 03</span></div>
+        <section class="inspector" aria-label="Recorded command analysis examples">
+          <div class="window-bar"><span class="window-dots" aria-hidden="true"><i></i><i></i><i></i></span><span>distill / analyze</span><span class="local-indicator"><span aria-hidden="true">●</span> LOCAL</span></div>
+          <div class="example-picker" role="group" aria-label="Choose a recorded command"><button type="button" class="example-button active" data-example="safe" aria-pressed="true">Simple command</button><button type="button" class="example-button" data-example="critical" aria-pressed="false">Protected deletion</button><button type="button" class="example-button" data-example="unknown" aria-pressed="false">Unknown script</button></div>
+          <div class="command-area"><span class="code-label">PROPOSED SHELL COMMAND</span><div class="command-line"><span class="prompt" aria-hidden="true">$</span><code id="example-command">echo hello</code></div><div class="command-context"><span>BASH</span><span>cwd: /tmp</span><span>STATIC ANALYSIS</span></div></div>
+          <div class="analysis-result" aria-live="polite" aria-atomic="true">
+            <div class="result-heading"><span class="result-symbol" id="result-symbol" aria-hidden="true">✓</span><div><span class="code-label">MODELED IMPACT</span><h2 id="result-impact">Safe</h2></div><span id="result-decision" class="decision-tag">Allow</span></div>
+            <p id="result-reason" class="result-reason">No modeled hazardous effect was found in the supported static semantics.</p>
+            <dl class="result-facts"><div><dt>Coverage</dt><dd id="result-coverage">Accounted</dd></div><div><dt>Approval risk</dt><dd id="result-risk">Safe</dd></div><div><dt>Execution</dt><dd>Not performed</dd></div></dl>
+          </div>
+          <div class="inspector-footer"><span class="code-label">ANALYZE ≠ EXECUTE</span><span aria-hidden="true">↳</span></div>
+        </section>
+        <p class="demo-note">Recorded CLI 0.4.6 examples on macOS, with explicit Bash context. Policy and environment can change results. This page does not run the analyzer.</p>
+      </div>
+    </section>
+
+    <div class="principles-strip"><div class="container strip-inner"><span><i aria-hidden="true">↳</i> Analysis stays local</span><span><i aria-hidden="true">⌘</i> No model in the analysis path</span><span><i aria-hidden="true">◇</i> Uncertainty stays visible</span><a href="https://github.com/HarshD0011/distill/blob/HEAD/LICENSE">Open source · GPL-3.0 <span aria-hidden="true">↗</span></a></div></div>
+
+    <section class="section container approach" id="approach" aria-labelledby="approach-title">
+      <div class="section-intro"><p class="eyebrow">01 / THE APPROACH</p><h2 id="approach-title">A verdict should come<br>with <em>context.</em></h2><p>A familiar command can hide a different effect. An unfamiliar command needs an honest answer. Distill keeps three questions separate.</p></div>
+      <div class="approach-list">
+        <article class="approach-row"><span class="row-number">01</span><div><h3>What could it change?</h3><p>Model supported command behavior: file operations, nested execution, network transfers, and other effects.</p></div><span class="row-tag">IMPACT</span></article>
+        <article class="approach-row"><span class="row-number">02</span><div><h3>What can we account for?</h3><p>Keep unsupported syntax, dependencies, and missing shell context visible. A known impact can still have incomplete coverage.</p></div><span class="row-tag">COVERAGE</span></article>
+        <article class="approach-row"><span class="row-number">03</span><div><h3>What should happen next?</h3><p>Apply configurable effect policy to allow, request review, or deny. Host permissions remain a separate boundary.</p></div><span class="row-tag">POLICY</span></article>
+      </div>
+    </section>
+
+    <section class="workflow-section" id="integrations" aria-labelledby="workflow-title">
+      <div class="container">
+        <div class="workflow-heading"><div><p class="eyebrow">02 / IN YOUR WORKFLOW</p><h2 id="workflow-title">A second look.<br>Right where you work.</h2></div><p>Connect command assessment to your coding agent. Keep the CLI close when you want to inspect something yourself.</p></div>
+        <div class="workflow-layout">
+          <div class="trace-window" aria-label="Illustrative Distill editor command trace">
+            <div class="trace-header"><span><span class="status-dot" aria-hidden="true"></span> DISTILL / COMMAND TRACE</span><span>ILLUSTRATION</span></div>
+            <div class="trace-project"><span class="trace-folder" aria-hidden="true">⌁</span><div><strong>A clearer command history</strong><span>Assessment, decision, completion</span></div></div>
+            <div class="trace-row"><span class="trace-dot safe" aria-hidden="true"></span><code>echo hello</code><span class="trace-badge safe">SAFE</span></div>
+            <div class="trace-row"><span class="trace-dot unknown" aria-hidden="true"></span><code>./deploy.sh</code><span class="trace-badge unknown">UNKNOWN</span></div>
+            <div class="trace-expanded"><span>Analysis coverage</span><strong>Opaque</strong><p>Unknown behavior remains visible. Review the assessment instead of relying on the command's name.</p></div>
+            <div class="trace-row"><span class="trace-dot critical" aria-hidden="true"></span><code>rm -rf /</code><span class="trace-badge critical">CRITICAL</span></div>
+            <div class="trace-bottom">Output capture defaults off. Editor history is temporary.</div>
+          </div>
+          <div class="integration-list">
+            <article><span class="integration-icon" aria-hidden="true">&gt;_</span><div><h3>Codex &amp; Claude Code</h3><p>User hooks assess commands before execution. Critical commands require a human decision; exact review behavior depends on the host and platform.</p><a href="https://github.com/HarshD0011/distill#build-and-install">Hook setup <span aria-hidden="true">↗</span></a></div></article>
+            <article><span class="integration-icon" aria-hidden="true">⌘</span><div><h3>VS Code</h3><p>A command trace sidebar with reasons, policy decisions, and available completion status. The platform-specific extension bundles the CLI.</p><a href="https://github.com/HarshD0011/distill/blob/HEAD/extensions/vscode/README.md">Extension guide <span aria-hidden="true">↗</span></a></div></article>
+            <article><span class="integration-icon" aria-hidden="true">↳</span><div><h3>Your terminal</h3><p>Analyze a command, inspect supported source artifacts, check integration health, or inspect coverage gaps from saved reports.</p><a href="https://github.com/HarshD0011/distill#analyze-commands">Explore the CLI <span aria-hidden="true">↗</span></a></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container boundaries" aria-labelledby="boundaries-title">
+      <div><p class="eyebrow">03 / CLEAR BOUNDARIES</p><h2 id="boundaries-title">Local by design.<br>Explicit about <em>limits.</em></h2><a class="text-link" href="https://github.com/HarshD0011/distill/blob/HEAD/docs/tool-coverage.md">Read coverage and limits <span aria-hidden="true">→</span></a></div>
+      <div class="boundary-grid"><article><span class="boundary-symbol" aria-hidden="true">◎</span><h3>No cloud analysis</h3><p>No model or network service runs in the analysis path. The analyzer works on your machine.</p></article><article><span class="boundary-symbol" aria-hidden="true">◒</span><h3>Unknown means unknown</h3><p>Static analysis is bounded. Recognizing a tool does not prove arbitrary application code safe.</p></article><article><span class="boundary-symbol" aria-hidden="true">⌁</span><h3>Privacy has boundaries, too</h3><p>Editor history is memory-only. The separate session ledger persists bounded hashes and policy state.</p></article><article><span class="boundary-symbol" aria-hidden="true">⊞</span><h3>Containment is opt-in</h3><p><code>analyze</code> does not execute commands. <code>run</code> uses native containment; installing hooks does not enable it automatically.</p></article></div>
+    </section>
+
+    <section class="install-section" id="install" aria-labelledby="install-title">
+      <div class="container install-layout"><div><p class="eyebrow">04 / GET STARTED</p><h2 id="install-title">Make the next<br>command clearer.</h2><p>Start with the VS Code extension, or build the CLI from source. Local desktop support for macOS and Linux.</p><a class="install-doc-link" href="https://github.com/HarshD0011/distill/blob/HEAD/README.md">Full installation documentation <span aria-hidden="true">↗</span></a></div>
+        <div class="install-panel"><div class="install-tabs" role="tablist" aria-label="Installation method"><button type="button" id="tab-extension" role="tab" aria-selected="true" aria-controls="panel-extension" tabindex="0">VS Code</button><button type="button" id="tab-cli" role="tab" aria-selected="false" aria-controls="panel-cli" tabindex="-1">CLI</button><button type="button" id="tab-hooks" role="tab" aria-selected="false" aria-controls="panel-hooks" tabindex="-1">Agent hooks</button></div>
+          <div id="panel-extension" class="install-content" role="tabpanel" aria-labelledby="tab-extension" tabindex="0"><span class="install-step-label">THE SHORTEST PATH</span><h3>One extension. CLI included.</h3><ol><li>Click <strong>Get extension</strong> below and allow your browser to open Visual Studio Code.</li><li>For new installations, use the platform-specific VSIX while Marketplace publication is pending, then open a trusted local folder.</li><li>Review the generated hooks in your agent, then open the Distill sidebar.</li></ol><a id="get-extension" class="button button-orange" href="vscode:extension/distill.distill-trace" aria-describedby="extension-open-hint">Get extension <span aria-hidden="true">↗</span></a><p id="extension-open-hint" class="install-small">Your browser may ask to open Visual Studio Code. <a href="https://github.com/HarshD0011/distill/blob/HEAD/extensions/vscode/README.md#install-and-connect">Install from VSIX instead ↗</a></p></div>
+          <div id="panel-cli" class="install-content" role="tabpanel" aria-labelledby="tab-cli" tabindex="0" hidden><span class="install-step-label">BUILD FROM SOURCE</span><h3>A small CLI. A closer look.</h3><div class="copy-block"><pre><code id="cli-command">git clone https://github.com/HarshD0011/distill.git
+cd distill
+cargo install --path crates/distill-cli --force
+distill analyze --command 'echo hello' --human</code></pre><button type="button" class="copy-button" data-copy="cli-command" aria-label="Copy CLI installation commands">Copy</button></div><p class="install-small">Requires a Rust toolchain supporting edition 2024. Run from the cloned repository.</p><a class="install-doc-link" href="https://github.com/HarshD0011/distill#analyze-commands">CLI documentation <span aria-hidden="true">↗</span></a></div>
+          <div id="panel-hooks" class="install-content" role="tabpanel" aria-labelledby="tab-hooks" tabindex="0" hidden><span class="install-step-label">AFTER INSTALLING THE CLI</span><h3>Connect your agent.</h3><div class="copy-block"><pre><code id="hook-command"># Preview before changing user hook definitions
+distill setup codex --check --workspace-root "$PWD"
+distill setup codex --labels --workspace-root "$PWD"
+distill doctor --json --workspace-root "$PWD"</code></pre><button type="button" class="copy-button" data-copy="hook-command" aria-label="Copy Codex hook setup commands">Copy</button></div><p class="install-small">Run from your workspace root and review the definitions in Codex’s <code>/hooks</code>. For Claude Code, use <code>distill setup claude</code>. Manual setup uses strict defaults; existing host permissions still apply.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section container faq-section" aria-labelledby="faq-title"><div><p class="eyebrow">A FEW USEFUL ANSWERS</p><h2 id="faq-title">Before you begin.</h2></div><div class="faq-list"><details><summary>Does Distill execute the command to analyze it?<span aria-hidden="true">+</span></summary><p>No. <code>analyze</code> and hook assessment inspect commands without executing them. The separate <code>run</code> subcommand is an opt-in execution gate.</p></details><details><summary>Is a “safe” rating a guarantee?<span aria-hidden="true">+</span></summary><p>No. It describes modeled impact within the supported static semantics. Coverage, source dependencies, shell context, and host permissions still matter. Incomplete coverage can require review even when the modeled impact is safe.</p></details><details><summary>Does installing the hooks sandbox my agent?<span aria-hidden="true">+</span></summary><p>No. Hooks are analysis adapters. Execution goes through native containment only when explicitly routed through <code>distill run</code>. macOS uses Seatbelt; supported Linux kernels use Landlock and seccomp.</p></details><details><summary>Which editor environments are supported?<span aria-hidden="true">+</span></summary><p>The extension supports trusted local desktop VS Code folders on macOS and Linux, on arm64 and x64. Windows, remote workspaces, WSL, containers, and browser VS Code are not currently supported by the extension.</p></details></div></section>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-top"><a class="wordmark" href="#" aria-label="Distill home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8l3 3-3 3M13 14h3M8 18h8"/></svg></span>distill<span class="brand-period">.</span></a><p>Less guesswork. More context.</p><div><a href="https://github.com/HarshD0011/distill">Source ↗</a><a href="https://github.com/HarshD0011/distill/issues">Issues ↗</a><a href="https://github.com/HarshD0011/distill/blob/HEAD/LICENSE">License ↗</a></div></div><div class="container footer-bottom"><span>An open-source project by Harsh Dhiman.</span><span>CLI 0.4.6 <span aria-hidden="true">·</span> Built in Rust <span aria-hidden="true">·</span> GPL-3.0</span></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

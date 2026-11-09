@@ -2,7 +2,7 @@
   "name": "distill-trace",
   "displayName": "Distill \u2014 Chat Command Trace",
   "description": "Temporary per-chat command history with Distill severity, policy decisions, and output.",
-  "version": "0.4.9",
+  "version": "0.5.10",
   "publisher": "distill",
   "license": "GPL-3.0-only",
   "repository": {
@@ -42,10 +42,36 @@
         "command": "distill.clearTrace",
         "title": "Distill: Clear Logs",
         "icon": "$(trash)"
+      },
+      {
+        "command": "distill.exportSession",
+        "title": "Distill: Export Session"
+      },
+      {
+        "command": "distill.configureServices",
+        "title": "Distill: Configure Optional Services"
+      },
+      {
+        "command": "distill.configureRouter",
+        "title": "Distill: Configure LLM Router",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "distill.startService",
+        "title": "Distill: Start Optional Service"
+      },
+      {
+        "command": "distill.stopService",
+        "title": "Distill: Stop Optional Service"
       }
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "distill.configureRouter",
+          "when": "view == distill.trace",
+          "group": "navigation@1"
+        },
         {
           "command": "distill.clearTrace",
           "when": "view == distill.trace",
@@ -85,6 +111,251 @@
           "default": "",
           "scope": "machine",
           "description": "Optional Codex home for chat titles. Reads only session_index.jsonl metadata; defaults to CODEX_HOME or ~/.codex."
+        },
+        "distill.llm.enabled": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Enable advisory model routing for unresolved commands and start the optional local service. Disabled uses static analysis only, including when a local classifier is configured."
+        },
+        "distill.llm.provider": {
+          "type": "string",
+          "enum": [
+            "openai_compatible",
+            "gemini",
+            "claude",
+            "llama_cpp",
+            "vllm"
+          ],
+          "enumDescriptions": [
+            "OpenAI or another compatible HTTPS endpoint. Defaults to GPT-6 Luna.",
+            "Google Gemini generateContent API. Defaults to Gemini 3.1 Flash-Lite and GEMINI_API_KEY.",
+            "Anthropic Claude Messages API. Defaults to Claude Haiku 5.5 and ANTHROPIC_API_KEY.",
+            "Local llama.cpp server, default port 8080. Set its served model alias.",
+            "Local vLLM server, default port 8000. Set its served model name."
+          ],
+          "default": "openai_compatible",
+          "scope": "machine",
+          "description": "Request format and endpoint preset. Uses exactly the selected model; never falls back to a cloud or more expensive model."
+        },
+        "distill.llm.endpoint": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Provider endpoint override. Gemini uses an API base URL (default https://generativelanguage.googleapis.com/v1beta); other providers use a full request URL. Empty uses the provider preset. HTTPS or loopback HTTP only."
+        },
+        "distill.llm.model": {
+          "type": "string",
+          "default": "",
+          "enum": [
+            "",
+            "gpt-6-luna",
+            "gpt-5.4-mini",
+            "gpt-5.4-nano",
+            "gpt-5-mini",
+            "gpt-5-nano",
+            "gpt-6.1-terra",
+            "gpt-6.1-sol",
+            "gpt-6-astra",
+            "gpt-6-sol",
+            "gpt-5.6-luna",
+            "gpt-5.6-terra",
+            "gpt-5.6-sol",
+            "gpt-5.5",
+            "gpt-5.4",
+            "gpt-5.2",
+            "gpt-5.1",
+            "gpt-5",
+            "gpt-4.1-mini",
+            "gpt-4.1",
+            "gpt-4o-mini",
+            "gpt-4o",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash-lite",
+            "gemini-3.8-flash",
+            "gemini-3.1-pro-preview",
+            "claude-haiku-5-5",
+            "claude-sonnet-5-5",
+            "claude-opus-5-5",
+            "__custom__"
+          ],
+          "enumItemLabels": [
+            "Provider default",
+            "OpenAI / compatible API \u00b7 GPT-6 Luna",
+            "OpenAI / compatible API \u00b7 GPT-5.4 Mini",
+            "OpenAI / compatible API \u00b7 GPT-5.4 Nano (deprecated; retires 2027-04-01)",
+            "OpenAI / compatible API \u00b7 GPT-5 Mini (deprecated; retires 2026-12-11)",
+            "OpenAI / compatible API \u00b7 GPT-5 Nano (deprecated; retires 2026-12-11)",
+            "OpenAI / compatible API \u00b7 GPT-6.1 Terra",
+            "OpenAI / compatible API \u00b7 GPT-6.1 Sol",
+            "OpenAI / compatible API \u00b7 GPT-6 Astra",
+            "OpenAI / compatible API \u00b7 GPT-6 Sol",
+            "OpenAI / compatible API \u00b7 GPT-5.6 Luna",
+            "OpenAI / compatible API \u00b7 GPT-5.6 Terra",
+            "OpenAI / compatible API \u00b7 GPT-5.6 Sol",
+            "OpenAI / compatible API \u00b7 GPT-5.5",
+            "OpenAI / compatible API \u00b7 GPT-5.4",
+            "OpenAI / compatible API \u00b7 GPT-5.2",
+            "OpenAI / compatible API \u00b7 GPT-5.1 (deprecated; retires 2027-04-01)",
+            "OpenAI / compatible API \u00b7 GPT-5 (deprecated; retires 2026-12-11)",
+            "OpenAI / compatible API \u00b7 GPT-4.1 Mini (deprecated; retires 2027-01-14)",
+            "OpenAI / compatible API \u00b7 GPT-4.1 (deprecated; retires 2027-01-14)",
+            "OpenAI / compatible API \u00b7 GPT-4o Mini (deprecated; retires 2027-01-14)",
+            "OpenAI / compatible API \u00b7 GPT-4o (deprecated; retires 2027-01-14)",
+            "Google Gemini \u00b7 Gemini 3.1 Flash-Lite",
+            "Google Gemini \u00b7 Gemini 3.5 Flash-Lite",
+            "Google Gemini \u00b7 Gemini 3.8 Flash",
+            "Google Gemini \u00b7 Gemini 3.1 Pro (preview)",
+            "Anthropic Claude \u00b7 Claude Haiku 5.5",
+            "Anthropic Claude \u00b7 Claude Sonnet 5.5",
+            "Anthropic Claude \u00b7 Claude Opus 5.5",
+            "Custom model\u2026"
+          ],
+          "enumDescriptions": [
+            "Use the selected provider\u2019s default model.",
+            "Model ID: gpt-6-luna. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.4-mini. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.4-nano. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5-mini. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5-nano. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-6.1-terra. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-6.1-sol. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-6-astra. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-6-sol. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.6-luna. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.6-terra. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.6-sol. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.5. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.4. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.2. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5.1. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-5. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-4.1-mini. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-4.1. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-4o-mini. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gpt-4o. Select OpenAI / compatible API as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gemini-3.1-flash-lite. Select Google Gemini as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gemini-3.5-flash-lite. Select Google Gemini as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gemini-3.8-flash. Select Google Gemini as the provider. Availability depends on your endpoint and account.",
+            "Model ID: gemini-3.1-pro-preview. Select Google Gemini as the provider. Availability depends on your endpoint and account.",
+            "Model ID: claude-haiku-5-5. Select Anthropic Claude as the provider. Availability depends on your endpoint and account.",
+            "Model ID: claude-sonnet-5-5. Select Anthropic Claude as the provider. Availability depends on your endpoint and account.",
+            "Model ID: claude-opus-5-5. Select Anthropic Claude as the provider. Availability depends on your endpoint and account.",
+            "Use the exact model ID in Distill \u203a Llm: Custom Model."
+          ],
+          "maxLength": 256,
+          "scope": "machine",
+          "markdownDescription": "Select a model for the configured provider. For another model or local served alias, choose **Custom model\u2026** and set `#distill.llm.customModel#`. The **Distill: Configure LLM Router** command opens the provider-specific form and secure API key entry."
+        },
+        "distill.llm.apiKeyEnv": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "OPENAI_API_KEY",
+            "GEMINI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "",
+            "custom"
+          ],
+          "enumDescriptions": [
+            "Use the selected provider\u2019s default variable.",
+            "OpenAI key.",
+            "Google Gemini key.",
+            "Anthropic Claude key.",
+            "Keyless local or compatible server.",
+            "Use Custom API Key Env below."
+          ],
+          "scope": "machine",
+          "description": "Select the key variable. Enter the actual key in Distill: Configure LLM Router; keys use encrypted SecretStorage."
+        },
+        "distill.llm.maxOutputTokens": {
+          "type": "integer",
+          "default": 512,
+          "minimum": 64,
+          "maximum": 2048,
+          "scope": "machine",
+          "description": "Maximum generated tokens per model request. No retries or fallback model requests are made."
+        },
+        "distill.llm.reasoningEffort": {
+          "type": "string",
+          "enum": [
+            "provider_default",
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ],
+          "enumItemLabels": [
+            "Provider default (omit parameter)",
+            "None",
+            "Minimal",
+            "Low",
+            "Medium",
+            "High",
+            "Extra high",
+            "Maximum"
+          ],
+          "default": "provider_default",
+          "scope": "machine",
+          "description": "Explicit reasoning_effort for OpenAI-compatible APIs, including local servers. Applied unchanged to every model; support depends on the endpoint and model. Provider default omits the parameter. Gemini and Claude require Provider default. Use the same explicit effort for latency comparisons; unsupported values return an error without retries or model fallback."
+        },
+        "distill.llm.deadlineMs": {
+          "type": "integer",
+          "default": 800,
+          "minimum": 20,
+          "maximum": 800,
+          "scope": "machine",
+          "description": "Legacy synchronous model budget. Background advice uses Background Deadline Ms; the hook waits at most 40 ms for a local queue acknowledgement."
+        },
+        "distill.llm.sendScriptContents": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Allow up to 8 KiB of inspected script excerpts in model requests. Command and structured analysis are sent when routing is enabled; script contents require this separate opt-in."
+        },
+        "distill.llm.customApiKeyEnv": {
+          "type": "string",
+          "default": "",
+          "pattern": "^[A-Z0-9_]*$",
+          "scope": "machine",
+          "description": "Variable name used when API Key Env is custom. This is a name, never the API key."
+        },
+        "distill.llm.backgroundDeadlineMs": {
+          "type": "integer",
+          "default": 5000,
+          "minimum": 100,
+          "maximum": 15000,
+          "scope": "machine",
+          "description": "Timeout for background model advice. The hook returns its static verdict without waiting for model completion."
+        },
+        "distill.llm.customModel": {
+          "type": "string",
+          "default": "",
+          "maxLength": 256,
+          "scope": "machine",
+          "markdownDescription": "Exact model ID or local served-model alias. Used when `#distill.llm.model#` is **Custom model\u2026**. Enter API keys through **Distill: Configure LLM Router**."
+        },
+        "distill.llm.reviewFormat": {
+          "type": "string",
+          "enum": [
+            "severity",
+            "effects"
+          ],
+          "default": "severity",
+          "scope": "machine",
+          "description": "Severity replies use one lowercase label per command, separated by semicolons. Effects preserves legacy JSON advice. Neither grants execution approval."
+        },
+        "distill.llm.batchWindowMs": {
+          "type": "integer",
+          "default": 0,
+          "minimum": 0,
+          "maximum": 500,
+          "scope": "machine",
+          "description": "Fixed wait from the first pending severity review to group overlapping requests. 0 sends immediately. Batching reduces API calls but adds queue delay; measure with your provider."
         }
       }
     }
@@ -92,6 +363,7 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "check": "node scripts/check.js",
-    "package": "python3 scripts/package.py"
+    "package": "python3 scripts/package.py",
+    "sync-models": "node scripts/sync-models.js"
   }
 }

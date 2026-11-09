@@ -10,11 +10,12 @@ pub use behavior::{BehaviorVerdict, evaluate_behavior};
 
 pub fn score(
     request: &AnalyzeRequest,
-    draft: AnalysisDraft,
+    mut draft: AnalysisDraft,
     config: &Config,
     elapsed_ms: u128,
 ) -> Report {
-    let incomplete = draft.coverage.summary != CoverageSummary::StaticAccounted;
+    let scoring_started = std::time::Instant::now();
+    let mut incomplete = draft.coverage.summary != CoverageSummary::StaticAccounted;
     let modeled_impact = draft
         .findings
         .iter()
@@ -35,18 +36,85 @@ pub fn score(
         None if incomplete => Severity::Medium,
         None => Severity::Safe,
     };
-    let severity = if incomplete {
+    let mut severity = if incomplete {
         raw_severity.max(Severity::Medium)
     } else {
         raw_severity
     };
+    for rule in &config.overrides {
+        if regex::Regex::new(&format!("^(?:{})$", rule.pattern))
+            .is_ok_and(|v| v.is_match(&request.command.text))
+        {
+            severity = if !incomplete && severity < Severity::Critical {
+                rule.severity
+            } else {
+                severity.max(rule.severity)
+            };
+        }
+    }
+    // Workspace-owned rules may only raise risk. Bind their contents just like
+    // other dependencies so an execution receipt cannot outlive a policy change.
+    let project = request.cwd.join(".distill-policy.toml");
+    let mut invalid_project = false;
+    if project.exists() {
+        #[derive(serde::Deserialize)]
+        #[serde(deny_unknown_fields)]
+        struct Project {
+            #[serde(default)]
+            raise: Vec<distill_core::PolicyOverride>,
+        }
+        let budget = distill_core::AnalysisBudget::new(20);
+        match distill_core::read_snapshot(&project, &budget, 16384).and_then(
+            |(source, snapshot)| {
+                toml::from_str::<Project>(&source)
+                    .map(|v| (v, snapshot))
+                    .map_err(|e| e.to_string())
+            },
+        ) {
+            Ok((policy, snapshot)) if policy.raise.len() <= 128 => {
+                draft.inspected_files.push(snapshot);
+                for rule in policy.raise {
+                    if rule.pattern.len() > 1024 {
+                        severity = severity.max(Severity::High);
+                        invalid_project = true;
+                        continue;
+                    }
+                    match regex::Regex::new(&format!("^(?:{})$", rule.pattern)) {
+                        Ok(pattern) if pattern.is_match(&request.command.text) => {
+                            severity = severity.max(rule.severity)
+                        }
+                        Err(_) => {
+                            severity = severity.max(Severity::High);
+                            invalid_project = true;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {
+                severity = severity.max(Severity::High);
+                invalid_project = true;
+            }
+        }
+    }
+    if invalid_project {
+        let reason = "Workspace policy could not be validated; review required";
+        draft.unknowns.push(reason.into());
+        draft.coverage.stop_reasons.push(reason.into());
+        if draft.coverage.summary == CoverageSummary::StaticAccounted {
+            draft.coverage.summary = CoverageSummary::Partial;
+        }
+        incomplete = true;
+    }
     let from_severity = match severity {
         Severity::Safe | Severity::Low => Decision::Allow,
         Severity::Medium => map_action(config.policy.medium),
         Severity::High => map_action(config.policy.high),
         Severity::Critical => map_action(config.policy.critical),
     };
-    let decision = if draft.coverage.summary == CoverageSummary::Stopped {
+    let decision = if invalid_project {
+        stronger(from_severity, Decision::Ask)
+    } else if draft.coverage.summary == CoverageSummary::Stopped {
         Decision::Deny
     } else if incomplete {
         stronger(from_severity, map_action(config.policy.incomplete))
@@ -77,13 +145,29 @@ pub fn score(
         behaviors: draft.behaviors,
         coverage: draft.coverage,
         trace_status,
+        coverage_gaps: draft
+            .unknowns
+            .iter()
+            .map(|v| distill_core::CoverageGap::from_reason(v))
+            .collect(),
         unknowns: draft.unknowns,
+        graph: draft.graph,
+        context_evidence: draft.context_evidence,
+        judge: None,
         policy_digest: config.digest(),
         behavior_policy_version: distill_core::BEHAVIOR_POLICY_VERSION,
         analysis_context: request.context.clone(),
         shell_dialect: request.command.dialect,
         cwd: request.cwd.clone(),
-        timings_ms: Timings { total: elapsed_ms },
+        timings_ms: Timings {
+            total: elapsed_ms + scoring_started.elapsed().as_millis(),
+            stages: [
+                ("static".into(), elapsed_ms),
+                ("scoring".into(), scoring_started.elapsed().as_millis()),
+            ]
+            .into_iter()
+            .collect(),
+        },
     }
 }
 
@@ -162,6 +246,8 @@ mod tests {
 
     fn empty_draft(summary: CoverageSummary, severity: Option<Severity>) -> AnalysisDraft {
         AnalysisDraft {
+            graph: Default::default(),
+            context_evidence: Vec::new(),
             inspected_files: Vec::new(),
             findings: Vec::new(),
             effects: Vec::new(),

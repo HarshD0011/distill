@@ -1,0 +1,104 @@
+{
+  "cli_version": "0.4.6",
+  "recorded_on": "2026-11-06",
+  "platform": "macOS",
+  "cwd": "/tmp",
+  "examples": {
+    "safe": {
+      "command_redacted": "echo hello",
+      "impact_severity": "safe",
+      "severity": "safe",
+      "decision": "allow",
+      "coverage": {
+        "summary": "static_accounted",
+        "parse": "accounted",
+        "options": "accounted",
+        "targets": "accounted",
+        "expansion": "accounted",
+        "stop_reasons": []
+      },
+      "findings": [],
+      "unknowns": [],
+      "analysis_context": {
+        "shell": "bash",
+        "workspace_roots": [],
+        "shell_options": null,
+        "sandbox_escalation": false
+      },
+      "behavior_policy_version": "9",
+      "mode": "embedded_static"
+    },
+    "critical": {
+      "command_redacted": "rm -rf /",
+      "impact_severity": "critical",
+      "severity": "critical",
+      "decision": "deny",
+      "coverage": {
+        "summary": "static_accounted",
+        "parse": "accounted",
+        "options": "accounted",
+        "targets": "accounted",
+        "expansion": "accounted",
+        "stop_reasons": []
+      },
+      "findings": [
+        {
+          "rule_id": "delete.filesystem-root",
+          "severity": "critical",
+          "impact": "Recursive delete targets a protected path, root, or home directory",
+          "evidence": [
+            {
+              "source": "command_definition",
+              "fact": "Recursive delete targets a protected path, root, or home directory"
+            },
+            {
+              "source": "source_syntax",
+              "fact": "rm at source 1:1; resolved argument \"/\""
+            }
+          ],
+          "confidence": "conditional",
+          "basis": "impact"
+        }
+      ],
+      "unknowns": [],
+      "analysis_context": {
+        "shell": "bash",
+        "workspace_roots": [],
+        "shell_options": null,
+        "sandbox_escalation": false
+      },
+      "behavior_policy_version": "9",
+      "mode": "embedded_static"
+    },
+    "unknown": {
+      "command_redacted": "./deploy.sh",
+      "impact_severity": null,
+      "severity": "medium",
+      "decision": "ask",
+      "coverage": {
+        "summary": "opaque",
+        "parse": "accounted",
+        "options": "unknown",
+        "targets": "partial",
+        "expansion": "accounted",
+        "stop_reasons": [
+          "Executable is not in a trusted macOS system location",
+          "Unknown command definition"
+        ]
+      },
+      "findings": [],
+      "unknowns": [
+        "Executable is not in a trusted macOS system location",
+        "Unknown command definition"
+      ],
+      "analysis_context": {
+        "shell": "bash",
+        "workspace_roots": [],
+        "shell_options": null,
+        "sandbox_escalation": false
+      },
+      "behavior_policy_version": "9",
+      "mode": "embedded_static"
+    }
+  }
+}

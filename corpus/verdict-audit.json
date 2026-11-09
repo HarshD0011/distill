@@ -485,11 +485,11 @@
     "risk_min": "high"
   },
   {
-    "name": "Python unmodeled imports",
+    "name": "Python standard-library JSON computation",
     "command": "python3 -c 'import json; print(json.dumps({\"a\":1}))'",
-    "impact": null,
-    "review": true,
-    "rationale": "Source or executable behavior remains unresolved; do not invent a safe impact rating.",
-    "risk_min": "high"
+    "impact": "low",
+    "review": false,
+    "rationale": "Approved JSON serialization of builtin literal data is statically accounted; no callbacks or dynamic imports are involved.",
+    "risk_min": "low"
   }
 ]

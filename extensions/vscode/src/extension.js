@@ -2,16 +2,30 @@
 const vscode = require('vscode');
 const crypto = require('node:crypto');
 const { connectBroker } = require('./client');
-const { ensureBinary } = require('./install');
+const { ensureBinary, trustedBinarySetting } = require('./install');
 const { configureUserHooks } = require('./setup');
 const { rpc } = require('./transport');
 const { SessionTitles } = require('./titles');
 const { normalizeDetails } = require('./assessments');
+const { exportSession } = require('./export');
+const { readRouterSettings, syncRouter, runWithInput } = require('./router');
+const { RouterCredentials } = require('./credentials');
+const { createRouterSettings } = require('./settings');
+const { modelPreference } = require('./models');
+const execFile = require('node:util').promisify(require('node:child_process').execFile);
+let cleanup;
 
 function activate(context) {
   let endpointPromise;
   let runtimePromise;
   let hooksPromise;
+  let setupQueue = Promise.resolve();
+  const clientId = crypto.randomUUID();
+  const credentials = new RouterCredentials(context.secrets);
+  let restartRouter = true;
+  let updatingSettings = false;
+  let routerState;
+  const publicRouterState = () => routerState ? { status: 'ready', enabled: routerState.enabled, running: routerState.running, model: routerState.model } : { status: 'error' };
   let view;
   let lastVersion = -1;
   let busy = false;
@@ -26,10 +40,13 @@ function activate(context) {
   let lastSnapshot;
   let lastTitles = '';
   let legacyBroker = false;
+  const statusBar = vscode.window.createStatusBarItem?.(vscode.StatusBarAlignment?.Left, 20);
+  if (statusBar) { statusBar.command = 'distill.openTrace'; statusBar.tooltip = 'Distill observed commands'; context.subscriptions.push(statusBar); statusBar.show(); }
   const titleHome = vscode.workspace.getConfiguration('distill').get('codexHome', '') || undefined;
   const titles = new SessionTitles(titleHome);
   const roots = () => (vscode.workspace.workspaceFolders || []).map(folder => folder.uri).filter(uri => uri.scheme === 'file').map(uri => uri.fsPath);
   const prepare = (force = false) => {
+    if (disposed) return Promise.reject(new Error('Distill is inactive.'));
     if (vscode.env.remoteName || !['darwin', 'linux'].includes(process.platform)) {
       return Promise.reject(new Error('V1 supports local desktop VS Code on macOS and Linux.'));
     }
@@ -37,11 +54,12 @@ function activate(context) {
     if (!runtimePromise) runtimePromise = ensureBinary({
       extensionPath: context.extensionPath,
       storagePath: context.globalStorageUri?.fsPath,
-      configured: vscode.workspace.getConfiguration('distill').get('binaryPath', ''),
+      configured: trustedBinarySetting(vscode.workspace.getConfiguration('distill')),
     });
-    if (!hooksPromise) hooksPromise = runtimePromise.then(async runtime => {
+    if (!hooksPromise) hooksPromise = setupQueue.catch(() => {}).then(() => runtimePromise).then(async runtime => {
       const setups = await configureUserHooks({
         binary: runtime.binary, extensionPath: context.extensionPath, roots: roots(), force,
+        debugLog: '',
         isDirty: file => vscode.workspace.textDocuments.some(document => document.uri.fsPath === file && document.isDirty),
       });
       const changed = setups.filter(setup => setup.changed);
@@ -51,15 +69,32 @@ function activate(context) {
           : 'Restart or resume Claude Code to approve the Distill hooks.').join(' ');
         void vscode.window.showInformationMessage(`Distill is installed and its hooks are configured. ${next}`);
       }
-      return { ...runtime, setups };
+      let router;
+      let settingsError;
+      try { router = readRouterSettings(vscode.workspace.getConfiguration('distill')); }
+      catch (error) { router = { enabled: false }; settingsError = error; }
+      try {
+        if (disposed) throw new Error('Distill is inactive.');
+        routerState = await syncRouter({ binary: runtime.binary, hosts: setups.map(setup => setup.host), router, env: credentials.environment(router), credential: router.enabled ? await credentials.handoff(router) : undefined, restart: restartRouter });
+        restartRouter = false;
+        if (settingsError) void vscode.window.showErrorMessage(`Distill LLM router disabled: ${settingsError.message}`);
+      } catch (error) {
+        routerState = undefined;
+        void vscode.window.showErrorMessage(`Distill router configuration failed: ${error.stderr || error.message}. Review Distill LLM settings and reconnect hooks.`);
+      }
+      void view?.webview.postMessage({ type: 'router-state', router: publicRouterState() });
+      return { ...runtime, setups, router: routerState };
     });
+    setupQueue = hooksPromise;
     return hooksPromise;
   };
   const connect = () => {
-    if (!endpointPromise) endpointPromise = prepare().then(runtime => connectBroker(roots(), runtime.binary)).then(endpoint => {
+    if (!endpointPromise) endpointPromise = prepare().then(runtime => connectBroker(roots(), runtime.binary, clientId)).then(endpoint => {
       const id = endpoint.instance_id || endpoint.token;
       if (brokerId && brokerId !== id) {
-        recordingWarning = 'Recorder restarted; earlier temporary traces were lost.';
+        recordingWarning = '';
+        lastSnapshot = undefined; lastTitles = ''; titles.clear();
+        view?.webview.postMessage({ type: 'cleared' });
         requestRevision++; lastVersion = -1;
       }
       legacyBroker = (endpoint.broker_version || 1) < 3;
@@ -84,6 +119,10 @@ function activate(context) {
       }
       if (!lastSnapshot) return;
       const namedSessions = await titles.enrich(lastSnapshot.sessions);
+      if (statusBar) {
+        statusBar.text = `Distill: ${namedSessions.reduce((sum, session) => sum + (session.commandCount || 0), 0)} commands`;
+        statusBar.tooltip = routerState ? (routerState.enabled ? `Static analysis + advisory LLM: ${routerState.model}` : 'Static analysis only · LLM router disabled') : 'Distill observed commands · check router configuration';
+      }
       if (revision !== requestRevision) return;
       const titleStamp = JSON.stringify(namedSessions.map(session => [session.key, session.title]));
       if (connectionError && view) view.webview.postMessage({ type: 'connected' });
@@ -104,10 +143,32 @@ function activate(context) {
     await send({ action: 'clear', roots: legacyBroker ? undefined : roots().map(root => require('node:fs').realpathSync(root)) });
     requestRevision++;
     lastVersion = -1; lastSnapshot = undefined; lastTitles = '';
+    titles.clear();
     selectedSession = ''; pageOffset = 0; query = ''; recordingWarning = '';
     view?.webview.postMessage({ type: 'cleared' });
     await refresh();
   };
+  const applyRouter = async () => {
+    restartRouter = true;
+    hooksPromise = null; requestRevision++;
+    const runtime = await prepare();
+    await refresh();
+    if (!runtime.router) throw new Error('Router could not be configured.');
+  };
+  const routerSettings = createRouterSettings(vscode, context, {
+    configuration: () => vscode.workspace.getConfiguration('distill'), credentials,
+    apply: async (values, router, apiKey) => {
+      if (apiKey !== undefined && typeof apiKey !== 'string') throw new Error('Invalid API key.');
+      if (apiKey) await credentials.save(router, apiKey);
+      updatingSettings = true;
+      try {
+        const configuration = vscode.workspace.getConfiguration('distill');
+        for (const [key, value] of Object.entries({ ...values, ...modelPreference(values.model) })) await configuration.update(`llm.${key}`, value, vscode.ConfigurationTarget.Global);
+      } finally { updatingSettings = false; }
+      await applyRouter();
+    },
+    forget: async router => { await credentials.forget(router); await applyRouter(); },
+  });
 
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('distill.trace', {
     resolveWebviewView(webviewView) {
@@ -117,12 +178,15 @@ function activate(context) {
       view.webview.options = { enableScripts: true, localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')] };
       const nonce = crypto.randomBytes(24).toString('hex');
       const resource = name => view.webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'media', name));
-      view.webview.html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${view.webview.cspSource}; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('trace.css')}"><title>Distill chat trace</title></head><body><header><h1>Command trace</h1><p class="muted">Temporary · clears when VS Code quits</p></header><div id="connection" role="status">Connecting to Distill…</div><section class="controls"><label for="chat">Chat session</label><select id="chat" aria-label="Chat session"></select><label class="sr-only" for="search">Filter commands</label><input id="search" type="search" placeholder="Filter commands or severity…"><div class="toolbar"><span id="count" class="muted"></span><button id="clear" class="quiet" title="Clear temporary command logs for this workspace.">Clear logs</button></div></section><main id="commands"></main><section id="empty"><h2>No commands yet</h2><p>Approve the Distill hooks in your agent, then run a command in a chat.</p><button id="setup">Review hook setup</button><p class="muted small">Only commands observed by the hooks are recorded.</p></section><script nonce="${nonce}" src="${resource('trace.js')}"></script></body></html>`;
+      view.webview.html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${view.webview.cspSource}; script-src 'nonce-${nonce}';"><link rel="stylesheet" href="${resource('trace.css')}"><title>Distill chat trace</title></head><body><header><div class="heading-row"><h1>Command trace <span class="extension-version">v${require('../package.json').version}</span></h1><button id="router-settings" class="quiet" title="Configure the LLM router, model and endpoint" aria-label="Configure LLM router">LLM settings</button></div><p id="router-status" class="muted" role="status">Checking LLM router…</p><p id="history-note" class="muted">Temporary · clears on window reload</p></header><div id="connection" role="status">Connecting to Distill…</div><section class="controls"><label for="chat">Chat session</label><select id="chat" aria-label="Chat session"></select><label class="sr-only" for="search">Filter commands</label><input id="search" type="search" placeholder="Filter commands or severity…"><div class="toolbar"><span id="count" class="muted"></span><button id="export" class="quiet" title="Export the retained session.">Export session</button><button id="clear" class="quiet" title="Clear temporary command logs for this workspace.">Clear logs</button></div></section><main id="commands"></main><section id="empty"><h2>No commands yet</h2><p>Approve the Distill hooks in your agent, then run a command in a chat.</p><button id="setup">Review hook setup</button><p class="muted small">Only commands observed by the hooks are recorded.</p></section><script nonce="${nonce}" src="${resource('trace.js')}"></script></body></html>`;
       const currentView = view;
       context.subscriptions.push(view.webview.onDidReceiveMessage(async message => {
         if (!message || typeof message.type !== 'string') return;
         try {
-          if (message.type === 'ready') { requestRevision++; lastVersion = -1; await refresh(); }
+          if (message.type === 'ready') {
+            void currentView.webview.postMessage({ type: 'router-state', router: hooksPromise ? publicRouterState() : { status: 'checking' } });
+            requestRevision++; lastVersion = -1; await refresh();
+          }
           if (message.type === 'page') {
             requestRevision++;
             selectedSession = typeof message.sessionKey === 'string' ? message.sessionKey : selectedSession;
@@ -131,7 +195,14 @@ function activate(context) {
             lastVersion = -1; await refresh();
           }
           if (message.type === 'setup') await vscode.commands.executeCommand('distill.setupHooks');
+          if (message.type === 'configure-router') await vscode.commands.executeCommand('distill.configureRouter');
           if (message.type === 'clear') await clearLogs();
+          if (message.type === 'feedback' && typeof message.sessionKey === 'string' && typeof message.id === 'string' && ['over', 'under'].includes(message.kind)) {
+            const result = await send({ action: 'feedback', sessionKey: message.sessionKey, id: message.id, kind: message.kind, note: typeof message.note === 'string' ? message.note.slice(0, 2048) : '' });
+            void vscode.window.showInformationMessage(result.persistent ? 'Distill feedback saved to your enabled history. Policy is unchanged.' : 'Distill feedback saved temporarily. Export the session to keep it. Policy is unchanged.');
+            lastVersion = -1; await refresh();
+          }
+          if (message.type === 'export') await vscode.commands.executeCommand('distill.exportSession');
           if (message.type === 'command' && typeof message.sessionKey === 'string' && typeof message.id === 'string') {
             const revision = requestRevision;
             let command;
@@ -175,21 +246,68 @@ function activate(context) {
       await vscode.window.showTextDocument(document, { preview: false });
     } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.message}`); }
   }));
+  context.subscriptions.push(vscode.commands.registerCommand('distill.exportSession', async () => {
+    try {
+      if (!selectedSession) throw new Error('Select a recorded session first.');
+      const format = await vscode.window.showQuickPick(['JSON', 'Markdown'], { placeHolder: 'Export the retained session as…' });
+      if (!format) return;
+      const target = await vscode.window.showSaveDialog({ defaultUri: vscode.Uri.file(require('node:path').join(roots()[0], `distill-session.${format === 'JSON' ? 'json' : 'md'}`)), filters: format === 'JSON' ? { JSON: ['json'] } : { Markdown: ['md'] } });
+      if (!target) return;
+      const result = await send({ action: 'export', sessionKey: selectedSession });
+      await vscode.workspace.fs.writeFile(target, Buffer.from(exportSession(result.export, format.toLowerCase())));
+      void vscode.window.showInformationMessage('Distill session exported.');
+    } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.message}`); }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('distill.configureServices', async () => {
+    try {
+      const runtime = await prepare();
+      const policy = runtime.setups.find(setup => setup.host === 'codex')?.policy_path;
+      if (!policy) throw new Error('The installed CLI did not report its user policy path. Update Distill and reconnect the hooks.');
+      const file = vscode.Uri.file(policy);
+      await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(file), { preview: false });
+      void vscode.window.showInformationMessage('Distill keeps editor traces temporary. Use Distill: Configure LLM Router for models and securely saved keys.');
+    } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.message}`); }
+  }));
+  context.subscriptions.push(vscode.commands.registerCommand('distill.configureRouter', () => routerSettings.open()));
+  for (const [command, action] of [['distill.startService', 'start'], ['distill.stopService', 'stop']]) context.subscriptions.push(vscode.commands.registerCommand(command, async () => {
+    try {
+      const runtime = await prepare();
+      const router = readRouterSettings(vscode.workspace.getConfiguration('distill'));
+      const response = JSON.parse((await runWithInput(runtime.binary, ['service', action, ...(action === 'start' ? ['--credential-stdin'] : [])], { env: credentials.environment(router), ...(action === 'start' ? { input: JSON.stringify(await credentials.handoff(router)) } : {}), timeout: 6000, maxBuffer: 65536 })).stdout);
+      if (routerState) routerState = { ...routerState, running: action === 'start' };
+      void view?.webview.postMessage({ type: 'router-state', router: publicRouterState() });
+      void vscode.window.showInformationMessage(action === 'start' ? `Distill optional service started. Model judge: ${response.judge_enabled ? 'on' : 'off'}. Traces remain temporary.` : 'Distill optional service stopped.');
+    } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.stderr || error.message}`); }
+  }));
   context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => { requestRevision++; endpointPromise = null; hooksPromise = null; lastVersion = -1; selectedSession = ''; pageOffset = 0; void refresh(); }));
   context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
-    if (!event.affectsConfiguration('distill.binaryPath')) return;
-    runtimePromise = null; hooksPromise = null; endpointPromise = null;
+    if (updatingSettings) return;
+    const binaryChanged = event.affectsConfiguration('distill.binaryPath');
+    if (!binaryChanged && !event.affectsConfiguration('distill.llm')) return;
+    if (binaryChanged) runtimePromise = null;
+    void view?.webview.postMessage({ type: 'router-state', router: { status: 'checking' } });
+    hooksPromise = null; endpointPromise = null; requestRevision++;
     void refresh();
   }));
   const timer = setInterval(refresh, 1000);
   context.subscriptions.push({ dispose() { disposed = true; clearInterval(timer); } });
-  // Activation starts recording even before the sidebar is opened. Deactivation does
-  // not delete history: the broker follows the editor main process, not this host.
+  cleanup = async () => {
+    disposed = true; clearInterval(timer);
+    await setupQueue.catch(() => {});
+    try {
+      if (endpointPromise) await rpc(await endpointPromise, { action: 'release', clientId });
+    } catch {}
+    try {
+      if (runtimePromise) await execFile((await runtimePromise).binary, ['service', 'stop'], { timeout: 2000, maxBuffer: 65536 });
+    } catch {}
+    lastSnapshot = undefined; titles.clear();
+  };
+  // Each activation has a new recorder lease; reloads discard the previous lease.
   void refresh();
   if (vscode.workspace.isTrusted && roots().length && !vscode.env.remoteName && ['darwin', 'linux'].includes(process.platform)) {
     void prepare().catch(error => vscode.window.showErrorMessage(`Distill setup could not finish: ${error.message} Run Distill: Connect User Hooks to retry.`));
   }
-  return { ready: () => prepare() };
+  return { ready: async () => { const runtime = await prepare(); await connect(); return runtime; } };
 }
 
-module.exports = { activate };
+module.exports = { activate, deactivate: () => cleanup?.() };

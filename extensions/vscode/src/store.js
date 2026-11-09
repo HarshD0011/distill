@@ -1,7 +1,7 @@
 'use strict';
 const path = require('node:path');
 const { cleanTitle } = require('./titles');
-const { reportKey, revisionKey } = require('./assessments');
+const { reportKey, revisionKey, modelFallback, displaySeverity } = require('./assessments');
 function contains(root, cwd) { const rel = path.relative(root, cwd); return rel === '' || (rel !== '..' && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel)); }
 
 function outputText(value) {
@@ -53,6 +53,11 @@ function compactReport(report) {
     policy_digest: report.policy_digest, behavior_policy_version: report.behavior_policy_version,
     shell_dialect: report.shell_dialect, analysis_context: report.analysis_context,
     unknowns: (report.unknowns || []).slice(0, 64),
+    coverage_gaps: (Array.isArray(report.coverage_gaps) ? report.coverage_gaps : []).slice(0, 64),
+    graph: report.graph ? { parse_complete: !!report.graph.parse_complete, truncated: !!report.graph.truncated || report.graph.nodes?.length > 128, nodes: (report.graph.nodes || []).slice(0, 128) } : undefined,
+    context_evidence: (Array.isArray(report.context_evidence) ? report.context_evidence : []).slice(0, 32),
+    judge: report.judge,
+    timings_ms: report.timings_ms,
     behaviors: (Array.isArray(report.behaviors) ? report.behaviors : []).slice(0, 32).filter(item => item && typeof item === 'object').map(item => ({
       kind: String(item.kind || '').slice(0, 48), operation: String(item.operation || '').slice(0, 96),
       target: item.target == null ? null : String(item.target).slice(0, 512), target_class: String(item.target_class || '').slice(0, 48),
@@ -64,7 +69,7 @@ function compactReport(report) {
   };
 }
 function assessmentState(report) {
-  return !report ? 'missing' : report.impact_severity ? 'rated' : 'unknown';
+  return !report ? 'missing' : report.impact_severity ? 'rated' : modelFallback(report) ? 'advisory' : 'unknown';
 }
 
 class TraceStore {
@@ -156,6 +161,66 @@ class TraceStore {
 
   text(entry) { return entry.text; }
 
+  pendingAdvice() {
+    return [...new Set([...this.sessions.values()].flatMap(session => [...session.commands.values()].filter(entry => entry.report?.judge?.status === 'pending').map(entry => entry.report.judge.request_digest)))].filter(key => /^[a-f0-9]{64}$/.test(key)).slice(0, 16);
+  }
+
+  applyAdvice(results) {
+    if (!Array.isArray(results) || results.length > 16) throw new Error('Invalid model results');
+    for (const advice of results) {
+      if (!advice || !/^[a-f0-9]{64}$/.test(advice.request_digest) || !['pending', 'advisory', 'unavailable', 'expired', 'busy'].includes(advice.status) || Buffer.byteLength(JSON.stringify(advice)) > 70000) continue;
+      for (const session of this.sessions.values()) for (const entry of session.commands.values()) {
+        let changed = false;
+        for (const revision of entry.revisions) {
+          const report = revision.report;
+          if (report?.judge?.status !== 'pending' || report.judge.request_digest !== advice.request_digest || JSON.stringify(report.judge) === JSON.stringify(advice)) continue;
+          const delta = Buffer.byteLength(JSON.stringify(advice)) - Buffer.byteLength(JSON.stringify(report.judge));
+          if (this.bytes + delta > this.limits.bytes) continue;
+          report.judge = advice;
+          report.assessment_key = reportKey(report);
+          this.bytes += delta; entry.accountedBytes += delta; changed = true;
+        }
+        if (changed) { this.version++; entry.version = this.version; }
+      }
+    }
+  }
+
+  feedback(sessionKey, id, value) {
+    const session = this.sessions.get(sessionKey); const entry = session?.commands.get(id);
+    if (!entry) throw new Error('Command is no longer available');
+    if (!['over', 'under'].includes(value.kind) || typeof (value.note || '') !== 'string' || (value.note || '').length > 2048) throw new Error('Invalid feedback');
+    value = { ...value, note: require('./privacy').redact(value.note || '') };
+    const timestamp = Number.isFinite(value.timestamp) ? value.timestamp : Date.now();
+    if (entry.feedback?.some(v => v.kind === value.kind && v.note === (value.note || '') && v.timestamp === timestamp)) return { recorded: true, persistent: true, changesPolicy: false, source: session.source, sessionId: session.id, cwd: session.cwd };
+    const feedback = [...(entry.feedback || []).slice(-15), { kind: value.kind, note: value.note || '', timestamp }];
+    const delta = Buffer.byteLength(JSON.stringify(feedback)) - Buffer.byteLength(JSON.stringify(entry.feedback || []));
+    if (this.bytes + delta > this.limits.bytes) throw new Error('Feedback capture limit reached');
+    entry.feedback = feedback; this.bytes += delta; entry.accountedBytes += delta;
+    entry.version = ++this.version;
+    return { recorded: true, persistent: false, changesPolicy: false, source: session.source, sessionId: session.id, cwd: session.cwd };
+  }
+
+  exportSession(sessionKey) {
+    const session = this.sessions.get(sessionKey);
+    if (!session) throw new Error('Session is no longer available');
+    const commands = []; let bytes = 0; let truncated = false;
+    for (const id of session.commands.keys()) {
+      const entry = this.readCommand(sessionKey, id); const size = Buffer.byteLength(JSON.stringify(entry));
+      if (bytes + size > 16 * 1024 * 1024) { truncated = true; break; }
+      commands.push(entry); bytes += size;
+    }
+    return { schema_version: 1, session: { id: session.id, title: session.title, source: session.source, cwd: session.cwd }, commands, truncated, scope: 'Retained observations; missing completion does not establish rejection. Output previews only.' };
+  }
+
+  restoreFeedback(values) {
+    const crypto = require('node:crypto');
+    const sessions = new Map([...this.sessions.values()].map(session => [crypto.createHash('sha256').update(JSON.stringify([session.source, session.id, session.cwd])).digest('hex'), session]));
+    for (const value of values.slice(-10000)) {
+      const session = sessions.get(value.session_key);
+      if (session?.commands.has(value.tool_id)) { try { this.feedback(session.key, value.tool_id, value); } catch {} }
+    }
+  }
+
   coverage() {
     const commands = new Map(); const reasons = new Map(); let total = 0; let incomplete = 0;
     for (const session of this.sessions.values()) for (const entry of session.commands.values()) {
@@ -184,7 +249,7 @@ class TraceStore {
         executionObserved: !!entry.executionObserved, assessmentCount: entry.revisionCount,
         assessments: entry.revisions, policyDigest: report?.policy_digest, shell: report?.shell_dialect,
         assessmentState: assessmentState(report), unknowns: report?.unknowns || [], behaviorPolicyVersion: report?.behavior_policy_version,
-        severity: report?.impact_severity || 'unknown', approvalRisk: report?.severity || null,
+        severity: displaySeverity(report), approvalRisk: report?.severity || null,
         decision: report?.decision || 'unavailable', coverage: report?.coverage?.summary || 'unavailable',
         reason: report?.explanation || 'No pre-command assessment was received.',
         output: previewOutput(entry.text), outputChars: entry.text.length, outputTruncated: !!entry.outputTruncated, outputCaptureDisabled: !!entry.outputCaptureDisabled,
@@ -192,7 +257,7 @@ class TraceStore {
     };
     const query = String(options.query || '').toLowerCase().slice(0, 1024);
     const matching = session => [...session.commands.values()].sort((a, b) => a.startedAt - b.startedAt)
-      .filter(entry => !query || [entry.command, entry.report?.impact_severity || (entry.report ? 'unknown' : 'unassessed'), entry.report?.decision, entry.status].join(' ').toLowerCase().includes(query));
+      .filter(entry => !query || [entry.command, entry.report ? displaySeverity(entry.report) : 'unassessed', entry.report?.decision, entry.status].join(' ').toLowerCase().includes(query));
     const selectedEntries = selected ? matching(selected) : [];
     return {
       version: this.version,
@@ -201,7 +266,7 @@ class TraceStore {
       sessions: allSessions.map(session => {
         let entries = [];
         if (!options.paged || session === selected) {
-          entries = (options.paged ? selectedEntries.slice(offset, offset + limit) : matching(session).slice(0, remaining)).map(entry => options.compact ? { id: entry.id, version: entry.version, command: entry.command, severity: entry.report?.impact_severity || 'unknown', assessmentState: assessmentState(entry.report) } : serialize(entry));
+          entries = (options.paged ? selectedEntries.slice(offset, offset + limit) : matching(session).slice(0, remaining)).map(entry => options.compact ? { id: entry.id, version: entry.version, command: entry.command, severity: displaySeverity(entry.report), assessmentState: assessmentState(entry.report) } : serialize(entry));
           remaining -= entries.length;
         }
         return { key: session.key, id: session.id, title: session.title, source: session.source, cwd: session.cwd, startedAt: session.startedAt, updatedAt: session.updatedAt,
@@ -219,7 +284,7 @@ class TraceStore {
       id: entry.id, version: entry.version, command: entry.command, cwd: entry.cwd,
       startedAt: entry.startedAt, completedAt: entry.completedAt, status: entry.status,
       exitCode: entry.exitCode ?? null, executionObserved: !!entry.executionObserved,
-      severity: report?.impact_severity || 'unknown', approvalRisk: report?.severity || null,
+      severity: displaySeverity(report), approvalRisk: report?.severity || null,
       assessmentState: assessmentState(report), unknowns: report?.unknowns || [], behaviorPolicyVersion: report?.behavior_policy_version,
       decision: report?.decision || 'unavailable', coverage: report?.coverage?.summary || 'unavailable',
       reason: report?.explanation || 'No pre-command assessment was received.',
@@ -229,6 +294,8 @@ class TraceStore {
       outputTruncated: !!entry.outputTruncated, outputCaptureDisabled: !!entry.outputCaptureDisabled,
       sessionId: session.id,
       behaviors: report?.behaviors || [], behaviorsTruncated: !!report?.behaviorsTruncated,
+      coverageGaps: report?.coverage_gaps || [], graph: report?.graph, contextEvidence: report?.context_evidence || [],
+      judge: report?.judge, timings: report?.timings_ms, feedback: entry.feedback || [],
     };
   }
 

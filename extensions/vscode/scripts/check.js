@@ -8,6 +8,8 @@ for (const directory of ['src', 'media', 'test', 'scripts']) {
   }
 }
 const manifest = require('../package.json');
+const assert = require('node:assert/strict');
+assert.deepEqual(manifest.contributes.configuration.properties['distill.llm.model'], require('../src/models').modelSettingSchema(), 'Native Model dropdown must match the shared catalog.');
 for (const file of [manifest.main, 'media/distill.svg', 'media/trace.js', 'media/trace.css']) {
   if (!fs.existsSync(path.join(__dirname, '..', file))) throw new Error(`Missing extension asset: ${file}`);
 }

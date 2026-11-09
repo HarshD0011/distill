@@ -8,6 +8,7 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
+pub mod advisory;
 pub mod trace;
 
 #[derive(Clone, Copy, Default)]
@@ -44,6 +45,12 @@ pub fn assess_hook(
         (Integration::Codex, Some("PermissionRequest")) => "PermissionRequest",
         _ => return Err("expected PreToolUse, or PermissionRequest for Codex".into()),
     };
+    if matches!(
+        event.get("tool_name").and_then(Value::as_str),
+        Some("Write" | "Edit" | "MultiEdit")
+    ) {
+        return assess_file_hook(host, &event, event_name, config, started);
+    }
     if event.get("tool_name").and_then(Value::as_str) != Some("Bash") {
         return Err("expected a Bash tool call".into());
     }
@@ -170,6 +177,34 @@ pub fn assess_hook(
         // command text. The alias does not establish the actual shell dialect.
         // Retain discovered effects (including critical ones), but never claim
         // complete coverage from the conditional Bash-subset interpretation.
+        // Preserve an accounted safe/low result as a conditional impact finding
+        // before adding shell uncertainty. Otherwise scoring turns commands like
+        // pwd/git status into UNKNOWN solely because they have no impact finding.
+        let conditional_impact = draft.max_severity.unwrap_or(Severity::Safe);
+        if draft.coverage.summary == CoverageSummary::StaticAccounted
+            && conditional_impact <= Severity::Low
+            && !draft
+                .findings
+                .iter()
+                .any(|finding| finding.basis == FindingBasis::Impact)
+        {
+            draft.findings.push(distill_core::Finding {
+                rule_id: if conditional_impact == Severity::Safe {
+                    "shell.conditional-safe"
+                } else {
+                    "shell.conditional-low"
+                }.into(),
+                severity: conditional_impact,
+                impact: if conditional_impact == Severity::Safe {
+                    "No modeled hazardous effect found under the conditional Bash-subset interpretation"
+                } else {
+                    "Modeled low-impact operations under the conditional Bash-subset interpretation"
+                }.into(),
+                evidence: vec![],
+                confidence: "conditional",
+                basis: FindingBasis::Impact,
+            });
+        }
         let reason = "Execution shell metadata is missing; Bash-subset analysis is conditional";
         draft.unknowns.push(reason.into());
         draft.coverage.stop_reasons.push(reason.into());
@@ -186,6 +221,7 @@ pub fn assess_hook(
         );
     }
     let mut report = score(&request, draft, config, started.elapsed().as_millis());
+    advisory::enrich(&request, &mut report, config, started);
     if request.context.sandbox_escalation {
         report.severity = report.severity.max(distill_core::Severity::High);
         report.impact_severity = Some(
@@ -232,7 +268,9 @@ pub fn assess_hook(
             &mut output,
             &event,
             command,
-            &report.severity_label().to_ascii_uppercase(),
+            &advisory::fallback_severity(&report)
+                .map(|v| v.as_str().to_ascii_uppercase())
+                .unwrap_or_else(|| report.severity_label().to_ascii_uppercase()),
             Some(&details),
             config,
         ) {
@@ -243,6 +281,101 @@ pub fn assess_hook(
         }
     }
     Ok((output, report))
+}
+
+fn assess_file_hook(
+    host: Integration,
+    event: &Value,
+    event_name: &str,
+    config: &Config,
+    started: Instant,
+) -> Result<(Value, Report), String> {
+    let cwd = event["cwd"]
+        .as_str()
+        .map(PathBuf::from)
+        .filter(|v| v.is_absolute())
+        .ok_or("Direct file edit requires an absolute cwd")?;
+    let tool = event["tool_name"].as_str().ok_or("Missing tool name")?;
+    let input = &event["tool_input"];
+    let path = input
+        .get("file_path")
+        .or_else(|| input.get("path"))
+        .and_then(Value::as_str)
+        .ok_or("Direct file edit requires file_path")?;
+    let mut edits = Vec::new();
+    if tool == "MultiEdit" {
+        let items = input["edits"]
+            .as_array()
+            .filter(|v| v.len() <= 128)
+            .ok_or("MultiEdit count is missing or exceeds its limit")?;
+        for item in items {
+            edits.push(distill_core::FileEdit {
+                path: PathBuf::from(path),
+                content: item
+                    .get("new_string")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+                full_write: false,
+            });
+        }
+    } else {
+        edits.push(distill_core::FileEdit {
+            path: PathBuf::from(path),
+            content: input
+                .get(if tool == "Write" {
+                    "content"
+                } else {
+                    "new_string"
+                })
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            full_write: tool == "Write",
+        });
+    }
+    let request = AnalyzeRequest {
+        protocol_version: distill_core::PROTOCOL_VERSION,
+        request_id: event["tool_use_id"]
+            .as_str()
+            .map(str::to_owned)
+            .unwrap_or_else(|| distill_core::new_id("edit")),
+        command: CommandForm {
+            kind: CommandKind::Shell,
+            text: format!(
+                "{tool} {path:?} content_sha256={}",
+                distill_core::sha256(input.to_string().as_bytes())
+            ),
+            dialect: ShellDialect::Bash,
+        },
+        cwd: cwd.clone(),
+        session_id: event["session_id"].as_str().map(str::to_owned),
+        source: host,
+        budget_ms: config.analysis.deadline_ms,
+        context: distill_core::ExecutionContext {
+            workspace_roots: vec![cwd.clone()],
+            ..Default::default()
+        },
+    };
+    let draft = distill_interp::interpret_file_edits(&request, &edits, config);
+    let mut report = score(&request, draft, config, started.elapsed().as_millis());
+    advisory::enrich(&request, &mut report, config, started);
+    if let (Some(session), Some(id)) =
+        (request.session_id.as_deref(), event["tool_use_id"].as_str())
+    {
+        distill_core::session::assess(
+            config,
+            if host == Integration::Codex {
+                "codex"
+            } else {
+                "claude"
+            },
+            session,
+            id,
+            &cwd,
+            &request.command.text,
+            &mut report,
+        )?;
+    }
+    Ok((translate_event(host, config, &report, event_name), report))
 }
 
 fn can_label_command(host: Integration, event: &Value, config: &Config) -> bool {
@@ -304,6 +437,9 @@ fn severity_mark(severity: &str) -> &'static str {
 
 fn approval_details(report: &Report) -> String {
     let mut details = format!("| Analysis: {}", report.analysis_label());
+    if advisory::fallback_severity(report).is_some() {
+        details.push_str(" | Model advice; static impact unresolved");
+    }
     if report.coverage.summary != CoverageSummary::StaticAccounted {
         details.push_str(&format!(
             " | Approval risk: {}",
@@ -390,24 +526,34 @@ fn severity_message(report: &Report) -> String {
         .map(|finding| finding.impact.as_str())
         .or_else(|| report.unknowns.first().map(String::as_str))
         .unwrap_or("No modeled hazardous effect found");
-    let severity = report.severity_label().to_ascii_uppercase();
+    let fallback = advisory::fallback_severity(report);
+    let severity = fallback
+        .map(|v| v.as_str())
+        .unwrap_or_else(|| report.severity_label())
+        .to_ascii_uppercase();
     let mut message = format!(
         "Distill | Severity: {severity} {}\nReason: {}.",
         severity_mark(&severity),
         impact.trim_end_matches('.')
     );
+    if fallback.is_some() {
+        message.push_str("\nRating source: model advice.");
+    }
+    if let Some(judge) = &report.judge {
+        if judge["status"] == "pending" {
+            message.push_str("\nModel review: pending.");
+        } else if judge["status"] == "unavailable" {
+            message.push_str("\nModel review: unavailable; review required.");
+        }
+    }
     if report.coverage.summary != CoverageSummary::StaticAccounted {
         message.push_str(&format!(
             "\nAnalysis: incomplete ({})",
             report.analysis_label()
         ));
-        if let Some(unknown) = report.unknowns.first() {
-            message.push_str(" — ");
-            message.push_str(unknown.trim_end_matches('.'));
-        }
         message.push('.');
         message.push_str(&format!(
-            "\nApproval risk: {} (includes unresolved behavior).",
+            "\nApproval risk: {}.",
             report.severity.as_str().to_ascii_uppercase()
         ));
     } else {
@@ -551,6 +697,49 @@ pub fn failure_with_options(
 mod tests {
     use super::*;
 
+    #[test]
+    fn direct_edits_rate_paths_without_executing_or_misreading_contents() {
+        let mut config = Config::default();
+        config.ledger.enabled = false;
+        for (tool, path, expected) in [
+            ("Write", "/tmp/distill-direct/app.js", Severity::Medium),
+            (
+                "Edit",
+                "/tmp/distill-direct/.github/workflows/check.yml",
+                Severity::High,
+            ),
+            (
+                "MultiEdit",
+                "/tmp/distill-direct/.config/distill/hook-policy-codex.toml",
+                Severity::Critical,
+            ),
+        ] {
+            let input=json!({"hook_event_name":"PreToolUse","tool_name":tool,"cwd":"/tmp","tool_input":{"file_path":path,"content":"rm -rf /","new_string":"rm -rf /","edits":[{"new_string":"rm -rf /"}]}}).to_string();
+            let (_, report) = assess_hook(
+                Integration::Codex,
+                &input,
+                &config,
+                HookOptions {
+                    label_command: true,
+                },
+            )
+            .unwrap();
+            assert_eq!(
+                report.impact_severity,
+                Some(expected),
+                "{tool}: {:?}",
+                report.findings
+            );
+            assert!(
+                report
+                    .behaviors
+                    .iter()
+                    .all(|v| v.kind != distill_core::EffectKind::FileDelete)
+            );
+            assert!(!report.unknowns.iter().any(|v| v.contains("shell metadata")));
+        }
+    }
+
     fn test_config() -> Config {
         let mut config = Config::default();
         config.ledger.enabled = false;
@@ -646,10 +835,19 @@ mod tests {
         let mut config = test_config();
         config.agents.codex.mode = AgentMode::Advisory;
         for (command, impact) in [
-            ("echo hello", None),
+            ("echo hello", Some(Severity::Safe)),
+            ("pwd", Some(Severity::Safe)),
+            ("git status --short", Some(Severity::Safe)),
+            (
+                "rg --files -g Cargo.toml -g Cargo.lock -g README.md",
+                Some(Severity::Safe),
+            ),
             ("cat input.txt", Some(Severity::Low)),
             ("touch ordinary.txt", Some(Severity::Medium)),
             ("rm -rf /", Some(Severity::Critical)),
+            ("mystery --do-it", None),
+            ("$CMD --flag", None),
+            ("echo 'unterminated", None),
         ] {
             let input = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "tool_input":{"command":command}});
             let (output, report) = assess_hook(
@@ -665,6 +863,15 @@ mod tests {
             assert!(report.severity >= Severity::High);
             assert_ne!(report.coverage.summary, CoverageSummary::StaticAccounted);
             assert!(report.analysis_context.shell.is_none());
+            assert_ne!(report.decision, Decision::Allow, "{command}");
+            assert_eq!(
+                report.findings.iter().any(|finding| {
+                    finding.rule_id == "shell.conditional-safe"
+                        && finding.confidence == "conditional"
+                }),
+                impact == Some(Severity::Safe),
+                "{command}"
+            );
             assert!(
                 report
                     .unknowns
@@ -819,6 +1026,8 @@ mod tests {
         assert!(message.contains("Severity: UNKNOWN"));
         assert!(message.contains("Approval risk: MEDIUM"));
         assert!(message.contains("Analysis: incomplete"));
+        assert!(!message.contains("includes unresolved behavior"));
+        assert_eq!(message.lines().count(), 4);
     }
 
     #[test]
@@ -826,8 +1035,14 @@ mod tests {
         let mut config = test_config();
         config.agents.codex.mode = AgentMode::Advisory;
         for (command, known) in [
-            ("python3 -c 'print(1); import os'", "UNKNOWN ⚪"),
-            ("python3 -c 'path = \"/etc/passwd\"; open(path)'", "LOW 🔵"),
+            (
+                "python3 -c 'print(1); import unmodeled_dependency'",
+                "UNKNOWN ⚪",
+            ),
+            (
+                "python3 -c 'path = \"/etc/passwd\"; open(path); unresolved()'",
+                "LOW 🔵",
+            ),
         ] {
             let output = handle_with_options(
                 Integration::Codex,

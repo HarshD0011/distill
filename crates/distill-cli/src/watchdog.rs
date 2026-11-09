@@ -30,6 +30,7 @@ pub fn supervise() -> bool {
         failure(&args, &input, "Analysis input limit exceeded");
         return true;
     }
+    crate::hook_debug::record(&args, &input, "received", None);
     let Ok(binary) = std::env::current_exe() else {
         failure(&args, &input, "Analyzer executable unavailable");
         return true;
@@ -76,14 +77,22 @@ pub fn supervise() -> bool {
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
-                if let Ok((true, bytes)) = rx.recv_timeout(Duration::from_millis(100))
+                let captured = rx.recv_timeout(Duration::from_millis(100));
+                if let Ok((true, bytes)) = &captured
                     && status.success()
                     && !bytes.is_empty()
                     && bytes.len() <= 16 * 1024 * 1024
                 {
                     if args[0] == "hook" {
-                        match crate::approval::finish(&args, &input, &bytes) {
+                        crate::hook_debug::record(&args, &input, "assessed", Some(bytes));
+                        match crate::approval::finish(&args, &input, bytes) {
                             Ok(output) => {
+                                crate::hook_debug::record(
+                                    &args,
+                                    &input,
+                                    "completed",
+                                    Some(&output),
+                                );
                                 let _ = std::io::stdout().write_all(&output);
                             }
                             Err(error) => failure(
@@ -93,14 +102,17 @@ pub fn supervise() -> bool {
                             ),
                         }
                     } else {
-                        let _ = std::io::stdout().write_all(&bytes);
+                        let _ = std::io::stdout().write_all(bytes);
                     }
                     return true;
                 }
                 failure(
                     &args,
                     &input,
-                    "Analyzer worker failed or exceeded its output limit",
+                    &format!(
+                        "Analyzer worker failed or exceeded its output limit ({status}; output_bytes={})",
+                        captured.as_ref().map(|(_, bytes)| bytes.len()).unwrap_or(0)
+                    ),
                 );
                 return true;
             }
@@ -138,5 +150,7 @@ fn failure(args: &[String], input: &[u8], reason: &str) {
     } else {
         json!({"mode": "embedded_static", "severity": "high", "impact_severity": null, "decision": "deny", "coverage": {"summary": "stopped", "stop_reasons": [reason]}, "trace_status": "stopped", "unknowns": [reason], "findings": [], "behaviors": [], "inspected_files": [], "explanation": reason})
     };
-    println!("{report}");
+    let output = report.to_string();
+    crate::hook_debug::record(args, input, "failed", Some(output.as_bytes()));
+    println!("{output}");
 }

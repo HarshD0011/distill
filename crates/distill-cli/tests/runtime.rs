@@ -64,10 +64,26 @@ fn user_setup_is_pinned_idempotent_and_never_edits_project_hooks() {
     let home = root.join("home");
     fs::create_dir_all(root.join("workspace/.codex")).unwrap();
     fs::write(root.join("workspace/.codex/hooks.json"), "{\"hooks\":{}}\n").unwrap();
+    fs::create_dir_all(home.join(".config/distill")).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(
+            home.join(".config/distill"),
+            fs::Permissions::from_mode(0o700),
+        )
+        .unwrap();
+    }
+    let legacy = home.join(".config/distill/hook-policy-v2-codex.toml");
+    let legacy_bytes =
+        "# An active older hook still reads these exact bytes.\n[policy]\nhigh = 'deny'\n";
+    fs::write(&legacy, legacy_bytes).unwrap();
     let mut command = cli(&root);
     command
         .args(["setup", "codex", "--workspace-root"])
-        .arg(root.join("workspace"));
+        .arg(root.join("workspace"))
+        .arg("--debug-log")
+        .arg(root.join("debug with spaces.jsonl"));
     let output = command.output().unwrap();
     assert!(
         output.status.success(),
@@ -82,6 +98,8 @@ fn user_setup_is_pinned_idempotent_and_never_edits_project_hooks() {
     assert!(hook.contains("--sha256"));
     assert!(!hook.contains("--label-command"));
     assert!(!hook.contains("--workspace-root"));
+    assert!(hook.contains("--debug-log"));
+    assert!(hook.contains("debug with spaces.jsonl'"));
     let output = command.output().unwrap();
     assert!(
         output.status.success(),
@@ -89,14 +107,18 @@ fn user_setup_is_pinned_idempotent_and_never_edits_project_hooks() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert_eq!(first, fs::read(home.join(".codex/hooks.json")).unwrap());
-    let policy_file = home.join(".config/distill/hook-policy-codex.toml");
+    assert_eq!(fs::read_to_string(&legacy).unwrap(), legacy_bytes);
+    let policy_file = home.join(".config/distill/hook-policy-v3-codex.toml");
+    assert!(hook.contains("hook-policy-v3-codex.toml"));
     let mut policy: toml::Value =
         toml::from_str(&fs::read_to_string(&policy_file).unwrap()).unwrap();
+    assert_eq!(policy["policy"]["high"].as_str(), Some("deny"));
     policy["policy"]["high"] = toml::Value::String("deny".into());
     fs::write(&policy_file, toml::to_string(&policy).unwrap()).unwrap();
     assert!(command.output().unwrap().status.success());
     let retained: toml::Value = toml::from_str(&fs::read_to_string(&policy_file).unwrap()).unwrap();
     assert_eq!(retained["policy"]["high"].as_str(), Some("deny"));
+    assert_eq!(fs::read_to_string(&legacy).unwrap(), legacy_bytes);
     use std::{io::Write, process::Stdio};
     let mut launcher = Command::new("/usr/bin/python3")
         .arg("-I")
@@ -139,6 +161,8 @@ fn watchdog_returns_high_denial_in_the_correct_hook_schema() {
     let root = fixture();
     let mut child = cli(&root)
         .args(["hook", "codex", "--mode", "advisory"])
+        .arg("--debug-log")
+        .arg(root.join("debug.jsonl"))
         .env("DISTILL_WATCHDOG_MS", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -152,6 +176,167 @@ fn watchdog_returns_high_denial_in_the_correct_hook_schema() {
         "PermissionRequest"
     );
     assert_eq!(value["hookSpecificOutput"]["decision"]["behavior"], "deny");
+    let records = fs::read_to_string(root.join("debug.jsonl")).unwrap();
+    let records = records
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(records.first().unwrap()["stage"], "received");
+    assert_eq!(records.last().unwrap()["stage"], "failed");
+    assert_eq!(records.last().unwrap()["permission_decision"], "deny");
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn router_settings_preserve_other_policy_and_reject_invalid_updates_atomically() {
+    use std::{io::Write, process::Stdio};
+    let root = fixture();
+    let home = root.join("home");
+    fs::create_dir_all(home.join(".config/distill")).unwrap();
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(
+            home.join(".config/distill"),
+            fs::Permissions::from_mode(0o700),
+        )
+        .unwrap();
+    }
+    let legacy = home.join(".config/distill/hook-policy-codex.toml");
+    let legacy_bytes = "[policy]\nhigh='deny'\n[service]\nhistory_enabled=true\n";
+    fs::write(&legacy, legacy_bytes).unwrap();
+    let update = |settings: Value, memory_only: bool| {
+        let mut command = cli(&root);
+        command.args(["configure-router", "codex"]);
+        if memory_only {
+            command.arg("--memory-only");
+        }
+        let mut child = command
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(settings.to_string().as_bytes())
+            .unwrap();
+        child.wait_with_output().unwrap()
+    };
+    let settings = serde_json::json!({"enabled":true,"provider":"llama_cpp","endpoint":"http://127.0.0.1:8080/v1/chat/completions","model":"served-model","api_key_env":""});
+    let result = update(settings.clone(), false);
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    let result: Value = serde_json::from_slice(&result.stdout).unwrap();
+    assert_eq!(result["router"]["model"], "served-model");
+    assert_eq!(result["history_enabled"], true);
+    let policy = home.join(".config/distill/hook-policy-v3-codex.toml");
+    let before = fs::read(&policy).unwrap();
+    let config = distill_core::Config::load(Some(&policy)).unwrap();
+    assert_eq!(config.policy.high, distill_core::PolicyAction::Deny);
+    assert!(config.service.history_enabled);
+    assert_eq!(fs::read_to_string(&legacy).unwrap(), legacy_bytes);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&update(settings, false).stdout).unwrap()["changed"],
+        false
+    );
+    assert!(
+        !update(serde_json::json!({"enabled":true,"model":""}), false)
+            .status
+            .success()
+    );
+    assert_eq!(fs::read(&policy).unwrap(), before);
+    assert!(
+        update(serde_json::json!({"enabled":false}), false)
+            .status
+            .success()
+    );
+    assert!(
+        !distill_core::Config::load(Some(&policy))
+            .unwrap()
+            .judge
+            .enabled
+    );
+    let memory = update(serde_json::json!({"enabled":false}), true);
+    assert!(memory.status.success());
+    let config = distill_core::Config::load(Some(&policy)).unwrap();
+    assert!(!config.service.history_enabled);
+    assert!(!config.history.enabled);
+    assert!(!config.ledger.enabled);
+    assert_eq!(fs::read_to_string(&legacy).unwrap(), legacy_bytes);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn hook_debug_records_metadata_and_verdicts_without_command_or_output() {
+    use std::{io::Write, process::Stdio};
+    let root = fixture();
+    let log = root.join("debug.jsonl");
+    let secret = "debug-private-payload-must-not-be-recorded";
+    let mut event = serde_json::json!({
+        "hook_event_name": "PreToolUse", "tool_name": "Bash", "cwd": root,
+        "session_id": "debug-session", "tool_use_id": "debug-tool",
+        "tool_input": {"command": format!("echo {secret}"), "workdir": root, "extra": secret},
+    });
+    for stage in ["PreToolUse", "PostToolUse"] {
+        event["hook_event_name"] = serde_json::json!(stage);
+        if stage == "PostToolUse" {
+            event["tool_response"] = serde_json::json!({"stdout": secret, "exit_code": 0});
+        }
+        let mut child = cli(&root)
+            .args(["hook", "codex", "--mode", "advisory", "--no-prompt"])
+            .arg(format!("--debug-log={}", log.display()))
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(event.to_string().as_bytes())
+            .unwrap();
+        let output = child.wait_with_output().unwrap();
+        assert!(output.status.success());
+        let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+        if stage == "PreToolUse" {
+            let message = response["systemMessage"].as_str().unwrap();
+            assert!(message.contains("Severity: SAFE"));
+            assert!(message.contains("Approval risk: HIGH"));
+        } else {
+            assert_eq!(response, serde_json::json!({}));
+        }
+    }
+    let text = fs::read_to_string(&log).unwrap();
+    assert!(!text.contains(secret));
+    let records = text
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(records.len(), 6);
+    assert_eq!(records[0]["stage"], "received");
+    assert_eq!(records[0]["shell"], Value::Null);
+    assert_eq!(records[0]["tool_use_id"], "debug-tool");
+    assert_eq!(records[0]["input_digest"], records[1]["input_digest"]);
+    assert_eq!(records[1]["stage"], "assessed");
+    assert_eq!(records[1]["analysis"]["impact_severity"], "safe");
+    assert_eq!(records[1]["analysis"]["approval_risk"], "high");
+    assert_eq!(records[1]["analysis"]["decision"], "ask");
+    assert_eq!(records[1]["analysis"]["coverage"], "partial");
+    assert_eq!(records[2]["stage"], "completed");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        assert_eq!(
+            fs::metadata(&log).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+    }
     fs::remove_dir_all(root).unwrap();
 }
 

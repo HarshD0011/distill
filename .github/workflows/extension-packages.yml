@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: cargo build --locked -p distill-cli
+      - run: cargo build --locked -p distill-cli -p distill-service
       - run: npm run check && npm test
         working-directory: extensions/vscode
       - run: npm run package

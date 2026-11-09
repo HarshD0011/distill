@@ -121,6 +121,11 @@ fn visit(
         python_import(node, source, env);
         return;
     }
+    if matches!(language, Language::JavaScript | Language::TypeScript) && kind == "import_statement"
+    {
+        super::javascript::bind_import(node, source, env);
+        return;
+    }
     if matches!(language, Language::Go) && kind == "import_spec" {
         if let (Some(name), Some(path)) = (
             field_text(node, "name", source),
@@ -227,6 +232,22 @@ fn visit(
         return;
     };
     let Some((kind, recursive)) = model(language, &call, &args, &values, source) else {
+        // Under the conditional builtin model, literal Error arguments cannot
+        // run coercion callbacks or mutate module bindings. Shadowed or dynamic
+        // constructors remain opaque and still invalidate those bindings.
+        let literal_error = matches!(language, Language::JavaScript | Language::TypeScript)
+            && matches!(
+                call.as_str(),
+                "Error"
+                    | "TypeError"
+                    | "RangeError"
+                    | "SyntaxError"
+                    | "ReferenceError"
+                    | "URIError"
+                    | "EvalError"
+            )
+            && args.len() <= 1
+            && values.iter().all(Option::is_some);
         if !matches!(
             call.as_str(),
             "print"
@@ -238,7 +259,8 @@ fn visit(
                 | "std::process::Command::new"
                 | "exec.Command"
                 | "pathlib.Path"
-        ) {
+        ) && !literal_error
+        {
             env.invalidate();
         }
         return;
@@ -460,7 +482,7 @@ fn model(
                         | "doctest.testfile"
                 )
         }
-        Language::JavaScript => {
+        Language::JavaScript | Language::TypeScript => {
             call.starts_with("fs.")
                 || call.starts_with("child_process.")
                 || matches!(call, "eval" | "fetch" | "http.request" | "https.request")

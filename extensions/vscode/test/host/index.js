@@ -9,7 +9,7 @@ const { app } = require('../helpers/webview');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-async function smoke() {
+async function smoke(driverContext) {
   const extension = vscode.extensions.getExtension('distill.distill-trace');
   assert.ok(extension, 'Packaged extension was discovered');
   await extension.activate();
@@ -26,7 +26,7 @@ async function smoke() {
   assert.equal(fs.existsSync(path.join(process.env.HOME, '.cargo/bin/distill')), false);
   const hookPath = path.join(process.env.CODEX_HOME, 'hooks.json');
   const installedHooks = JSON.parse(fs.readFileSync(hookPath, 'utf8'));
-  const handler = installedHooks.hooks.PreToolUse.find(group => group.matcher === '^Bash$').hooks[0].command;
+  const handler = installedHooks.hooks.PreToolUse.find(group => group.matcher === '^(Bash|Write|Edit|MultiEdit)$').hooks[0].command;
   assert.ok(handler.includes(runtime.binary));
   assert.match(handler, /hook-launcher\.js/);
   assert.ok(!handler.includes('python'));
@@ -39,8 +39,26 @@ async function smoke() {
   await rpc(endpoint, { action: 'register', roots: [otherRoot] });
   const phaseFile = process.env.DISTILL_HOST_TEST_RESULT + '.reload';
   const reloaded = process.env.DISTILL_HOST_TEST_RESULT && fs.existsSync(phaseFile);
+  const { RouterCredentials } = require('../../src/credentials');
+  const reloadCredentials = new RouterCredentials(driverContext.secrets);
+  const reloadRoute = { provider: 'openai_compatible', endpoint: 'https://fixture.invalid/v1/chat/completions', api_key_env: 'FIXTURE_ONLY_KEY' };
+  if (reloaded && process.env.DISTILL_HOST_TEST_PERSISTENT_SECRETS === '1') {
+    assert.equal((await reloadCredentials.handoff(reloadRoute)).key, 'reload-fixture-key', 'SecretStorage survives an actual editor window reload');
+    assert.equal(reloadCredentials.environment(reloadRoute).FIXTURE_ONLY_KEY, undefined, 'Reload never moves the key into the process environment');
+    await reloadCredentials.forget(reloadRoute);
+    assert.equal(await reloadCredentials.has(reloadRoute), false);
+  } else if (!reloaded && process.env.DISTILL_HOST_TEST_PERSISTENT_SECRETS === '1') {
+    await reloadCredentials.save(reloadRoute, 'reload-fixture-key');
+  }
   const event = { protocol: 1, source: 'codex', kind: 'completion', session_id: 'extension-host-smoke', tool_use_id: 'smoke-command', timestamp: Date.now(), command: 'echo smoke', session_cwd: roots[0], tool_response: 'one\ntwo\nthree\nfour\nfive\nsix' };
-  if (!reloaded) {
+  if (reloaded) {
+    const previous = JSON.parse(fs.readFileSync(phaseFile, 'utf8'));
+    assert.deepEqual((await rpc(endpoint, { action: 'snapshot', roots })).sessions, [], 'Window reload discards prior command history');
+    assert.equal(process.env.VSCODE_PID, previous.owner, 'Reload preserves the owning application');
+    assert.equal(runtime.binary, previous.binary, 'Reload reuses the immutable installed CLI');
+    assert.equal(fs.statSync(hookPath).mtimeMs, previous.hookMtime, 'Reload does not rewrite approved hook definitions');
+  }
+  {
     for (const [id, latency] of [['one', 1], ['two', 5]]) await rpc(endpoint, { action: 'record', event: { ...event, kind: 'assessment', hook_event_name: 'PreToolUse', report: {
       report_id: id, severity: 'safe', impact_severity: 'safe', decision: 'allow', coverage: { summary: 'static_accounted' }, explanation: `distill SAFE (${latency} ms; approval risk SAFE): No modeled hazardous effect found`,
     } } });
@@ -63,18 +81,12 @@ async function smoke() {
       if (labeled.hookSpecificOutput.permissionDecision !== 'deny') execFileSync(process.env.DISTILL_TEST_BINARY, args, { input: JSON.stringify({ ...pre, hook_event_name: 'PostToolUse', tool_input: labeled.hookSpecificOutput.updatedInput, tool_response: { exit_code: 0 } }), encoding: 'utf8', timeout: 5000 });
     }
     await rpc(endpoint, { action: 'record', event: { ...event, tool_use_id: 'unassessed', command: 'echo missing-assessment' } });
-    if (process.env.DISTILL_HOST_TEST_RESULT) {
+    if (!reloaded && process.env.DISTILL_HOST_TEST_RESULT) {
       fs.writeFileSync(phaseFile, JSON.stringify({ socket: endpoint.socket, owner: process.env.VSCODE_PID, binary:runtime.binary, hookMtime:fs.statSync(hookPath).mtimeMs }));
       // Reload destroys this extension host and cancels its command promise.
       void vscode.commands.executeCommand('workbench.action.reloadWindow').then(() => {}, () => {});
       await new Promise(() => {});
     }
-  } else {
-    const previous = JSON.parse(fs.readFileSync(phaseFile, 'utf8'));
-    assert.equal(endpoint.socket, previous.socket, 'Window reload retains the same broker');
-    assert.equal(process.env.VSCODE_PID, previous.owner, 'Reload preserves the owning application');
-    assert.equal(runtime.binary, previous.binary, 'Reload reuses the immutable installed CLI');
-    assert.equal(fs.statSync(hookPath).mtimeMs, previous.hookMtime, 'Reload does not rewrite approved hook definitions');
   }
   await vscode.commands.executeCommand('distill.openTrace');
   const reconnected = await connectBroker(roots, process.env.DISTILL_TEST_BINARY);
@@ -103,7 +115,7 @@ async function smoke() {
   const detail = (await rpc(reconnected, { action: 'command', sessionKey: session.key, id: event.tool_use_id })).command;
   assert.equal(detail.output.hasMore, true);
   assert.equal(detail.sessionId, event.session_id);
-  assert.equal(detail.assessmentCount, 1, 'Equivalent assessments stay merged across reload');
+  assert.equal(detail.assessmentCount, 1, 'Equivalent assessments stay merged within the session');
   assert.equal(session.commands[0].output.hasMore, true);
   assert.equal(session.commands[0].output.text.split('\n').length, 5);
   assert.equal((await rpc(reconnected, { action: 'output', sessionKey: session.key, id: event.tool_use_id })).text, event.tool_response);
@@ -112,12 +124,12 @@ async function smoke() {
   assert.equal((await rpc(endpoint, { action: 'snapshot', roots: [otherRoot] })).sessions[0].id, 'other-workspace', 'Clear logs preserves other workspace history');
   await rpc(endpoint, { action: 'record', event: { ...event, timestamp: Date.now(), tool_use_id: 'after-clear', command: 'echo new-log' } });
   assert.equal((await rpc(endpoint, { action: 'snapshot', roots })).sessions[0].commands.length, 1, 'Recording continues after clearing');
-  console.log('Distill extension-host smoke passed: installed package activation, actual reload, real signed hook verdict badges, impact versus approval risk, clear action, workspace isolation, continued recording.');
+  console.log('Distill extension-host smoke passed: installed package activation, actual reload clears history, real signed hook verdict badges, impact versus approval risk, clear action, workspace isolation, continued recording.');
 }
 
-async function run() {
+async function run(driverContext) {
   try {
-    await smoke();
+    await smoke(driverContext);
     if (process.env.DISTILL_HOST_TEST_RESULT) require('node:fs').writeFileSync(process.env.DISTILL_HOST_TEST_RESULT, 'passed');
   } catch (error) {
     if (process.env.DISTILL_HOST_TEST_RESULT) require('node:fs').writeFileSync(process.env.DISTILL_HOST_TEST_RESULT, error.stack || String(error));

@@ -27,7 +27,7 @@ function mergeHooks(existing, host, binary, workspaceRoot, coveredEvents = new S
     if (coveredEvents.has(event)) continue;
     if (found) continue;
     const label = host === 'codex' && event === 'PreToolUse' ? ' --label-command' : '';
-    result.hooks[event].push({ matcher: host === 'codex' ? '^Bash$' : 'Bash', hooks: [{
+    result.hooks[event].push({ matcher: '^(Bash|Write|Edit|MultiEdit)$', hooks: [{
       type: 'command', command: `${shellQuote(binary)} hook ${host} --mode advisory${label}${workspace}`, timeout: event.startsWith('PostToolUse') ? 10 : 150,
     }] });
   }

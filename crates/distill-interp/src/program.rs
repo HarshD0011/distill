@@ -127,6 +127,9 @@ impl Analyzer<'_> {
                 self.inspect_file(Language::Python, &file);
             }
             Target::Module(module) if !module.dynamic => {
+                if self.python_standard_module(&module, &invocation.arguments) {
+                    return;
+                }
                 match module.text.as_str() {
                     "pytest" | "unittest" => self.python_tests(&module.text, &invocation.arguments),
                     "uv" => self.uv("uv", &invocation.arguments, depth + 1, input),
@@ -143,6 +146,108 @@ impl Analyzer<'_> {
                 self.unresolved_program("Python invocation or standard-input source is unresolved")
             }
         }
+    }
+
+    fn python_standard_module(&mut self, module: &Word, args: &[Word]) -> bool {
+        if !matches!(
+            module.text.as_str(),
+            "py_compile" | "compileall" | "json.tool"
+        ) {
+            return false;
+        }
+        let base = self.cwd.clone();
+        if let Some(base) = base {
+            for prefix in module.text.split('.').scan(String::new(), |prefix, part| {
+                if !prefix.is_empty() {
+                    prefix.push('/');
+                }
+                prefix.push_str(part);
+                Some(prefix.clone())
+            }) {
+                for file in [
+                    base.join(format!("{prefix}.py")),
+                    base.join(prefix).join("__init__.py"),
+                ] {
+                    if file.exists() {
+                        self.unresolved_program(
+                            "Python standard-library module is shadowed by project source",
+                        );
+                        self.inspect_file(Language::Python, &literal_word(&file.to_string_lossy()));
+                        return true;
+                    }
+                }
+            }
+        }
+        self.raise(Severity::Low);
+        let (valued, switches): (&[&str], &[&str]) = match module.text.as_str() {
+            "py_compile" => (&[], &["-q", "--quiet", "-h", "--help"]),
+            "compileall" => (
+                &[
+                    "-r",
+                    "-d",
+                    "-s",
+                    "-p",
+                    "-x",
+                    "-j",
+                    "--workers",
+                    "-o",
+                    "-e",
+                    "--invalidation-mode",
+                ],
+                &["-l", "-q", "-f", "-b", "-h", "--help", "--hardlink-dupes"],
+            ),
+            _ => (
+                &["--indent"],
+                &[
+                    "--sort-keys",
+                    "--no-ensure-ascii",
+                    "--json-lines",
+                    "--tab",
+                    "--no-indent",
+                    "--compact",
+                    "-h",
+                    "--help",
+                ],
+            ),
+        };
+        let options = self.tool_options(args, valued, switches, false);
+        if options.incomplete {
+            return true;
+        }
+        if options.has(&["-h", "--help"]) {
+            return true;
+        }
+        if module.text == "json.tool" {
+            if options.operands.len() > 2 {
+                self.unresolved_program("Python JSON tool operands are unsupported");
+                return true;
+            }
+            if let Some(file) = options.operands.first().filter(|file| file.text != "-") {
+                self.read_destination(file);
+            }
+            if let Some(file) = options.operands.get(1).filter(|file| file.text != "-") {
+                self.write_destination(file, false);
+            }
+        } else {
+            let mut files = options.operands;
+            if module.text == "compileall" && files.is_empty() {
+                self.unresolved_program("Python compileall without explicit targets traverses the interpreter search path");
+            }
+            for file in files.drain(..) {
+                self.read_destination(&file);
+                // Bytecode compilation parses source; it never executes the
+                // compiled module. Preserve explicit output scope and policy.
+                if let Some(path) = self.lexical_path(&file) {
+                    let target = if path.is_dir() {
+                        path
+                    } else {
+                        path.parent().unwrap_or(&path).to_path_buf()
+                    };
+                    self.write_destination(&literal_word(&target.to_string_lossy()), true);
+                }
+            }
+        }
+        true
     }
 
     pub(super) fn python_startup(&mut self, invocation: &crate::python_cli::Invocation) {
@@ -189,23 +294,78 @@ impl Analyzer<'_> {
         }
     }
 
-    pub(super) fn node(&mut self, args: &[Word]) {
-        if info_only(args, &["--version", "-v"]) {
-            self.raise(Severity::Safe);
+    pub(super) fn node(&mut self, args: &[Word], input: Option<&crate::shell::ShellInput>) {
+        use crate::node_cli::Target;
+        let invocation = match crate::node_cli::parse(args) {
+            Ok(invocation) => invocation,
+            Err(reason) => {
+                self.unresolved_program(reason);
+                return;
+            }
+        };
+        let language = if invocation.typescript {
+            Language::TypeScript
+        } else {
+            Language::JavaScript
+        };
+        for reason in invocation.gaps {
+            self.unresolved_program(reason);
+        }
+        for file in invocation.configuration {
+            self.read_destination(&file);
+            self.unresolved_program(
+                "Node runtime configuration or environment files can load additional code",
+            );
+        }
+        for file in invocation.preloads {
+            self.unresolved_program("Node preload modules or loaders can execute additional code");
+            if !file.dynamic
+                && (file.text.starts_with('.') || std::path::Path::new(&file.text).is_absolute())
+            {
+                self.node_file(&file);
+            }
+        }
+        match invocation.target {
+            Target::Info => self.raise(Severity::Safe),
+            Target::Code(source) if !source.dynamic => {
+                self.inspect_program(language, &source.text, None);
+            }
+            Target::File(file) => {
+                self.node_file(&file);
+            }
+            Target::Stdin => match input {
+                Some(input) if !input.dynamic => {
+                    self.inspect_program(language, &input.text, None);
+                }
+                Some(_) => {
+                    self.unresolved_program("Node stdin contains unresolved shell expansions")
+                }
+                None => self.unresolved_program("Node standard-input source is unavailable"),
+            },
+            _ => self.unresolved_program("Node eval source is dynamic"),
+        }
+    }
+
+    fn node_file(&mut self, file: &Word) {
+        if !file.dynamic
+            && [".ts", ".mts", ".cts"]
+                .iter()
+                .any(|extension| file.text.ends_with(extension))
+        {
+            self.unresolved_program(
+                "TypeScript runtime transformation and dependency behavior are unresolved",
+            );
+            self.inspect_file(Language::TypeScript, file);
             return;
         }
-        // A narrow argv grammar avoids mistaking application arguments for Node
-        // options or overlooking preload modules and repeated eval options.
-        if args.len() == 2
-            && !args.iter().any(|arg| arg.dynamic)
-            && matches!(args[0].text.as_str(), "-e" | "--eval")
+        if !file.dynamic
+            && [".js", ".mjs", ".cjs"]
+                .iter()
+                .any(|extension| file.text.ends_with(extension))
         {
-            self.inspect_program(Language::JavaScript, &args[1].text, None);
-        } else if args.len() == 1 && args[0].text.ends_with(".js") && !args[0].text.starts_with('-')
-        {
-            self.inspect_file(Language::JavaScript, &args[0]);
+            self.inspect_file(Language::JavaScript, file);
         } else {
-            self.unresolved_program("Node invocation or source is unresolved");
+            self.unresolved_program("Node source format or module resolution is unsupported");
         }
     }
 
@@ -381,11 +541,144 @@ impl Analyzer<'_> {
                 true
             }
             Ok(analysis) => {
+                if let Some(python) = analysis.python {
+                    let complete = python.gaps.is_empty();
+                    for gap in python.gaps {
+                        self.unresolved_program(&gap);
+                    }
+                    // The standard-library model is conditional on import identity,
+                    // just like bare system executables. Visible project shadows
+                    // must never inherit the model of the library they replace.
+                    for module in python.imports {
+                        let mut prefixes = Vec::new();
+                        let mut prefix = String::new();
+                        for part in module.split('.') {
+                            if !prefix.is_empty() {
+                                prefix.push('/');
+                            }
+                            prefix.push_str(part);
+                            prefixes.push(prefix.clone());
+                        }
+                        let base = origin
+                            .and_then(|file| self.lexical_path(&literal_word(file)))
+                            .and_then(|file| file.parent().map(std::path::Path::to_path_buf))
+                            .or_else(|| self.cwd.clone());
+                        if let Some(base) = base {
+                            for candidate in prefixes.iter().flat_map(|relative| {
+                                [
+                                    base.join(format!("{relative}.py")),
+                                    base.join(relative).join("__init__.py"),
+                                ]
+                            }) {
+                                if candidate.exists() {
+                                    self.unresolved_program("Python standard-library import is shadowed by project source");
+                                    if self.python_imports.len() < 32
+                                        && !self.python_imports.contains(&candidate)
+                                    {
+                                        self.python_imports.push(candidate.clone());
+                                        self.inspect_file(
+                                            Language::Python,
+                                            &literal_word(&candidate.to_string_lossy()),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    for observation in python.observations {
+                        self.source_observation(observation, origin);
+                    }
+                    if !complete || limit.is_some() {
+                        // Preserve conditional hazards in unsupported classes,
+                        // decorators, dynamic calls, and unmodeled statements.
+                        for observation in analysis.observations {
+                            self.source_observation(observation, origin);
+                        }
+                    }
+                    for command in python.commands {
+                        if self.python_command_depth
+                            >= self.config.analysis.expansion_depth_max.min(8)
+                        {
+                            self.unresolved_program(
+                                "Python subprocess inspection depth limit reached",
+                            );
+                            continue;
+                        }
+                        self.python_command_depth += 1;
+                        let command = if command.shell {
+                            command.argv.join(" ")
+                        } else {
+                            command
+                                .argv
+                                .iter()
+                                .map(|arg| format!("'{}'", arg.replace('\'', "'\\''")))
+                                .collect::<Vec<_>>()
+                                .join(" ")
+                        };
+                        self.analyze(&command, self.python_command_depth);
+                        self.python_command_depth -= 1;
+                    }
+                    if complete {
+                        self.raise(Severity::Low);
+                    }
+                    return false;
+                }
                 self.unresolved_program(
                     "Source includes behavior outside the supported static semantics",
                 );
                 for observation in analysis.observations {
                     self.source_observation(observation, origin);
+                }
+                for import in analysis.imports {
+                    let Some(specifier) = import.specifier else {
+                        self.unresolved_program("Node import specifier is dynamic or unsupported");
+                        continue;
+                    };
+                    if specifier.starts_with("node:")
+                        || matches!(
+                            specifier.as_str(),
+                            "fs" | "fs/promises"
+                                | "child_process"
+                                | "http"
+                                | "https"
+                                | "path"
+                                | "url"
+                                | "util"
+                                | "assert"
+                                | "assert/strict"
+                        )
+                    {
+                        continue;
+                    }
+                    if !specifier.starts_with("./") && !specifier.starts_with("../") {
+                        self.unresolved_program("Node package imports, custom loaders, or native modules are unresolved");
+                        continue;
+                    }
+                    if self.node_imports.len() >= 32
+                        || self.node_import_depth >= self.config.analysis.expansion_depth_max.min(8)
+                    {
+                        self.unresolved_program("Node local import file or depth limit reached");
+                        continue;
+                    }
+                    let base = origin
+                        .and_then(|file| self.lexical_path(&literal_word(file)))
+                        .and_then(|file| file.parent().map(std::path::Path::to_path_buf))
+                        .or_else(|| self.cwd.clone());
+                    let Some(base) = base else {
+                        self.unresolved_program("Node local import directory is unresolved");
+                        continue;
+                    };
+                    let dependency = crate::normalize_path(&base.join(&specifier));
+                    if self.node_imports.contains(&dependency) {
+                        self.unresolved_program(
+                            "Node local import cycle or repeated dependency remains partial",
+                        );
+                        continue;
+                    }
+                    self.node_imports.push(dependency.clone());
+                    self.node_import_depth += 1;
+                    self.node_file(&literal_word(&dependency.to_string_lossy()));
+                    self.node_import_depth -= 1;
                 }
                 false
             }
@@ -439,6 +732,15 @@ impl Analyzer<'_> {
             },
             Some(id),
         );
+    }
+}
+
+fn literal_word(text: &str) -> Word {
+    Word {
+        text: text.into(),
+        dynamic: false,
+        tilde_expansion: false,
+        substitutions: vec![],
     }
 }
 

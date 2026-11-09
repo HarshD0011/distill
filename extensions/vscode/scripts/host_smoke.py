@@ -9,6 +9,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 code = os.environ.get("VSCODE_BIN", "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code")
+persistent_secrets = os.environ.get('DISTILL_HOST_TEST_PERSISTENT_SECRETS') == '1'
 with tempfile.TemporaryDirectory(prefix="distill-vscode-host-", dir="/tmp") as temporary:
     temporary = Path(temporary)
     workspace = temporary / "workspace"
@@ -42,12 +43,13 @@ with tempfile.TemporaryDirectory(prefix="distill-vscode-host-", dir="/tmp") as t
     driver = temporary / "driver"
     driver.mkdir(parents=True)
     (driver / "package.json").write_text(json.dumps({"name": "lifecycle-driver", "publisher": "distill", "version": "0.0.1", "engines": {"vscode": "^1.95.0"}, "activationEvents": ["onStartupFinished"], "main": "driver.js"}))
-    (driver / "driver.js").write_text("exports.activate = async () => { try { await require(" + json.dumps(str(root / "test/host")) + ").run(); } finally { await require('vscode').commands.executeCommand('workbench.action.quit'); } };\n")
+    (driver / "driver.js").write_text("exports.activate = async context => { try { await require(" + json.dumps(str(root / "test/host")) + ").run(context); } finally { await require('vscode').commands.executeCommand('workbench.action.quit'); } };\n")
     try:
         result = subprocess.run([
             code, *common, "--new-window", "--wait", "--verbose", "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes",
-            # Disposable profiles must not wait for a macOS keychain prompt.
-            "--use-inmemory-secretstorage",
+            # Default CI runs remain headless. The explicit persistent mode uses
+            # the real OS-backed store and tests an actual reload with a fake key.
+            *([] if persistent_secrets else ["--use-inmemory-secretstorage"]),
             "--extensionDevelopmentPath=" + str(driver), str(workspace),
         ], env=environment, text=True, capture_output=True, timeout=90)
     except subprocess.TimeoutExpired as error:

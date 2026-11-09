@@ -17,6 +17,23 @@ pub fn finish(args: &[String], input: &[u8], bytes: &[u8]) -> Result<Vec<u8>, St
     if report["severity"] == "critical" {
         let event: Value = serde_json::from_slice(input).map_err(|e| e.to_string())?;
         let (host, config, no_prompt) = configuration(args)?;
+        if event["tool_name"] != "Bash" {
+            // A shell approval dialog cannot bind or review a direct editor-tool
+            // payload. Protected direct edits retain their explicit denial.
+            response["systemMessage"] = json!(
+                "Distill | Severity: CRITICAL | Protected direct file edit denied. Review and manage agent hook/security configuration manually."
+            );
+            if config.recording_enabled() {
+                let _ = distill_agents::trace::assessment_value(
+                    host,
+                    std::str::from_utf8(input).map_err(|e| e.to_string())?,
+                    &report,
+                    &response,
+                    &config,
+                );
+            }
+            return serde_json::to_vec(&response).map_err(|e| e.to_string());
+        }
         response = decide(
             &event,
             &mut report,
@@ -34,7 +51,7 @@ pub fn finish(args: &[String], input: &[u8], bytes: &[u8]) -> Result<Vec<u8>, St
                 Ok(())
             },
         );
-        if config.editor_trace.enabled
+        if config.recording_enabled()
             && let Err(error) = distill_agents::trace::assessment_value(
                 host,
                 std::str::from_utf8(input).map_err(|e| e.to_string())?,

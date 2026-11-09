@@ -22,8 +22,11 @@ def main():
     if system not in ('darwin', 'linux') or arch is None:
         raise SystemExit('Package on a supported macOS/Linux arm64/x64 host.')
     if args.binary is None:
-        subprocess.run(['cargo', 'build', '--release', '--locked', '-p', 'distill-cli'], cwd=workspace, check=True)
+        subprocess.run(['cargo', 'build', '--release', '--locked', '-p', 'distill-cli', '-p', 'distill-service'], cwd=workspace, check=True)
     binary = (args.binary or workspace / 'target/release/distill').resolve()
+    service = binary.with_name('distill-service')
+    if not service.is_file():
+        raise SystemExit('Build distill-service beside the supplied CLI binary before packaging.')
     content = binary.read_bytes()
     if system == 'darwin':
         valid = content[:4] == bytes.fromhex('cffaedfe') and struct.unpack_from('<I', content, 4)[0] == {'arm64': 0x100000c, 'x64': 0x1000007}[arch]
@@ -31,12 +34,19 @@ def main():
         valid = content[:6] == b'\x7fELF\x02\x01' and struct.unpack_from('<H', content, 18)[0] == {'arm64': 183, 'x64': 62}[arch]
     if not valid:
         raise SystemExit('The CLI binary does not match the packaging host platform.')
+    service_content = service.read_bytes()
+    if system == 'darwin':
+        service_valid = service_content[:4] == bytes.fromhex('cffaedfe') and struct.unpack_from('<I', service_content, 4)[0] == {'arm64': 0x100000c, 'x64': 0x1000007}[arch]
+    else:
+        service_valid = service_content[:6] == b'\x7fELF\x02\x01' and struct.unpack_from('<H', service_content, 18)[0] == {'arm64': 183, 'x64': 62}[arch]
+    if not service_valid:
+        raise SystemExit('The service binary does not match the packaging host platform.')
     health = json.loads(subprocess.check_output([str(binary), 'doctor', '--json']))
-    if not {'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval'}.issubset(health['capabilities']):
+    if not {'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval', 'conditional-shell-impact', 'hook-debug-log', 'node-module-analysis', 'structured-diagnostics', 'direct-file-hooks', 'optional-service', 'configurable-router', 'versioned-hook-policy', 'native-gemini-claude', 'session-only-router', 'background-model-advice', 'model-agnostic-router'}.issubset(health['capabilities']):
         raise SystemExit('Rebuild the CLI: required hook protections are missing.')
     target_platform = f'{system}-{arch}'
     target = root / f"{package['name']}-{package['version']}-{target_platform}.vsix"
-    native = {'schema_version': 1, 'platform': system, 'arch': arch, 'version': health['product_version'], 'sha256': hashlib.sha256(content).hexdigest()}
+    native = {'schema_version': 1, 'platform': system, 'arch': arch, 'version': health['product_version'], 'sha256': hashlib.sha256(content).hexdigest(), 'service': {'sha256': hashlib.sha256(service.read_bytes()).hexdigest()}}
     manifest = f'''<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
 <Metadata><Identity Language="en-US" Id="{escape(package['name'])}" Version="{escape(package['version'])}" Publisher="{escape(package['publisher'])}" TargetPlatform="{target_platform}"/><DisplayName>{escape(package['displayName'])}</DisplayName><Description xml:space="preserve">{escape(package['description'])}</Description><Tags>commands,trace,severity</Tags><Categories>Other</Categories><GalleryFlags>Public</GalleryFlags><Properties><Property Id="Microsoft.VisualStudio.Code.Engine" Value="{escape(package['engines']['vscode'])}"/><Property Id="Microsoft.VisualStudio.Code.ExtensionKind" Value="ui"/><Property Id="Microsoft.VisualStudio.Code.ExecutesCode" Value="true"/></Properties><License>extension/LICENSE</License></Metadata>
@@ -49,6 +59,7 @@ def main():
             archive.write(file, f'extension/{file.relative_to(root)}')
         archive.write(workspace / 'LICENSE', 'extension/LICENSE')
         archive.write(binary, 'extension/bin/distill')
+        archive.write(service, 'extension/bin/distill-service')
         archive.writestr('extension/bin/manifest.json', json.dumps(native, indent=2) + '\n')
     print(target)
 

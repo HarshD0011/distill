@@ -1,0 +1,129 @@
+{
+  "kind": "live_existing_service",
+  "model": "gpt-5.6-luna",
+  "provider": "openai_compatible",
+  "source_contents_enabled": false,
+  "limitations": "Current configured route only; no compact-versus-batch comparison, no candidate execution, cache misses required.",
+  "trials": [
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.46525009162724
+      ],
+      "advice_ms": [
+        1790.245
+      ],
+      "completion_ms": 1790.255,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.1928329998627305
+      ],
+      "advice_ms": [
+        1940.509
+      ],
+      "completion_ms": 1940.551,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.272582919336855
+      ],
+      "advice_ms": [
+        1851.685
+      ],
+      "completion_ms": 1851.706,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.992083995603025
+      ],
+      "advice_ms": [
+        2373.688
+      ],
+      "completion_ms": 2373.73,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.279124994762242
+      ],
+      "advice_ms": [
+        1639.163
+      ],
+      "completion_ms": 1639.176,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.667791003361344
+      ],
+      "advice_ms": [
+        2229.511
+      ],
+      "completion_ms": 2229.568,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0
+    }
+  ]
+}

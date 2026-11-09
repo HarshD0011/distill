@@ -1,0 +1,5147 @@
+{
+  "kind": "local_mock",
+  "model": "deterministic fixture, no inference",
+  "mock_delay": "120 ms + 2 ms per KiB input; synthetic, not a provider estimate",
+  "repeats_per_case": 3,
+  "static_commands": [
+    {
+      "command": "echo hello",
+      "samples": 20,
+      "process_median_ms": 13.839,
+      "process_p95_ms": 18.13,
+      "analysis_median_ms": 5.0,
+      "coverage": "static_accounted",
+      "approval_risk": "safe"
+    },
+    {
+      "command": "cat README.md",
+      "samples": 20,
+      "process_median_ms": 14.238,
+      "process_p95_ms": 16.851,
+      "analysis_median_ms": 5.0,
+      "coverage": "static_accounted",
+      "approval_risk": "low"
+    },
+    {
+      "command": "node scripts/test.js",
+      "samples": 20,
+      "process_median_ms": 13.698,
+      "process_p95_ms": 20.189,
+      "analysis_median_ms": 5.0,
+      "coverage": "partial",
+      "approval_risk": "high"
+    },
+    {
+      "command": "rm -rf /",
+      "samples": 20,
+      "process_median_ms": 13.773,
+      "process_p95_ms": 16.09,
+      "analysis_median_ms": 5.0,
+      "coverage": "static_accounted",
+      "approval_risk": "critical"
+    }
+  ],
+  "trials": [
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.136625004932284,
+        7.379333022981882,
+        12.15254096314311,
+        12.575667002238333
+      ],
+      "advice_ms": [
+        135.908,
+        141.203,
+        144.739,
+        144.25
+      ],
+      "service_advice_ms": [
+        127,
+        128,
+        124,
+        124
+      ],
+      "completion_ms": 171.036,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.270124973729253,
+        10.570415994152427
+      ],
+      "advice_ms": [
+        135.11,
+        142.993
+      ],
+      "service_advice_ms": [
+        127,
+        127
+      ],
+      "completion_ms": 244.277,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.83587503246963,
+        12.208999949507415
+      ],
+      "advice_ms": [
+        156.071,
+        159.027
+      ],
+      "service_advice_ms": [
+        144,
+        144
+      ],
+      "completion_ms": 167.024,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.08341708034277,
+        10.574875050224364,
+        10.05983306095004,
+        14.826792059466243
+      ],
+      "advice_ms": [
+        329.684,
+        224.83,
+        141.872,
+        147.607
+      ],
+      "service_advice_ms": [
+        126,
+        127,
+        129,
+        127
+      ],
+      "completion_ms": 450.94,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.907166007906199,
+        11.551167001016438,
+        11.014792020432651,
+        10.019624955020845
+      ],
+      "advice_ms": [
+        172.3,
+        162.303,
+        163.388,
+        164.923
+      ],
+      "service_advice_ms": [
+        151,
+        149,
+        147,
+        143
+      ],
+      "completion_ms": 197.785,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.1607920322567225,
+        12.751542031764984
+      ],
+      "advice_ms": [
+        136.51,
+        154.687
+      ],
+      "service_advice_ms": [
+        129,
+        131
+      ],
+      "completion_ms": 159.905,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.305000050924718
+      ],
+      "advice_ms": [
+        164.705
+      ],
+      "service_advice_ms": [
+        146
+      ],
+      "completion_ms": 164.846,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        9.031458059325814,
+        5.100959097035229
+      ],
+      "advice_ms": [
+        145.069,
+        140.537
+      ],
+      "service_advice_ms": [
+        130,
+        128
+      ],
+      "completion_ms": 244.467,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.644832975231111,
+        10.94229205045849
+      ],
+      "advice_ms": [
+        164.246,
+        164.02
+      ],
+      "service_advice_ms": [
+        148,
+        149
+      ],
+      "completion_ms": 174.868,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.07770893536508,
+        12.787124956957996
+      ],
+      "advice_ms": [
+        162.178,
+        169.001
+      ],
+      "service_advice_ms": [
+        145,
+        150
+      ],
+      "completion_ms": 274.19,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.30970802437514,
+        13.13595799729228
+      ],
+      "advice_ms": [
+        168.798,
+        172.68
+      ],
+      "service_advice_ms": [
+        147,
+        146
+      ],
+      "completion_ms": 182.13,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.36274994071573,
+        15.306250075809658,
+        3.5563750425353646,
+        4.566958057694137
+      ],
+      "advice_ms": [
+        319.488,
+        215.832,
+        141.741,
+        143.073
+      ],
+      "service_advice_ms": [
+        129,
+        129,
+        126,
+        128
+      ],
+      "completion_ms": 448.203,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.288584046065807,
+        15.032541006803513,
+        13.410459039732814,
+        13.135708984918892
+      ],
+      "advice_ms": [
+        321.781,
+        216.679,
+        165.379,
+        174.309
+      ],
+      "service_advice_ms": [
+        148,
+        150,
+        150,
+        152
+      ],
+      "completion_ms": 476.12,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.701249935664237,
+        9.350416949018836,
+        10.15404099598527,
+        11.598999961279333
+      ],
+      "advice_ms": [
+        163.851,
+        162.988,
+        166.369,
+        168.765
+      ],
+      "service_advice_ms": [
+        148,
+        152,
+        149,
+        149
+      ],
+      "completion_ms": 199.482,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.198125033639371,
+        19.353083916939795
+      ],
+      "advice_ms": [
+        164.516,
+        179.992
+      ],
+      "service_advice_ms": [
+        152,
+        148
+      ],
+      "completion_ms": 285.212,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.483875055797398,
+        10.00700006261468,
+        14.340291963890195,
+        13.537083053961396
+      ],
+      "advice_ms": [
+        322.231,
+        217.091,
+        177.191,
+        169.892
+      ],
+      "service_advice_ms": [
+        151,
+        149,
+        149,
+        153
+      ],
+      "completion_ms": 473.526,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.114375057630241
+      ],
+      "advice_ms": [
+        151.14
+      ],
+      "service_advice_ms": [
+        132
+      ],
+      "completion_ms": 151.229,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.066249963827431,
+        10.986500070430338
+      ],
+      "advice_ms": [
+        138.703,
+        142.639
+      ],
+      "service_advice_ms": [
+        129,
+        128
+      ],
+      "completion_ms": 247.806,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.639832979999483,
+        12.374041019938886,
+        11.773415957577527,
+        12.324834009632468
+      ],
+      "advice_ms": [
+        140.298,
+        146.221,
+        146.553,
+        146.827
+      ],
+      "service_advice_ms": [
+        129,
+        128,
+        130,
+        130
+      ],
+      "completion_ms": 177.829,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.418167078867555
+      ],
+      "advice_ms": [
+        143.229
+      ],
+      "service_advice_ms": [
+        128
+      ],
+      "completion_ms": 143.263,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.473583010025322,
+        15.88975009508431
+      ],
+      "advice_ms": [
+        162.161,
+        169.646
+      ],
+      "service_advice_ms": [
+        149,
+        150
+      ],
+      "completion_ms": 272.926,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 19254,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.539541999809444,
+        12.271083891391754,
+        12.322166934609413,
+        10.644291993230581
+      ],
+      "advice_ms": [
+        319.063,
+        213.915,
+        166.453,
+        171.955
+      ],
+      "service_advice_ms": [
+        150,
+        151,
+        151,
+        152
+      ],
+      "completion_ms": 473.759,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.287042008712888
+      ],
+      "advice_ms": [
+        163.484
+      ],
+      "service_advice_ms": [
+        148
+      ],
+      "completion_ms": 163.673,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.625041995197535,
+        12.279291986487806,
+        9.218084043823183,
+        7.678708992898464
+      ],
+      "advice_ms": [
+        319.329,
+        217.854,
+        149.889,
+        149.822
+      ],
+      "service_advice_ms": [
+        128,
+        131,
+        132,
+        132
+      ],
+      "completion_ms": 450.636,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.182250032201409,
+        11.909959022887051
+      ],
+      "advice_ms": [
+        159.781,
+        152.571
+      ],
+      "service_advice_ms": [
+        133,
+        130
+      ],
+      "completion_ms": 159.822,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.306833053007722,
+        11.015750002115965
+      ],
+      "advice_ms": [
+        150.8,
+        143.451
+      ],
+      "service_advice_ms": [
+        131,
+        129
+      ],
+      "completion_ms": 150.867,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2532,
+      "output_bytes": 486
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.720666985027492,
+        11.109333019703627,
+        12.242209049873054,
+        11.914500035345554
+      ],
+      "advice_ms": [
+        164.775,
+        168.508,
+        169.982,
+        170.179
+      ],
+      "service_advice_ms": [
+        151,
+        144,
+        148,
+        145
+      ],
+      "completion_ms": 202.804,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 38508,
+      "output_bytes": 972
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.566292024217546
+      ],
+      "advice_ms": [
+        143.73
+      ],
+      "service_advice_ms": [
+        130
+      ],
+      "completion_ms": 143.747,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1266,
+      "output_bytes": 243
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.671124910004437
+      ],
+      "advice_ms": [
+        165.163
+      ],
+      "service_advice_ms": [
+        148
+      ],
+      "completion_ms": 165.317,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9627,
+      "output_bytes": 243
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.430958027020097,
+        10.209875064902008,
+        12.805833015590906,
+        12.10920896846801
+      ],
+      "advice_ms": [
+        141.603,
+        145.902,
+        148.151,
+        148.17
+      ],
+      "service_advice_ms": [
+        132,
+        130,
+        130,
+        131
+      ],
+      "completion_ms": 179.755,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "effects",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 5064,
+      "output_bytes": 972
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.953542051836848,
+        7.977416971698403,
+        12.576582957990468,
+        12.290165992453694
+      ],
+      "advice_ms": [
+        137.683,
+        142.241,
+        147.13,
+        147.287
+      ],
+      "service_advice_ms": [
+        123,
+        128,
+        128,
+        128
+      ],
+      "completion_ms": 175.864,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.911624968983233,
+        4.748708102852106
+      ],
+      "advice_ms": [
+        137.454,
+        145.91
+      ],
+      "service_advice_ms": [
+        127,
+        129
+      ],
+      "completion_ms": 248.081,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.04187494982034,
+        11.865000007674098
+      ],
+      "advice_ms": [
+        162.813,
+        165.11
+      ],
+      "service_advice_ms": [
+        145,
+        144
+      ],
+      "completion_ms": 175.501,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.713750004768372,
+        13.147583929821849,
+        14.53695900272578,
+        4.039500025101006
+      ],
+      "advice_ms": [
+        318.472,
+        213.503,
+        153.346,
+        147.228
+      ],
+      "service_advice_ms": [
+        130,
+        129,
+        130,
+        129
+      ],
+      "completion_ms": 452.377,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.480792050249875,
+        13.5043750051409,
+        11.825707973912358,
+        12.214209069497883
+      ],
+      "advice_ms": [
+        164.285,
+        167.642,
+        166.551,
+        166.713
+      ],
+      "service_advice_ms": [
+        148,
+        149,
+        147,
+        147
+      ],
+      "completion_ms": 201.383,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.992042064666748,
+        12.24570907652378
+      ],
+      "advice_ms": [
+        144.491,
+        150.075
+      ],
+      "service_advice_ms": [
+        126,
+        125
+      ],
+      "completion_ms": 157.219,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.469499996863306
+      ],
+      "advice_ms": [
+        162.751
+      ],
+      "service_advice_ms": [
+        146
+      ],
+      "completion_ms": 162.884,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        9.852082934230566,
+        7.466249982826412
+      ],
+      "advice_ms": [
+        142.583,
+        138.764
+      ],
+      "service_advice_ms": [
+        128,
+        127
+      ],
+      "completion_ms": 241.075,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.426791966892779,
+        11.696457979269326
+      ],
+      "advice_ms": [
+        165.37,
+        167.638
+      ],
+      "service_advice_ms": [
+        148,
+        148
+      ],
+      "completion_ms": 178.45,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.420375037938356,
+        19.11416696384549
+      ],
+      "advice_ms": [
+        163.144,
+        170.193
+      ],
+      "service_advice_ms": [
+        144,
+        147
+      ],
+      "completion_ms": 271.651,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        21.083207917399704,
+        15.844541951082647
+      ],
+      "advice_ms": [
+        178.499,
+        167.826
+      ],
+      "service_advice_ms": [
+        149,
+        147
+      ],
+      "completion_ms": 189.475,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.46708398219198,
+        2.155750058591366,
+        13.703583041206002,
+        5.452750017866492
+      ],
+      "advice_ms": [
+        319.87,
+        214.826,
+        155.916,
+        136.345
+      ],
+      "service_advice_ms": [
+        129,
+        129,
+        130,
+        128
+      ],
+      "completion_ms": 440.482,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.985166951082647,
+        10.738665936514735,
+        6.775083020329475,
+        13.366666971705854
+      ],
+      "advice_ms": [
+        327.244,
+        222.316,
+        158.579,
+        169.663
+      ],
+      "service_advice_ms": [
+        146,
+        148,
+        148,
+        148
+      ],
+      "completion_ms": 474.864,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.8222079211846,
+        9.76341706700623,
+        11.608291999436915,
+        9.998499997891486
+      ],
+      "advice_ms": [
+        158.947,
+        162.411,
+        165.213,
+        165.523
+      ],
+      "service_advice_ms": [
+        146,
+        147,
+        147,
+        147
+      ],
+      "completion_ms": 196.235,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.314041981473565,
+        12.465625070035458
+      ],
+      "advice_ms": [
+        171.047,
+        170.789
+      ],
+      "service_advice_ms": [
+        148,
+        148
+      ],
+      "completion_ms": 276.085,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.026292107999325,
+        14.201708021573722,
+        9.525333996862173,
+        11.131915962323546
+      ],
+      "advice_ms": [
+        319.277,
+        217.335,
+        163.666,
+        164.056
+      ],
+      "service_advice_ms": [
+        145,
+        148,
+        148,
+        148
+      ],
+      "completion_ms": 466.321,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.888375056907535
+      ],
+      "advice_ms": [
+        136.209
+      ],
+      "service_advice_ms": [
+        125
+      ],
+      "completion_ms": 136.251,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.823415936902165,
+        13.655125047080219
+      ],
+      "advice_ms": [
+        138.053,
+        145.313
+      ],
+      "service_advice_ms": [
+        129,
+        126
+      ],
+      "completion_ms": 248.124,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.703667040914297,
+        13.201333000324667,
+        9.535291930660605,
+        11.885166983120143
+      ],
+      "advice_ms": [
+        139.754,
+        142.943,
+        142.397,
+        145.516
+      ],
+      "service_advice_ms": [
+        125,
+        126,
+        129,
+        128
+      ],
+      "completion_ms": 176.169,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.109416066668928
+      ],
+      "advice_ms": [
+        140.927
+      ],
+      "service_advice_ms": [
+        128
+      ],
+      "completion_ms": 140.97,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.104875011369586,
+        6.463333964347839
+      ],
+      "advice_ms": [
+        166.015,
+        159.264
+      ],
+      "service_advice_ms": [
+        143,
+        147
+      ],
+      "completion_ms": 264.556,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.00641705468297,
+        18.23637494817376,
+        15.623958082869649,
+        14.770500012673438
+      ],
+      "advice_ms": [
+        323.757,
+        219.999,
+        171.056,
+        165.984
+      ],
+      "service_advice_ms": [
+        147,
+        148,
+        147,
+        147
+      ],
+      "completion_ms": 467.421,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.654374957084656
+      ],
+      "advice_ms": [
+        168.789
+      ],
+      "service_advice_ms": [
+        146
+      ],
+      "completion_ms": 169.001,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.637624930590391,
+        10.703208041377366,
+        8.052875055000186,
+        8.202875033020973
+      ],
+      "advice_ms": [
+        323.898,
+        219.026,
+        143.286,
+        141.567
+      ],
+      "service_advice_ms": [
+        126,
+        130,
+        129,
+        128
+      ],
+      "completion_ms": 445.284,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.941500072367489,
+        10.335833998396993
+      ],
+      "advice_ms": [
+        137.07,
+        143.043
+      ],
+      "service_advice_ms": [
+        128,
+        128
+      ],
+      "completion_ms": 149.106,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.78375007212162,
+        11.979500064626336
+      ],
+      "advice_ms": [
+        149.44,
+        141.606
+      ],
+      "service_advice_ms": [
+        129,
+        125
+      ],
+      "completion_ms": 149.474,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.896083946339786,
+        11.23841607477516,
+        11.786499992012978,
+        12.442749924957752
+      ],
+      "advice_ms": [
+        165.033,
+        165.667,
+        165.895,
+        166.998
+      ],
+      "service_advice_ms": [
+        145,
+        146,
+        146,
+        147
+      ],
+      "completion_ms": 202.355,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.613500067032874
+      ],
+      "advice_ms": [
+        139.293
+      ],
+      "service_advice_ms": [
+        129
+      ],
+      "completion_ms": 139.338,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.368957930244505
+      ],
+      "advice_ms": [
+        166.824
+      ],
+      "service_advice_ms": [
+        147
+      ],
+      "completion_ms": 167.048,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.509166046977043,
+        11.993666063062847,
+        12.874415959231555,
+        12.546999962069094
+      ],
+      "advice_ms": [
+        138.295,
+        144.207,
+        155.957,
+        143.007
+      ],
+      "service_advice_ms": [
+        129,
+        124,
+        130,
+        127
+      ],
+      "completion_ms": 173.565,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 0,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.960082963109016,
+        7.906415965408087,
+        12.534208013676107,
+        12.629124918021262
+      ],
+      "advice_ms": [
+        202.451,
+        194.485,
+        186.57,
+        174.027
+      ],
+      "service_advice_ms": [
+        185,
+        178,
+        165,
+        152
+      ],
+      "completion_ms": 202.478,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        10.777750052511692,
+        4.519582958891988
+      ],
+      "advice_ms": [
+        201.483,
+        185.666
+      ],
+      "service_advice_ms": [
+        183,
+        180
+      ],
+      "completion_ms": 286.654,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.447582975961268,
+        13.000541017390788
+      ],
+      "advice_ms": [
+        237.914,
+        226.365
+      ],
+      "service_advice_ms": [
+        223,
+        210
+      ],
+      "completion_ms": 238.114,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.941583007574081,
+        14.229124994017184,
+        11.12358400132507,
+        3.2596669625490904
+      ],
+      "advice_ms": [
+        318.448,
+        215.941,
+        197.073,
+        198.343
+      ],
+      "service_advice_ms": [
+        182,
+        185,
+        177,
+        184
+      ],
+      "completion_ms": 502.532,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.530040948651731,
+        13.284333981573582,
+        11.256833910010755,
+        12.278832960873842
+      ],
+      "advice_ms": [
+        272.151,
+        261.495,
+        248.05,
+        236.613
+      ],
+      "service_advice_ms": [
+        260,
+        247,
+        235,
+        223
+      ],
+      "completion_ms": 272.344,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.157750030979514,
+        12.147290981374681
+      ],
+      "advice_ms": [
+        201.058,
+        194.844
+      ],
+      "service_advice_ms": [
+        183,
+        171
+      ],
+      "completion_ms": 201.156,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.511166019365191
+      ],
+      "advice_ms": [
+        219.928
+      ],
+      "service_advice_ms": [
+        203
+      ],
+      "completion_ms": 220.175,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.284042076207697,
+        11.630958993919194
+      ],
+      "advice_ms": [
+        189.927,
+        199.476
+      ],
+      "service_advice_ms": [
+        178,
+        185
+      ],
+      "completion_ms": 303.853,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.479042073711753,
+        12.99258298240602
+      ],
+      "advice_ms": [
+        237.445,
+        226.823
+      ],
+      "service_advice_ms": [
+        214,
+        201
+      ],
+      "completion_ms": 237.628,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        5.8994999853894114,
+        15.773792052641511
+      ],
+      "advice_ms": [
+        211.26,
+        219.44
+      ],
+      "service_advice_ms": [
+        202,
+        202
+      ],
+      "completion_ms": 324.666,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.408915928564966,
+        11.815625010058284
+      ],
+      "advice_ms": [
+        248.942,
+        238.342
+      ],
+      "service_advice_ms": [
+        224,
+        211
+      ],
+      "completion_ms": 249.132,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.507000023499131,
+        13.242417015135288,
+        3.805208019912243,
+        11.88245799858123
+      ],
+      "advice_ms": [
+        327.325,
+        222.255,
+        196.944,
+        204.255
+      ],
+      "service_advice_ms": [
+        185,
+        185,
+        183,
+        179
+      ],
+      "completion_ms": 509.347,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.043958900496364,
+        11.587582994252443,
+        11.025457992218435,
+        14.685042086057365
+      ],
+      "advice_ms": [
+        323.756,
+        218.609,
+        224.698,
+        221.447
+      ],
+      "service_advice_ms": [
+        202,
+        203,
+        201,
+        201
+      ],
+      "completion_ms": 525.486,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.086208978667855,
+        11.27350004389882,
+        12.81854195985943,
+        13.340124976821244
+      ],
+      "advice_ms": [
+        276.947,
+        265.714,
+        254.338,
+        241.449
+      ],
+      "service_advice_ms": [
+        257,
+        245,
+        232,
+        219
+      ],
+      "completion_ms": 277.108,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.447084088809788,
+        15.464541967958212
+      ],
+      "advice_ms": [
+        222.711,
+        226.181
+      ],
+      "service_advice_ms": [
+        204,
+        198
+      ],
+      "completion_ms": 329.972,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.04025007225573,
+        7.794749923050404,
+        15.775750041939318,
+        12.987500056624413
+      ],
+      "advice_ms": [
+        324.716,
+        223.419,
+        220.12,
+        214.998
+      ],
+      "service_advice_ms": [
+        204,
+        196,
+        199,
+        196
+      ],
+      "completion_ms": 520.379,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.9220829755067825
+      ],
+      "advice_ms": [
+        202.44
+      ],
+      "service_advice_ms": [
+        183
+      ],
+      "completion_ms": 202.497,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.2377079632133245,
+        14.751374954357743
+      ],
+      "advice_ms": [
+        190.773,
+        207.88
+      ],
+      "service_advice_ms": [
+        182,
+        181
+      ],
+      "completion_ms": 313.036,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.070832954719663,
+        11.207415955141187,
+        12.606541975401342,
+        11.008083005435765
+      ],
+      "advice_ms": [
+        202.296,
+        196.193,
+        184.954,
+        172.312
+      ],
+      "service_advice_ms": [
+        188,
+        176,
+        164,
+        153
+      ],
+      "completion_ms": 202.352,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.729957996867597
+      ],
+      "advice_ms": [
+        198.868
+      ],
+      "service_advice_ms": [
+        182
+      ],
+      "completion_ms": 198.905,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.031333960592747,
+        16.733874916099012
+      ],
+      "advice_ms": [
+        224.325,
+        220.605
+      ],
+      "service_advice_ms": [
+        205,
+        200
+      ],
+      "completion_ms": 321.88,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.57699997909367,
+        18.206625012680888,
+        13.072833069600165,
+        10.139624937437475
+      ],
+      "advice_ms": [
+        323.541,
+        221.472,
+        218.754,
+        218.828
+      ],
+      "service_advice_ms": [
+        199,
+        199,
+        200,
+        203
+      ],
+      "completion_ms": 524.119,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 37436,
+      "output_bytes": 264
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.077083017677069
+      ],
+      "advice_ms": [
+        212.202
+      ],
+      "service_advice_ms": [
+        199
+      ],
+      "completion_ms": 212.382,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.882584002800286,
+        5.931040970608592,
+        6.321792025119066,
+        2.604041015729308
+      ],
+      "advice_ms": [
+        319.868,
+        214.86,
+        191.354,
+        197.99
+      ],
+      "service_advice_ms": [
+        185,
+        183,
+        182,
+        182
+      ],
+      "completion_ms": 503.016,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 4,
+      "input_bytes": 4060,
+      "output_bytes": 264
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.399582955054939,
+        12.448916910216212
+      ],
+      "advice_ms": [
+        193.815,
+        187.408
+      ],
+      "service_advice_ms": [
+        181,
+        169
+      ],
+      "completion_ms": 193.825,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.522584008052945,
+        12.449749978259206
+      ],
+      "advice_ms": [
+        191.87,
+        185.343
+      ],
+      "service_advice_ms": [
+        183,
+        170
+      ],
+      "completion_ms": 191.878,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.484750007279217,
+        12.794458074495196,
+        12.673916993662715,
+        12.6772919902578
+      ],
+      "advice_ms": [
+        268.979,
+        261.471,
+        248.66,
+        235.972
+      ],
+      "service_advice_ms": [
+        252,
+        240,
+        227,
+        214
+      ],
+      "completion_ms": 269.022,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.415000068955123
+      ],
+      "advice_ms": [
+        192.37
+      ],
+      "service_advice_ms": [
+        182
+      ],
+      "completion_ms": 192.375,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.7310840133577585
+      ],
+      "advice_ms": [
+        213.776
+      ],
+      "service_advice_ms": [
+        199
+      ],
+      "completion_ms": 213.815,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.55133302602917,
+        12.561083072796464,
+        12.481290963478386,
+        12.4390838900581
+      ],
+      "advice_ms": [
+        189.738,
+        185.177,
+        172.594,
+        160.094
+      ],
+      "service_advice_ms": [
+        184,
+        171,
+        159,
+        146
+      ],
+      "completion_ms": 189.75,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 50,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.925166981294751,
+        8.000000030733645,
+        12.208833009935915,
+        10.279958951286972
+      ],
+      "advice_ms": [
+        250.681,
+        242.744,
+        234.738,
+        222.521
+      ],
+      "service_advice_ms": [
+        230,
+        222,
+        210,
+        199
+      ],
+      "completion_ms": 250.705,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.774250068701804,
+        13.343707891181111
+      ],
+      "advice_ms": [
+        252.33,
+        248.98
+      ],
+      "service_advice_ms": [
+        233,
+        227
+      ],
+      "completion_ms": 352.493,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.937583024613559,
+        12.786249979399145
+      ],
+      "advice_ms": [
+        281.975,
+        274.011
+      ],
+      "service_advice_ms": [
+        267,
+        254
+      ],
+      "completion_ms": 282.021,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.313999998383224,
+        13.130625011399388,
+        7.703665993176401,
+        12.184416060335934
+      ],
+      "advice_ms": [
+        323.529,
+        257.335,
+        157.343,
+        259.495
+      ],
+      "service_advice_ms": [
+        236,
+        235,
+        140,
+        233
+      ],
+      "completion_ms": 560.168,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 3,
+      "input_bytes": 3259,
+      "output_bytes": 202
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.705624939873815,
+        11.567958979867399,
+        12.957165949046612,
+        13.304500025697052
+      ],
+      "advice_ms": [
+        330.259,
+        319.402,
+        307.744,
+        294.698
+      ],
+      "service_advice_ms": [
+        312,
+        300,
+        287,
+        274
+      ],
+      "completion_ms": 330.485,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.561999976634979,
+        11.394749977625906
+      ],
+      "advice_ms": [
+        245.818,
+        240.215
+      ],
+      "service_advice_ms": [
+        236,
+        225
+      ],
+      "completion_ms": 245.874,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.627249954268336
+      ],
+      "advice_ms": [
+        261.599
+      ],
+      "service_advice_ms": [
+        249
+      ],
+      "completion_ms": 261.799,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.722166948951781,
+        13.339875033125281
+      ],
+      "advice_ms": [
+        249.353,
+        248.731
+      ],
+      "service_advice_ms": [
+        231,
+        230
+      ],
+      "completion_ms": 353.871,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.673416942358017,
+        11.978666996583343
+      ],
+      "advice_ms": [
+        287.134,
+        275.336
+      ],
+      "service_advice_ms": [
+        271,
+        259
+      ],
+      "completion_ms": 287.385,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.9561249585822225,
+        13.683749944902956
+      ],
+      "advice_ms": [
+        262.946,
+        268.997
+      ],
+      "service_advice_ms": [
+        250,
+        251
+      ],
+      "completion_ms": 374.309,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.894957998767495,
+        10.155458934605122
+      ],
+      "advice_ms": [
+        296.632,
+        286.627
+      ],
+      "service_advice_ms": [
+        274,
+        264
+      ],
+      "completion_ms": 296.84,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.35062500461936,
+        7.073958055116236,
+        13.933334033936262,
+        5.286208004690707
+      ],
+      "advice_ms": [
+        317.436,
+        238.858,
+        259.679,
+        163.98
+      ],
+      "service_advice_ms": [
+        228,
+        229,
+        233,
+        146
+      ],
+      "completion_ms": 464.827,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 3,
+      "input_bytes": 3259,
+      "output_bytes": 202
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.601541074924171,
+        9.939667070284486,
+        14.346915995702147,
+        13.68241710588336
+      ],
+      "advice_ms": [
+        322.978,
+        218.007,
+        297.118,
+        198.797
+      ],
+      "service_advice_ms": [
+        271,
+        167,
+        271,
+        174
+      ],
+      "completion_ms": 502.387,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 35834,
+      "output_bytes": 140
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.212333105504513,
+        12.254833010956645,
+        12.03712506685406,
+        10.95966703724116
+      ],
+      "advice_ms": [
+        331.389,
+        320.004,
+        307.558,
+        295.439
+      ],
+      "service_advice_ms": [
+        311,
+        299,
+        286,
+        275
+      ],
+      "completion_ms": 331.555,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.787334081716835,
+        8.376374957151711
+      ],
+      "advice_ms": [
+        288.057,
+        187.571
+      ],
+      "service_advice_ms": [
+        271,
+        171
+      ],
+      "completion_ms": 288.262,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.180750046856701,
+        7.584625040180981,
+        17.014999990351498,
+        15.020624967291951
+      ],
+      "advice_ms": [
+        323.118,
+        218.618,
+        298.903,
+        201.724
+      ],
+      "service_advice_ms": [
+        268,
+        166,
+        269,
+        174
+      ],
+      "completion_ms": 503.632,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 35834,
+      "output_bytes": 140
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.081832922063768
+      ],
+      "advice_ms": [
+        243.733
+      ],
+      "service_advice_ms": [
+        232
+      ],
+      "completion_ms": 243.78,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.36370897013694,
+        13.882124912925065
+      ],
+      "advice_ms": [
+        250.704,
+        254.936
+      ],
+      "service_advice_ms": [
+        233,
+        230
+      ],
+      "completion_ms": 359.709,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 2030,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.902207969687879,
+        11.328916996717453,
+        11.402792064473033,
+        12.909084092825651
+      ],
+      "advice_ms": [
+        244.434,
+        237.505,
+        226.145,
+        214.71
+      ],
+      "service_advice_ms": [
+        233,
+        222,
+        211,
+        198
+      ],
+      "completion_ms": 244.485,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.363083026371896
+      ],
+      "advice_ms": [
+        250.88
+      ],
+      "service_advice_ms": [
+        232
+      ],
+      "completion_ms": 250.954,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.342916055582464,
+        13.8726249570027
+      ],
+      "advice_ms": [
+        279.795,
+        271.42
+      ],
+      "service_advice_ms": [
+        255,
+        252
+      ],
+      "completion_ms": 376.0,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 2,
+      "input_bytes": 18718,
+      "output_bytes": 132
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.05870902352035,
+        12.22979195881635,
+        9.949457948096097,
+        7.263000006787479
+      ],
+      "advice_ms": [
+        313.813,
+        295.141,
+        199.229,
+        274.022
+      ],
+      "service_advice_ms": [
+        250,
+        274,
+        180,
+        253
+      ],
+      "completion_ms": 575.121,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 3,
+      "input_bytes": 36635,
+      "output_bytes": 202
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.47483300883323
+      ],
+      "advice_ms": [
+        276.583
+      ],
+      "service_advice_ms": [
+        255
+      ],
+      "completion_ms": 276.78,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.780875031836331,
+        9.623791091144085,
+        11.077750008553267,
+        5.365916993469
+      ],
+      "advice_ms": [
+        319.119,
+        251.594,
+        152.805,
+        250.775
+      ],
+      "service_advice_ms": [
+        233,
+        233,
+        133,
+        234
+      ],
+      "completion_ms": 553.76,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 3,
+      "input_bytes": 3259,
+      "output_bytes": 202
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.0680000353604555,
+        13.323417049832642
+      ],
+      "advice_ms": [
+        246.905,
+        239.8
+      ],
+      "service_advice_ms": [
+        235,
+        221
+      ],
+      "completion_ms": 246.942,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.361540920101106,
+        12.965583009645343
+      ],
+      "advice_ms": [
+        250.501,
+        243.098
+      ],
+      "service_advice_ms": [
+        232,
+        219
+      ],
+      "completion_ms": 250.55,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.046333005651832,
+        11.412999941967428,
+        12.916999985463917,
+        13.116708025336266
+      ],
+      "advice_ms": [
+        328.731,
+        317.556,
+        306.064,
+        293.082
+      ],
+      "service_advice_ms": [
+        313,
+        301,
+        288,
+        275
+      ],
+      "completion_ms": 328.885,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.122499984689057
+      ],
+      "advice_ms": [
+        240.894
+      ],
+      "service_advice_ms": [
+        230
+      ],
+      "completion_ms": 240.936,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.6456660171970725
+      ],
+      "advice_ms": [
+        256.105
+      ],
+      "service_advice_ms": [
+        247
+      ],
+      "completion_ms": 256.182,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.3278750060126185,
+        11.303083971142769,
+        10.75516699347645,
+        10.765374987386167
+      ],
+      "advice_ms": [
+        245.722,
+        238.358,
+        226.956,
+        216.157
+      ],
+      "service_advice_ms": [
+        231,
+        220,
+        209,
+        198
+      ],
+      "completion_ms": 245.792,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 100,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.97758309636265,
+        7.882165955379605,
+        12.501375051215291,
+        12.637167004868388
+      ],
+      "advice_ms": [
+        655.7,
+        647.713,
+        639.824,
+        627.317
+      ],
+      "service_advice_ms": [
+        639,
+        631,
+        619,
+        606
+      ],
+      "completion_ms": 655.726,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.56637500692159,
+        15.025333035737276
+      ],
+      "advice_ms": [
+        644.172,
+        540.206
+      ],
+      "service_advice_ms": [
+        635,
+        524
+      ],
+      "completion_ms": 644.223,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        12.159417034126818,
+        12.176207965239882
+      ],
+      "advice_ms": [
+        688.566,
+        676.236
+      ],
+      "service_advice_ms": [
+        673,
+        661
+      ],
+      "completion_ms": 688.796,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.091082912869751,
+        13.919209013693035,
+        8.634916972368956,
+        6.885666050948203
+      ],
+      "advice_ms": [
+        641.435,
+        540.181,
+        436.43,
+        340.045
+      ],
+      "service_advice_ms": [
+        630,
+        523,
+        425,
+        330
+      ],
+      "completion_ms": 641.514,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.786458056420088,
+        13.078958028927445,
+        12.37150002270937,
+        11.641500052064657
+      ],
+      "advice_ms": [
+        720.539,
+        711.617,
+        698.446,
+        685.939
+      ],
+      "service_advice_ms": [
+        707,
+        694,
+        682,
+        670
+      ],
+      "completion_ms": 720.757,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.682959035970271,
+        12.897707987576723
+      ],
+      "advice_ms": [
+        644.785,
+        638.073
+      ],
+      "service_advice_ms": [
+        630,
+        617
+      ],
+      "completion_ms": 644.829,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.506666985340416
+      ],
+      "advice_ms": [
+        664.18
+      ],
+      "service_advice_ms": [
+        653
+      ],
+      "completion_ms": 664.245,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.104583015665412,
+        12.616249965503812
+      ],
+      "advice_ms": [
+        644.807,
+        539.849
+      ],
+      "service_advice_ms": [
+        628,
+        518
+      ],
+      "completion_ms": 644.894,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.678708971478045,
+        12.437792029231787
+      ],
+      "advice_ms": [
+        684.237,
+        674.47
+      ],
+      "service_advice_ms": [
+        672,
+        660
+      ],
+      "completion_ms": 684.45,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.114500018768013,
+        13.317500008270144
+      ],
+      "advice_ms": [
+        677.545,
+        572.45
+      ],
+      "service_advice_ms": [
+        666,
+        557
+      ],
+      "completion_ms": 677.778,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.575540945865214,
+        11.947291088290513
+      ],
+      "advice_ms": [
+        687.824,
+        677.095
+      ],
+      "service_advice_ms": [
+        665,
+        652
+      ],
+      "completion_ms": 688.032,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.529125035740435,
+        9.96170798316598,
+        6.208542035892606,
+        1.4048750745132565
+      ],
+      "advice_ms": [
+        642.214,
+        537.181,
+        437.182,
+        337.177
+      ],
+      "service_advice_ms": [
+        633,
+        524,
+        428,
+        333
+      ],
+      "completion_ms": 642.234,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.333375005051494,
+        14.834417030215263,
+        12.620999943464994,
+        7.272624992765486
+      ],
+      "advice_ms": [
+        726.256,
+        621.261,
+        525.716,
+        425.836
+      ],
+      "service_advice_ms": [
+        703,
+        595,
+        502,
+        407
+      ],
+      "completion_ms": 726.368,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.413708980195224,
+        12.073917081579566,
+        12.157290941104293,
+        16.516583040356636
+      ],
+      "advice_ms": [
+        721.638,
+        711.121,
+        698.954,
+        686.575
+      ],
+      "service_advice_ms": [
+        702,
+        690,
+        678,
+        661
+      ],
+      "completion_ms": 721.743,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        7.820500060915947,
+        10.06220793351531
+      ],
+      "advice_ms": [
+        683.9,
+        578.812
+      ],
+      "service_advice_ms": [
+        671,
+        564
+      ],
+      "completion_ms": 684.002,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.52783294674009,
+        9.312415961176157,
+        8.719083038158715,
+        13.12174997292459
+      ],
+      "advice_ms": [
+        736.544,
+        634.237,
+        533.854,
+        433.202
+      ],
+      "service_advice_ms": [
+        711,
+        611,
+        512,
+        407
+      ],
+      "completion_ms": 736.669,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.9966670125722885
+      ],
+      "advice_ms": [
+        650.359
+      ],
+      "service_advice_ms": [
+        632
+      ],
+      "completion_ms": 650.407,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.707832963205874,
+        11.540709063410759
+      ],
+      "advice_ms": [
+        652.843,
+        547.801
+      ],
+      "service_advice_ms": [
+        634,
+        525
+      ],
+      "completion_ms": 652.879,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.052708067931235,
+        11.830041999928653,
+        11.942834011279047,
+        12.273374944925308
+      ],
+      "advice_ms": [
+        650.126,
+        643.045,
+        631.199,
+        619.236
+      ],
+      "service_advice_ms": [
+        635,
+        623,
+        612,
+        599
+      ],
+      "completion_ms": 650.162,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        6.240874994546175
+      ],
+      "advice_ms": [
+        652.791
+      ],
+      "service_advice_ms": [
+        635
+      ],
+      "completion_ms": 652.825,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.73541701771319,
+        17.197875073179603
+      ],
+      "advice_ms": [
+        693.725,
+        588.684
+      ],
+      "service_advice_ms": [
+        672,
+        560
+      ],
+      "completion_ms": 693.869,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 17917,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        11.436000000685453,
+        14.71700007095933,
+        16.460333950817585,
+        10.816750000230968
+      ],
+      "advice_ms": [
+        727.71,
+        624.293,
+        526.624,
+        425.472
+      ],
+      "service_advice_ms": [
+        710,
+        603,
+        504,
+        408
+      ],
+      "completion_ms": 727.826,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        8.315999992191792
+      ],
+      "advice_ms": [
+        660.074
+      ],
+      "service_advice_ms": [
+        646
+      ],
+      "completion_ms": 660.222,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 100,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.704832940362394,
+        3.369542071595788,
+        7.705416996032,
+        4.012332996353507
+      ],
+      "advice_ms": [
+        657.604,
+        552.57,
+        456.565,
+        352.547
+      ],
+      "service_advice_ms": [
+        636,
+        535,
+        435,
+        334
+      ],
+      "completion_ms": 657.658,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        5.398500012233853,
+        11.860416969284415
+      ],
+      "advice_ms": [
+        640.55,
+        635.132
+      ],
+      "service_advice_ms": [
+        630,
+        618
+      ],
+      "completion_ms": 640.591,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 2,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        4.833332961425185,
+        12.158958008512855
+      ],
+      "advice_ms": [
+        645.382,
+        640.504
+      ],
+      "service_advice_ms": [
+        628,
+        616
+      ],
+      "completion_ms": 645.434,
+      "statuses": [
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1229,
+      "output_bytes": 70
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        10.858000023290515,
+        11.691333027556539,
+        13.692499953322113,
+        12.95895897783339
+      ],
+      "advice_ms": [
+        720.278,
+        709.32,
+        697.53,
+        683.741
+      ],
+      "service_advice_ms": [
+        707,
+        695,
+        682,
+        669
+      ],
+      "completion_ms": 720.424,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 35033,
+      "output_bytes": 78
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        8.265167009085417
+      ],
+      "advice_ms": [
+        644.466
+      ],
+      "service_advice_ms": [
+        630
+      ],
+      "completion_ms": 644.552,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1015,
+      "output_bytes": 66
+    },
+    {
+      "commands": 1,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 8192,
+      "submit_ms": [
+        9.428750025108457
+      ],
+      "advice_ms": [
+        668.173
+      ],
+      "service_advice_ms": [
+        653
+      ],
+      "completion_ms": 668.348,
+      "statuses": [
+        "advisory"
+      ],
+      "cached": [
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 9359,
+      "output_bytes": 66
+    },
+    {
+      "commands": 4,
+      "arrival_gap_ms": 0,
+      "script_bytes_per_command": 0,
+      "submit_ms": [
+        7.978582987561822,
+        12.492832960560918,
+        10.316166910342872,
+        13.629958964884281
+      ],
+      "advice_ms": [
+        646.751,
+        638.74,
+        626.212,
+        615.867
+      ],
+      "service_advice_ms": [
+        633,
+        620,
+        610,
+        596
+      ],
+      "completion_ms": 646.796,
+      "statuses": [
+        "advisory",
+        "advisory",
+        "advisory",
+        "advisory"
+      ],
+      "cached": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "review_format": "severity",
+      "window_ms": 500,
+      "api_calls": 1,
+      "input_bytes": 1657,
+      "output_bytes": 78
+    }
+  ],
+  "limitations": "Pipeline compatibility, timings, batching and payload sizes only. Does not measure model accuracy, token usage, billing, or real provider latency. Debug binaries; polling adds <= 5 ms and later submissions can delay observing earlier results."
+}

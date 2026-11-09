@@ -8,22 +8,62 @@ use std::{
     fs,
     path::{Path, PathBuf},
 };
+// Older, still-running host sessions cache their hook command and policy path.
+// Never rewrite that policy using fields their pinned executable cannot parse.
+pub fn policy_path(home: &Path, host: &str) -> PathBuf {
+    home.join(format!(".config/distill/hook-policy-v3-{host}.toml"))
+}
+
 pub fn load_config(host: &str, explicit: Option<&Path>) -> Result<Config, String> {
     if explicit.is_some() {
         return Config::load(explicit);
     }
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
-    let stored = home.join(format!(".config/distill/hook-policy-{host}.toml"));
-    match read_user_file(&stored)? {
-        Some(bytes) => {
+    for stored in [
+        policy_path(&home, host),
+        home.join(format!(".config/distill/hook-policy-v2-{host}.toml")),
+        home.join(format!(".config/distill/hook-policy-{host}.toml")),
+    ] {
+        if let Some(bytes) = read_user_file(&stored)? {
             let config: Config =
                 toml::from_str(std::str::from_utf8(&bytes).map_err(|e| e.to_string())?)
                     .map_err(|e| e.to_string())?;
             config.validate()?;
-            Ok(config)
+            return Ok(config);
         }
-        None => Config::load(None),
     }
+    Config::load(None)
+}
+
+pub fn configure_router(
+    host: &str,
+    judge: distill_core::JudgeConfig,
+    memory_only: bool,
+) -> Result<Value, String> {
+    let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
+    let path = policy_path(&home, host);
+    let original = read_user_file(&path)?;
+    let mut config = load_config(host, None)?;
+    let before = toml::to_string(&config).map_err(|e| e.to_string())?;
+    config.judge = judge;
+    if memory_only {
+        config.service.history_enabled = false;
+        config.history.enabled = false;
+        config.ledger.enabled = false;
+    }
+    config.validate()?;
+    let updated = toml::to_string(&config).map_err(|e| e.to_string())?;
+    let changed = original.is_none() || before != updated;
+    if changed {
+        private_directory(path.parent().ok_or("Policy directory unavailable")?)?;
+        if read_user_file(&path)? != original {
+            return Err("User policy changed while applying router settings; retry".into());
+        }
+        atomic_private(&path, updated.as_bytes())?;
+    }
+    Ok(
+        json!({"policy_path":path,"policy_digest":config.digest(),"changed":changed,"history_enabled":config.service.history_enabled,"router":config.judge}),
+    )
 }
 pub fn configure(
     host: &str,
@@ -32,7 +72,11 @@ pub fn configure(
     check: bool,
     labels: bool,
     node_runtime: Option<&Path>,
+    debug_log: Option<&Path>,
 ) -> Result<Value, String> {
+    if debug_log.is_some_and(|path| !path.is_absolute()) {
+        return Err("Hook debug log path must be absolute".into());
+    }
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
     let directory = if host == "codex" {
         std::env::var_os("CODEX_HOME")
@@ -78,7 +122,7 @@ pub fn configure(
         let command = format!("/usr/bin/python3 -I {}", quote(&launcher));
         (launcher, LAUNCHER, command)
     };
-    let policy = state.join(format!("hook-policy-{host}.toml"));
+    let policy = policy_path(&home, host);
     let mut pinned_config = config.clone();
     pinned_config.security.label_key_path = key_path(config);
     let events = if host == "codex" {
@@ -141,8 +185,11 @@ pub fn configure(
         };
         // -I prevents repository modules and PYTHON* injection into the pin-checking launcher.
         needs_key |= !label.is_empty();
+        let debug = debug_log
+            .map(|path| format!(" --debug-log {}", quote(path)))
+            .unwrap_or_default();
         let command = format!(
-            "{launcher_command} --binary {} --sha256 {} hook {host} --config {} --mode {mode}{label}",
+            "{launcher_command} --binary {} --sha256 {} hook {host} --config {} --mode {mode}{label}{debug}",
             quote(&binary),
             digest,
             quote(&policy)
@@ -152,7 +199,7 @@ pub fn configure(
         } else {
             150
         };
-        groups.push(json!({"matcher": "^Bash$", "hooks": [{"type": "command", "command": command, "timeout": timeout}]}));
+        groups.push(json!({"matcher": "^(Bash|Write|Edit|MultiEdit)$", "hooks": [{"type": "command", "command": command, "timeout": timeout}]}));
     }
     let inventory = crate::hook_sources::inspect(host, roots)?;
     if inventory["handlers"]
@@ -200,7 +247,7 @@ pub fn configure(
         )?;
     }
     Ok(
-        json!({"path": file, "configuration": existing, "binary": binary, "binary_sha256": digest, "changed": !check, "workspace_warnings": inventory["warnings"],
+        json!({"path": file, "policy_path": policy, "configuration": existing, "binary": binary, "binary_sha256": digest, "changed": !check, "workspace_warnings": inventory["warnings"],
         "project_handlers": inventory["handlers"].as_array().into_iter().flatten().filter(|h| h["scope"] == "project").collect::<Vec<_>>(),
         "next_step": if host == "codex" { "Review and trust the changed user hooks in /hooks" } else { "Restart or resume Claude Code to load user hooks" }}),
     )

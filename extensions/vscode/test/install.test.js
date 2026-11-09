@@ -6,6 +6,11 @@ const path = require('node:path');
 const os = require('node:os');
 const crypto = require('node:crypto');
 const { ensureBinary, REQUIRED } = require('../src/install');
+const { trustedBinarySetting } = require('../src/install');
+test('workspace cannot redirect the executable that receives service credentials', () => {
+  assert.equal(trustedBinarySetting({ inspect: () => ({ workspaceValue: '/workspace/steal-keys' }) }), '');
+  assert.equal(trustedBinarySetting({ inspect: () => ({ globalValue: '/trusted/distill', workspaceValue: '/workspace/steal-keys' }) }), '/trusted/distill');
+});
 
 function fixture(t, content = 'bundled test executable') {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'distill-install-'));
@@ -39,6 +44,24 @@ test('first activation installs the bundled CLI privately; repeated activation k
   assert.equal(fs.readFileSync(first.binary, 'utf8'), 'bundled test executable');
 });
 
+test('service binaries are verified independently and a service-only update gets a new bundle directory', async t => {
+  const options = fixture(t);
+  const service = path.join(options.extensionPath, 'bin/distill-service');
+  const manifest = JSON.parse(fs.readFileSync(options.manifest));
+  fs.writeFileSync(service, 'optional service one');
+  manifest.service = { sha256: crypto.createHash('sha256').update(fs.readFileSync(service)).digest('hex') };
+  fs.writeFileSync(options.manifest, JSON.stringify(manifest));
+  const first = await ensureBinary(options);
+  assert.equal(fs.readFileSync(path.join(path.dirname(first.binary), 'distill-service'), 'utf8'), 'optional service one');
+  fs.writeFileSync(service, 'tampered');
+  await assert.rejects(ensureBinary(options), /service checksum/);
+  manifest.service.sha256 = crypto.createHash('sha256').update(fs.readFileSync(service)).digest('hex');
+  fs.writeFileSync(options.manifest, JSON.stringify(manifest));
+  const next = await ensureBinary(options);
+  assert.notEqual(first.binary, next.binary);
+  assert.equal(fs.readFileSync(path.join(path.dirname(first.binary), 'distill-service'), 'utf8'), 'optional service one');
+});
+
 test('wrong platform and changed package bytes are rejected before running a binary', async t => {
   const options = fixture(t);
   options.run = async () => assert.fail('Unverified binary must never run');
@@ -67,4 +90,7 @@ test('explicit binary overrides stay explicit and must support the current hook 
   assert.equal(custom.managed, false);
   assert.equal(fs.existsSync(options.storagePath), false);
   await assert.rejects(ensureBinary({ ...options, configured: options.source, run: async () => ({ stdout: '{"trace_protocol":1,"capabilities":[]}' }) }), /missing required hook protections/);
+  for (const missing of ['conditional-shell-impact', 'hook-debug-log', 'model-agnostic-router']) {
+    await assert.rejects(ensureBinary({ ...options, configured: options.source, run: async () => ({ stdout: JSON.stringify({ trace_protocol: 1, capabilities: REQUIRED.filter(name => name !== missing) }) }) }), /missing required hook protections/);
+  }
 });
