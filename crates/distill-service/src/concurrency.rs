@@ -9,7 +9,7 @@ pub(super) struct Requests(AtomicUsize);
 impl Requests {
     pub(super) fn acquire(&self) -> Result<Permit<'_>, String> {
         self.0
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |running| {
+            .try_update(Ordering::AcqRel, Ordering::Acquire, |running| {
                 (running < MAX_MODEL_REQUESTS).then_some(running + 1)
             })
             .map(|_| Permit(self))

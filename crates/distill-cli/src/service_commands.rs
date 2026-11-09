@@ -178,10 +178,8 @@ pub fn manage(
                 .stdin(Stdio::piped())
                 .stdout(Stdio::null())
                 .stderr(Stdio::null());
-            for name in ["HOME"] {
-                if let Some(value) = std::env::var_os(name) {
-                    command.env(name, value);
-                }
+            if let Some(value) = std::env::var_os("HOME") {
+                command.env("HOME", value);
             }
             #[cfg(unix)]
             {
