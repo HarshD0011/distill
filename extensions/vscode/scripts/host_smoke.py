@@ -44,6 +44,7 @@ with tempfile.TemporaryDirectory(prefix="distill-vscode-host-", dir="/tmp") as t
     driver.mkdir(parents=True)
     (driver / "package.json").write_text(json.dumps({"name": "lifecycle-driver", "publisher": "distill", "version": "0.0.1", "engines": {"vscode": "^1.95.0"}, "activationEvents": ["onStartupFinished"], "main": "driver.js"}))
     (driver / "driver.js").write_text("exports.activate = async context => { try { await require(" + json.dumps(str(root / "test/host")) + ").run(context); } finally { await require('vscode').commands.executeCommand('workbench.action.quit'); } };\n")
+    print('In the disposable VS Code window, choose Connect Distill when asked. This test does not bypass setup approval.', flush=True)
     try:
         result = subprocess.run([
             code, *common, "--new-window", "--wait", "--verbose", "--disable-workspace-trust", "--skip-welcome", "--skip-release-notes",

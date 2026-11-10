@@ -1,0 +1,18 @@
+/* Ink & Paper is the fixed palette: true black, crisp white, and neutral grays. */
+:root {
+  --palette-hue:0;
+  --tone-25:var(--palette-hue) 0% 100%;
+  --tone-50:var(--palette-hue) 0% 99%;
+  --tone-100:var(--palette-hue) 0% 97%;
+  --tone-200:var(--palette-hue) 0% 91%;
+  --tone-300:var(--palette-hue) 0% 80%;
+  --tone-400:var(--palette-hue) 0% 66%;
+  --tone-500:var(--palette-hue) 0% 50%;
+  --tone-600:var(--palette-hue) 0% 36%;
+  --tone-700:var(--palette-hue) 0% 25%;
+  --tone-800:var(--palette-hue) 0% 16%;
+  --tone-850:var(--palette-hue) 0% 10%;
+  --tone-900:var(--palette-hue) 0% 6%;
+  --tone-950:var(--palette-hue) 0% 2%;
+  --tone-975:var(--palette-hue) 0% 0%;
+}

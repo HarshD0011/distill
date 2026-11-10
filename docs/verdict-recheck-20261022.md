@@ -28,7 +28,7 @@ These are analyzer effect-model gaps. The extension's missing-assessment present
 ## Reproduce
 
 ```sh
-python3 scripts/verdict_challenge.py /Users/harshdhiman/.cargo/bin/distill --output /tmp/distill-verdict-challenge.json
+python3 scripts/verdict_challenge.py "$HOME/.cargo/bin/distill" --output /tmp/distill-verdict-challenge.json
 ```
 
 The command intentionally exits 1 while the nine expectations fail. Candidate commands are only analyzed. The separate probes touch disposable fixture files, run harmless `printf`, and manipulate three private in-memory rows. No challenge deletion payload, external database, or user credential file is used.

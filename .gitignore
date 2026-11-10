@@ -54,6 +54,7 @@ __pycache__/
 
 # VS Code extension packages
 *.vsix
+node_modules/
 
 
 # Added by cargo
@@ -70,3 +71,4 @@ distill_complete_architecture.md
 /crash-*
 /timeout-*
 *.env
+*.mp4

@@ -4,7 +4,7 @@
   "max_model_requests": 5,
   "session_id": "distill-live-response-test-80cf1030-4726-4d30-8d3b-aa7b6b8bd859",
   "session_title": "Distill live review test (no execution)",
-  "workspace": "/Users/harshdhiman/Code/distill",
+  "workspace": "<redacted-home>/Code/distill",
   "candidate_commands_executed": false,
   "submitted": 5,
   "responses": 5,

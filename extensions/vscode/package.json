@@ -1,14 +1,17 @@
 {
   "name": "distill-trace",
   "displayName": "Distill \u2014 Chat Command Trace",
-  "description": "Temporary per-chat command history with Distill severity, policy decisions, and output.",
-  "version": "0.5.10",
+  "description": "Command safety checks and temporary chat traces for Codex and Claude Code. Includes the Distill CLI with guided hook setup.",
+  "version": "0.5.11",
   "publisher": "distill",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/harshdhiman/distill"
   },
+  "homepage": "https://github.com/harshdhiman/distill#readme",
+  "bugs": { "url": "https://github.com/harshdhiman/distill/issues" },
+  "keywords": ["distill", "codex", "claude", "command safety", "hooks", "trace"],
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -365,5 +368,7 @@
     "check": "node scripts/check.js",
     "package": "python3 scripts/package.py",
     "sync-models": "node scripts/sync-models.js"
-  }
+  },
+  "devDependencies": { "@vscode/vsce": "4.1.0" },
+  "overrides": { "minimatch": "11.0.6" }
 }

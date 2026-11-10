@@ -5,14 +5,23 @@ const path = require('node:path');
 const { promisify, isDeepStrictEqual } = require('node:util');
 const execFile = promisify(require('node:child_process').execFile);
 
+const serviceName = host => `Distill for ${host === 'codex' ? 'Codex' : 'Claude Code'}`;
+
+class HookSetupDeclined extends Error {
+  constructor() {
+    super('Distill is installed. Run Distill: Connect User Hooks when you want to connect it.');
+    this.code = 'DISTILL_SETUP_DECLINED';
+  }
+}
+
 function detectHosts(home = os.homedir()) {
   // Codex is configured before its first chat; also connect existing Claude installs.
   return ['codex', ...(fs.existsSync(path.join(home, '.claude')) ? ['claude'] : [])];
 }
 
-async function configureUserHooks({ binary, extensionPath, roots, debugLog, runtime = process.execPath, env = process.env, home = env.HOME || os.homedir(), hosts = detectHosts(home), isDirty = () => false, force = false, run = execFile }) {
+async function configureUserHooks({ binary, extensionPath, roots, debugLog, runtime = process.execPath, env = process.env, home = env.HOME || os.homedir(), hosts = detectHosts(home), isDirty = () => false, force = false, approve = async () => true, run = execFile }) {
   if (debugLog !== undefined && debugLog !== '' && !path.isAbsolute(debugLog)) throw new Error('Hook debug log path must be absolute.');
-  const results = [];
+  const plans = [];
   for (const host of hosts) {
     if (!['codex', 'claude'].includes(host)) throw new Error('Unsupported Distill hook host.');
     const policies = [`hook-policy-v3-${host}.toml`, `hook-policy-v2-${host}.toml`, `hook-policy-${host}.toml`].map(name => path.join(home, '.config/distill', name));
@@ -42,13 +51,23 @@ async function configureUserHooks({ binary, extensionPath, roots, debugLog, runt
     if (fs.existsSync(preview.path)) existing = JSON.parse(fs.readFileSync(preview.path, 'utf8'));
     const launcher = path.join(home, '.config/distill/hook-launcher.js');
     if (!force && stored === preview.policy_path && fs.existsSync(launcher) && isDeepStrictEqual(existing, preview.configuration)) {
-      results.push({ ...preview, host, changed: false });
-      continue;
+      plans.push({ preview, host, changed: false });
+    } else {
+      plans.push({ preview, host, changed: true, args, options });
     }
+  }
+  const changes = plans.filter(plan => plan.changed);
+  // One service-level decision covers all required lifecycle events and hosts.
+  // The agent's own trust review remains independent of this setup permission.
+  if (changes.length && !await approve(changes.map(({ preview, host }) => ({ host, name: serviceName(host), path: preview.path })))) throw new HookSetupDeclined();
+  if (changes.some(({ preview }) => isDirty(preview.path))) throw new Error('Save or revert the open user hooks file before Distill can update it.');
+  const results = [];
+  for (const { preview, host, changed, args, options } of plans) {
+    if (!changed) { results.push({ ...preview, host, changed: false }); continue; }
     const setup = JSON.parse((await run(binary, args, options)).stdout);
     results.push({ ...setup, host });
   }
   return results;
 }
 
-module.exports = { configureUserHooks, detectHosts };
+module.exports = { configureUserHooks, detectHosts, serviceName, HookSetupDeclined };

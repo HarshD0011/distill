@@ -199,7 +199,12 @@ pub fn configure(
         } else {
             150
         };
-        groups.push(json!({"matcher": "^(Bash|Write|Edit|MultiEdit)$", "hooks": [{"type": "command", "command": command, "timeout": timeout}]}));
+        let service_name = if host == "codex" {
+            "Codex"
+        } else {
+            "Claude Code"
+        };
+        groups.push(json!({"matcher": "^(Bash|Write|Edit|MultiEdit)$", "hooks": [{"type": "command", "command": command, "timeout": timeout, "statusMessage": format!("Distill for {service_name}")}]}));
     }
     let inventory = crate::hook_sources::inspect(host, roots)?;
     if inventory["handlers"]
@@ -249,7 +254,8 @@ pub fn configure(
     Ok(
         json!({"path": file, "policy_path": policy, "configuration": existing, "binary": binary, "binary_sha256": digest, "changed": !check, "workspace_warnings": inventory["warnings"],
         "project_handlers": inventory["handlers"].as_array().into_iter().flatten().filter(|h| h["scope"] == "project").collect::<Vec<_>>(),
-        "next_step": if host == "codex" { "Review and trust the changed user hooks in /hooks" } else { "Restart or resume Claude Code to load user hooks" }}),
+        "service_name": if host == "codex" { "Distill for Codex" } else { "Distill for Claude Code" },
+        "next_step": if host == "codex" { "Review and trust Distill for Codex in /hooks" } else { "Restart or resume Claude Code to load Distill for Claude Code" }}),
     )
 }
 fn quote(path: &Path) -> String {

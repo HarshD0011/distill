@@ -1,4 +1,4 @@
-# Distill Chat Command Trace · 0.5.8
+# Distill Chat Command Trace · 0.5.11
 
 A VS Code sidebar for commands observed by Distill's Codex and Claude Code hooks. The chat picker uses Codex chat headings. Each compact row shows just the command and severity. Click a row for a plain-language reason, policy decision, status, and output. **More details** contains the full command, coverage, bounded modeled effects (including database row scope), directory, shell, and time; **Assessment history** contains distinct revisions and provenance. Output starts with five lines (up to 1,800 characters); **Read more** loads retained output. Search covers the selected chat's complete retained history, with 100 commands per page.
 
@@ -8,9 +8,16 @@ Chat headings come from Codex's local `session_index.jsonl` metadata and update 
 
 ## Install and connect
 
-Install the platform-specific Distill extension and open a trusted local folder. **The extension automatically installs the bundled CLI and configures its user hooks. No Rust, Cargo, Python, terminal installation command, or separate download is required.** In Codex, open `/hooks` and approve the Distill definitions. Existing Claude Code installations are also connected; restart or resume Claude and approve its hooks. Open the Distill activity bar icon and run a command in a chat.
+1. Install Distill in VS Code and open a trusted local folder. For a downloaded `.vsix`, use **Extensions: Install from VSIX…**.
+2. Choose **Connect Distill** in the single setup prompt. It names the services being connected: **Distill for Codex**, and **Distill for Claude Code** when Claude is installed. **Not Now** leaves your user hook files untouched; run **Distill: Connect User Hooks** when ready.
+3. In Codex, open `/hooks` and trust the handlers labeled **Distill for Codex**. Restart or resume Claude Code to load its hooks.
+4. Open the Distill activity bar icon and run a command in your agent chat.
 
-Packages support local desktop VS Code on macOS and Linux, on arm64 and x64. For example, Apple Silicon uses `distill-trace-0.5.8-darwin-arm64.vsix`, installed with **Extensions: Install from VSIX…**. Use the package matching your operating system and architecture.
+**The CLI and optional local service are bundled and installed automatically. No Rust, Cargo, Python, terminal installation command, or separate download is required.** Model advice is optional and starts disabled; static command checks work without an API key.
+
+Distill is one service connection. Agents require separate lifecycle handlers for checking commands, reviewing permissions, and recording results. Every Distill handler has the same service label, with one handler per event. Codex owns its trust screen and may prefix those labels with a number or require trust for each event; the extension cannot combine or bypass that review. Existing unnamed/duplicate Distill handlers in the user hook file are consolidated on reconnection, preserving strict mode and unrelated services.
+
+Packages support local desktop VS Code 1.95+ on macOS and Linux (glibc), on arm64 and x64. Apple Silicon uses `distill-trace-0.5.11-darwin-arm64.vsix`. Use the package matching your operating system and architecture; Marketplace installations select the matching platform automatically when published.
 
 Extension 0.5.8 bundles CLI 0.5.8 / behavior policy 10. Recognized safe commands retain their conditional SAFE impact when Codex omits execution-shell metadata; analysis remains partial with HIGH approval risk. Unknown commands and unsupported syntax request background advice when routing is enabled; completed fallback ratings are marked as model advice. The installer requires `conditional-shell-impact` and `hook-debug-log` so stale custom CLIs cannot silently retain the old behavior. Python interpreter flags and stdin, pytest/unittest discovery, uv wrappers and environment operations, and Cargo workspace build/test effects remain supported. Dependency, plugin, and shell-context uncertainty remains visible; recognizing a test command does not certify arbitrary test code as safe.
 
@@ -20,19 +27,28 @@ The installer verifies the bundled SHA-256 before running the CLI, installs it i
 
 Fresh installations use advisory mode for noncritical verdicts. **CRITICAL commands always require a human decision**, including under automatic approval. On macOS the bundled CLI opens a Distill-owned AppKit popup in the foreground across Spaces with **Approve once** and **Deny**. It shows the exact command, working directory, and reason. Only the approval click releases that invocation; dismissal, timeout, unavailable UI, or changed inspected files/policy deny it. The popup is provided by Distill, not Codex. Other platforms currently retain the denial fallback. Pre-execution hook timeouts allow 150 seconds for the 120-second dialog and bounded analysis. The installer requires `native-critical-approval` and `foreground-critical-approval` so an older custom CLI cannot silently retain the old behavior. Existing strict modes, stored policies, global policies, unrelated handlers, and project files are preserved. Command output capture defaults off; existing privacy choices are retained.
 
-**Distill: Connect User Hooks** repairs/retries setup and opens the generated hook file for review. Save or revert an unsaved hook document first. **Distill: Binary Path** is an optional absolute override for development or a separately managed CLI; custom CLIs must support the current hook protections. Workspace PATH lookup remains disabled. Remote, Windows, browser, and virtual workspaces are unsupported.
+**Distill: Connect User Hooks** repairs/retries setup through the same named approval prompt. Save or revert an unsaved hook document first. **Distill: Binary Path** is an optional absolute override for development or a separately managed CLI; custom CLIs must support the current hook protections, including `named-hook-services`. Workspace PATH lookup remains disabled. Remote, Windows, Alpine Linux, browser, and virtual workspaces are unsupported.
 
 For maintainers, build a package from the repository root:
 
 ```sh
-cargo build -p distill-cli
+cargo build --locked -p distill-cli -p distill-service
 cd extensions/vscode
+npm ci
 npm run check
 npm test
 npm run package
 ```
 
-Packaging builds the release CLI for the packaging host and embeds its checksum manifest, executable, and first-run policy in a platform-specific VSIX. Rust and Python are build-time maintainer tools only. To use an existing matching release build, run `python3 scripts/package.py --binary /absolute/path/distill`. No npm dependencies are required. Development hosts can set `distill.binaryPath` and press F5 with **Run Distill Extension**.
+Packaging builds the release CLI and service for the packaging host and embeds both executables, their checksum manifest, and the first-run policy in a platform-specific VSIX. The pinned official `@vscode/vsce` packager validates Marketplace metadata and includes the README, changelog, and license. Packaging verifies the final archive's native checksums and platform target. Rust, Python, Node.js 22+, and npm are maintainer tools only; the installed extension has no npm runtime dependencies. To reuse a matching release build, run `python3 scripts/package.py --binary /absolute/path/distill`, with `distill-service` beside it. Development hosts can set `distill.binaryPath` and press F5 with **Run Distill Extension**.
+
+Run `python3 scripts/package_smoke.py path/to/package.vsix` to check fresh CLI/service installation, one named setup approval for both hosts, actual safe-hook invocation, and unchanged reconnection from the packaged files. This test uses disposable directories and needs no editor UI. `python3 scripts/host_smoke.py` additionally checks a real VS Code reload and quit; choose **Connect Distill** in its disposable window when prompted.
+
+## Publish to the VS Code Marketplace
+
+The **extension packages** GitHub Actions workflow builds and tests `darwin-arm64`, `darwin-x64`, `linux-arm64`, and `linux-x64` packages on native runners. Run it manually or push an `extension-v0.5.11` tag, then download the VSIX artifacts. For a first release, create or verify ownership of the `distill` publisher in [Marketplace publisher management](https://marketplace.visualstudio.com/manage), then upload the matching packages there. The manifest publisher must match the account you control. Building a VSIX does not publish it or verify publisher ownership.
+
+Publish all supported platform packages under the same extension ID and version so users get the correct bundled binaries automatically. Follow [VS Code's publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for account setup and authenticated publishing; use its Trusted Publishing guidance when adding automated release publishing. The build workflow only produces artifacts.
 
 **Upgrading from 0.3:** Install the current extension, approve the updated hooks, then fully quit and reopen VS Code once. The old TCP recorder survives window reloads and cannot accept the new Unix-socket events. The sidebar reports this mismatch explicitly. As with every application quit, temporary editor history clears. Commands missed while the recorder was incompatible are not backfilled.
 
@@ -44,7 +60,7 @@ Command history, output, feedback, title lookups and view caches stay in memory.
 
 The extension does not restore durable history or persist feedback. Its managed hook policy disables persistent history, the approval ledger and hook debug logging. Nonsecret connection preferences and installed, checksum-pinned executables remain on disk. Explicit session exports are user-owned files. Standalone CLI installations can still opt into their separate durable-history feature.
 
-API keys entered in **LLM settings** are the deliberate exception: they are saved through VS Code's encrypted **SecretStorage**, never in `settings.json`, global/workspace state, endpoint metadata or webview storage. Keys are bound to the selected provider, endpoint and key-variable name. The form never reads a saved key back into its password field. **Remove saved key** deletes the selected connection's credential. If an environment variable supplies another key, that external credential can still be used.
+API keys entered in **LLM settings** are the deliberate exception: they are saved through VS Code's encrypted **SecretStorage**, never in `settings.json`, global/workspace state, endpoint metadata or webview storage. Keys are bound to the selected provider, endpoint and key-variable name. The form never reads a saved key back into its password field. **Remove saved key** deletes the selected connection's credential. The extension does not fall back to inherited environment credentials after a key is removed or the endpoint changes.
 
 Transport uses a private Unix socket, peer-UID verification and token authentication. Temporary endpoint/lock files contain only rendezvous metadata, not command history or API keys; normal shutdown removes them. A forcibly killed recorder can leave metadata behind. The model service also follows its owning extension-host process, so its in-memory credentials and advice cache are discarded on host exit. Replacing a key restarts that service even when the rest of the policy is unchanged.
 

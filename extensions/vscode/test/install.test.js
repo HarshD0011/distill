@@ -90,7 +90,7 @@ test('explicit binary overrides stay explicit and must support the current hook 
   assert.equal(custom.managed, false);
   assert.equal(fs.existsSync(options.storagePath), false);
   await assert.rejects(ensureBinary({ ...options, configured: options.source, run: async () => ({ stdout: '{"trace_protocol":1,"capabilities":[]}' }) }), /missing required hook protections/);
-  for (const missing of ['conditional-shell-impact', 'hook-debug-log', 'model-agnostic-router']) {
+  for (const missing of ['conditional-shell-impact', 'hook-debug-log', 'model-agnostic-router', 'named-hook-services']) {
     await assert.rejects(ensureBinary({ ...options, configured: options.source, run: async () => ({ stdout: JSON.stringify({ trace_protocol: 1, capabilities: REQUIRED.filter(name => name !== missing) }) }) }), /missing required hook protections/);
   }
 });

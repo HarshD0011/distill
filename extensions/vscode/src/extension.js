@@ -61,13 +61,21 @@ function activate(context) {
         binary: runtime.binary, extensionPath: context.extensionPath, roots: roots(), force,
         debugLog: '',
         isDirty: file => vscode.workspace.textDocuments.some(document => document.uri.fsPath === file && document.isDirty),
+        approve: async services => {
+          const names = services.map(service => service.name).join(' and ');
+          const choice = await vscode.window.showInformationMessage(`Connect ${names}?`, {
+            modal: true,
+            detail: 'Enable command safety checks and temporary chat traces. Distill will update your user hook settings. Review and trust the named Distill handlers in your agent before they can run.',
+          }, 'Connect Distill', 'Not Now');
+          return choice === 'Connect Distill';
+        },
       });
       const changed = setups.filter(setup => setup.changed);
       if (changed.length) {
         const next = changed.map(setup => setup.host === 'codex'
-          ? 'Approve the Distill hooks in Codex with /hooks.'
-          : 'Restart or resume Claude Code to approve the Distill hooks.').join(' ');
-        void vscode.window.showInformationMessage(`Distill is installed and its hooks are configured. ${next}`);
+          ? 'In Codex /hooks, review and trust “Distill for Codex”.'
+          : 'Restart or resume Claude Code to load “Distill for Claude Code”.').join(' ');
+        void vscode.window.showInformationMessage(`Distill is installed and connected. ${next}`);
       }
       let router;
       let settingsError;
@@ -239,12 +247,9 @@ function activate(context) {
       runtimePromise = null;
       hooksPromise = null;
       endpointPromise = null;
-      const runtime = await prepare(true);
+      await prepare(true);
       await connect();
-      const file = vscode.Uri.file(runtime.setups[0].path);
-      const document = await vscode.workspace.openTextDocument(file);
-      await vscode.window.showTextDocument(document, { preview: false });
-    } catch (error) { vscode.window.showErrorMessage(`Distill: ${error.message}`); }
+    } catch (error) { if (error.code !== 'DISTILL_SETUP_DECLINED') vscode.window.showErrorMessage(`Distill: ${error.message}`); }
   }));
   context.subscriptions.push(vscode.commands.registerCommand('distill.exportSession', async () => {
     try {
@@ -305,7 +310,7 @@ function activate(context) {
   // Each activation has a new recorder lease; reloads discard the previous lease.
   void refresh();
   if (vscode.workspace.isTrusted && roots().length && !vscode.env.remoteName && ['darwin', 'linux'].includes(process.platform)) {
-    void prepare().catch(error => vscode.window.showErrorMessage(`Distill setup could not finish: ${error.message} Run Distill: Connect User Hooks to retry.`));
+    void prepare().catch(error => { if (error.code !== 'DISTILL_SETUP_DECLINED') vscode.window.showErrorMessage(`Distill setup could not finish: ${error.message} Run Distill: Connect User Hooks to retry.`); });
   }
   return { ready: async () => { const runtime = await prepare(); await connect(); return runtime; } };
 }
