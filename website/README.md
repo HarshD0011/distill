@@ -83,8 +83,8 @@ Official reference:
   sharing, opt-in script excerpts, and encrypted API key storage. The website
   itself does not connect to model providers or collect credentials.
 - A model-cost note recommends a small, capable model for high-volume command
-  review. The maintainer reports a real-world GPT-6 Luna test of 470 requests for
-  $0.11: approximately $0.00023/request or $0.23/1,000 requests, in USD. These are
+  review. The maintainer reports a real-world GPT-6 Luna test of 610 requests for
+  $0.12: approximately $0.00020/request or $0.20/1,000 requests, in USD. These are
   rounded observed/extrapolated costs, not a quoted API tariff. The official
   model page is linked for context. Sub-second responses are reported as observed
   cases, not a universal latency guarantee; checked-in live samples also include

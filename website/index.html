@@ -156,12 +156,12 @@
         <div class="model-economics-heading"><div><span class="model-label">SMALL MODEL. SMALL BILL.</span><h3 id="model-economics-title">Choose a model built for volume.</h3></div><span class="model-test-badge">REAL-WORLD TEST</span></div>
         <p class="model-economics-copy">An agent can run hundreds of commands in a session. Use a low-cost, capable model such as <a href="https://developers.openai.com/api/docs/models/gpt-6-luna">GPT-6 Luna</a> for optional review, so frequent checks stay affordable.</p>
         <dl class="model-test-stats">
-          <div><dt>API requests</dt><dd><span data-count-to="470" data-count-decimals="0" aria-hidden="true">470</span><span class="counter-final">470</span></dd></div>
-          <div><dt>Total API spend</dt><dd><span aria-hidden="true">$<span data-count-to="0.11" data-count-decimals="2">0.11</span></span><span class="counter-final">$0.11</span></dd></div>
-          <div><dt>Per 1,000 requests</dt><dd><span aria-hidden="true">≈$<span data-count-to="0.23" data-count-decimals="2">0.23</span></span><span class="counter-final">Approximately $0.23</span></dd></div>
+          <div><dt>API requests</dt><dd><span data-count-to="610" data-count-decimals="0" aria-hidden="true">610</span><span class="counter-final">610</span></dd></div>
+          <div><dt>Total API spend</dt><dd><span aria-hidden="true">$<span data-count-to="0.12" data-count-decimals="2">0.12</span></span><span class="counter-final">$0.12</span></dd></div>
+          <div><dt>Per 1,000 requests</dt><dd><span aria-hidden="true">≈$<span data-count-to="0.20" data-count-decimals="2">0.20</span></span><span class="counter-final">Approximately $0.20</span></dd></div>
           <div><dt>Model replies observed</dt><dd>&lt;1<span class="metric-unit">s</span></dd></div>
         </dl>
-        <p class="model-test-note">Maintainer-reported GPT-6 Luna field test. About $0.00023 per request; costs are in USD and normalized figures are rounded. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
+        <p class="model-test-note">Maintainer-reported GPT-6 Luna field test. About $0.00020 per request; costs are in USD and normalized figures are rounded. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
         <div class="model-speed-summary"><h4>How we keep reviews fast.</h4><p>The compact review path sends bounded context and asks for a short, severity-only reply. Recent matching results are cached, duplicate requests share work, and a persistent local service reuses connections. Reviews run in the background so provider waits don’t block the command hook.</p></div>
       </aside>
       <div class="model-setup"><h3>Connect a model in VS Code.</h3><ol><li>Open <strong>LLM settings</strong> in Distill, or run <strong>Distill: Configure LLM Router</strong>.</li><li>Choose your provider and model. Add an API key for a cloud provider, or set your local server endpoint.</li><li>Enable routing and select <strong>Apply settings</strong>. Model advice appears alongside the command assessment.</li></ol></div>
