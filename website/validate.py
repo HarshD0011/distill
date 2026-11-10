@@ -6,6 +6,7 @@ from urllib.parse import unquote, urldefrag, urljoin, urlsplit
 from urllib.request import Request, urlopen
 from concurrent.futures import ThreadPoolExecutor
 import argparse
+import hashlib
 import json
 import re
 
@@ -63,6 +64,16 @@ if page.open_tags:
 for stylesheet in ROOT.glob('*.css'):
     for asset in re.findall(r'url\(\s*[\'\"]?([^\s\)\'\"]+)', stylesheet.read_text()):
         page.links.append(asset)
+for script in [ROOT / 'app.js', *ROOT.glob('*.mjs')]:
+    page.links.extend(re.findall(r'(?:from\s*|import\s*\()\s*[\'\"](\./[^\'\"]+)', script.read_text()))
+vendor = ROOT / 'vendor' / 'three-0.180.0'
+manifest = json.loads((vendor / 'manifest.json').read_text())
+dependencies = json.loads((ROOT / 'dependencies' / 'package.json').read_text())
+if dependencies['dependencies'].get('three') != '0.180.0' or manifest['version'] != '0.180.0':
+    page.errors.append('Three.js must stay pinned to the reviewed version')
+for asset, expected in manifest['sha256'].items():
+    if hashlib.sha256((vendor / asset).read_bytes()).hexdigest() != expected:
+        page.errors.append(f'Three.js vendor integrity mismatch: {asset}')
 for link in page.links:
     parts = urlsplit(link)
     if parts.scheme or parts.netloc:

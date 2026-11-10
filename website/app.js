@@ -18,6 +18,7 @@ function initLogoIntro() {
     let sweepTimer;
     let handoffTimer;
     let flight;
+    let glass;
 
     function finish() {
       if (finished) return;
@@ -26,6 +27,7 @@ function initLogoIntro() {
       clearTimeout(handoffTimer);
       flight?.cancel();
       intro.hidden = true;
+      glass?.dispose();
       root.classList.remove('intro-pending', 'intro-revealing');
       surfaces.forEach((element, index) => { element.inert = inertBefore[index]; });
       skip.removeEventListener('click', finish);
@@ -54,7 +56,10 @@ function initLogoIntro() {
     }
     function onMotion() { if (motion.matches) finish(); }
     function onVisibility() { if (document.hidden) finish(); }
-    function onResize() { if (docking) finish(); }
+    function onResize() {
+      if (docking) finish();
+      else { glass?.dispose(); glass = null; }
+    }
     function onPageShow(event) { if (event.persisted) finish(); }
 
     function dock() {
@@ -67,14 +72,15 @@ function initLogoIntro() {
           return;
         }
         docking = true;
+        glass?.dock();
         word.classList.add('is-docking');
         root.classList.add('intro-revealing');
         flight = word.animate([
           { transform:'translate3d(0,0,0) scale(1,1)' },
           { transform:`translate3d(${to.left - from.left}px,${to.top - from.top}px,0) scale(${to.width / from.width},${to.height / from.height})` }
-        ], { duration:1150, easing:'cubic-bezier(.76,0,.24,1)', fill:'forwards' });
+        ], { duration:1400, easing:'cubic-bezier(.65,0,.35,1)', fill:'forwards' });
         flight.finished.then(finish, finish);
-        handoffTimer = setTimeout(finish, 1300);
+        handoffTimer = setTimeout(finish, 1550);
       } catch {
         finish();
       }
@@ -97,6 +103,12 @@ function initLogoIntro() {
     intro.classList.add('is-playing');
     skip.focus({ preventScroll:true });
     sweepTimer = setTimeout(dock, 5800);
+    import('./liquid-logo.mjs?v=721148bd0e2d').then(({ createLiquidLogo }) => {
+      if (finished || docking) return;
+      glass = createLiquidLogo(word);
+    }).catch(() => {
+      // Unsupported graphics and failed module loads retain the light CSS fallback.
+    });
   });
 }
 const logoIntroFinished = initLogoIntro();

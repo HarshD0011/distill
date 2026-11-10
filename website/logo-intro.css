@@ -1,4 +1,4 @@
-/* A single chrome-light pass, followed by a handoff to the real header wordmark. */
+/* The GPU glass canvas shares the real wordmark's layout and header handoff. */
 html {
   scrollbar-gutter:stable;
 }
@@ -34,23 +34,20 @@ html {
   font-weight:750;
   line-height:1;
   letter-spacing:-.052em;
+  transform-origin:0 0;
+  user-select:none;
+}
+.intro-word-label {
+  position:relative;
+  display:block;
   color:transparent;
-  background-image:linear-gradient(115deg,
-    #e5e5e8 0%,#75757d 9%,#1a1a1e 17%,#414148 24%,
-    #c3c3cb 32%,#f6f6f8 37%,#8b8b94 40%,#242429 48%,
-    #16161a 58%,#9a9aa2 68%,#e2e2e8 73%,#51515b 83%,#242429 100%);
-  background-size:260% 180%;
-  background-position:100% 50%;
+  background-image:linear-gradient(180deg,#e8e8ed 0%,#91919c 18%,#37373e 43%,#93939f 62%,#ededf2 77%,#4c4c56 100%);
   background-clip:text;
   -webkit-background-clip:text;
   -webkit-text-stroke:.65px #b9b9c166;
-  transform-origin:0 0;
-  animation:intro-metal 5.8s linear both;
-  animation-play-state:paused;
-  transition:color .4s ease;
-  user-select:none;
+  transition:opacity .3s ease,color .55s ease;
 }
-.intro-word:before,.intro-word:after {
+.intro-word-label:before {
   content:attr(data-word);
   position:absolute;
   inset:0;
@@ -60,30 +57,28 @@ html {
   color:transparent;
   pointer-events:none;
   transition:opacity .4s ease;
-}
-.intro-word:before {
   background-image:linear-gradient(180deg,#eeeef1 0%,#9a9aa433 25%,#08080a 48%,#f9f9fc88 64%,#72727c 100%);
   opacity:.45;
   -webkit-text-stroke:.8px #d6d6df55;
 }
-.intro-word:after {
-  background-image:radial-gradient(ellipse at 50% 110%,
-    transparent 38%,#15151b 41%,#b9b0d7 42%,#f8f8ff 43%,
-    #fff 44%,#d7e9ee 45%,#d0be9655 46%,#fff9 47%,transparent 50%);
-  background-size:240% 180%;
-  background-position:100% 50%;
-  -webkit-text-stroke:0;
-  animation:intro-glint 5.8s cubic-bezier(.4,0,.6,1) both;
-  animation-play-state:paused;
+.intro-glass-canvas {
+  position:absolute;
+  display:block;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity .3s ease;
 }
-.logo-intro.is-playing .intro-word,.logo-intro.is-playing .intro-word:after {
-  animation-play-state:running;
+.intro-word.has-glass .intro-glass-canvas {
+  opacity:1;
 }
-.intro-word.is-docking {
+.intro-word.has-glass .intro-word-label {
+  opacity:0;
+}
+.intro-word.is-docking .intro-word-label {
   color:hsl(var(--tone-100));
   -webkit-text-stroke:0;
 }
-.intro-word.is-docking:before,.intro-word.is-docking:after {
+.intro-word.is-docking .intro-word-label:before {
   opacity:0;
 }
 .intro-skip {
@@ -142,23 +137,12 @@ html.intro-revealing .intro-skip {
   opacity:0;
   pointer-events:none;
 }
-@keyframes intro-metal {
-  from { background-position:100% 50% }
-  to { background-position:0% 50% }
-}
-@keyframes intro-glint {
-  0% { background-position:110% 50%; opacity:0 }
-  8% { opacity:1 }
-  88% { opacity:1 }
-  100% { background-position:-10% 50%; opacity:0 }
-}
 @media(max-width:600px) {
   .intro-word { font-size:clamp(90px,26vw,152px) }
   .intro-skip { font-size:9px }
 }
 @media(prefers-reduced-motion:reduce) {
-  .intro-word,.intro-word:after { animation:none }
-  .intro-backdrop,.intro-word,.intro-word:before,.intro-word:after,
+  .intro-backdrop,.intro-word-label,.intro-word-label:before,.intro-glass-canvas,
   .intro-skip,html.intro-pending .site-header,html.intro-pending main,
   html.intro-pending .site-footer { transition:none }
 }
