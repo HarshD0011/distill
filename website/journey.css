@@ -789,6 +789,61 @@ body[data-scene-theme="paper"] .site-journey {
   color:var(--muted);
   font-size:14px;
 }
+.platform-support {
+  margin-top:25px;
+  padding-top:21px;
+  border-top:1px solid var(--line);
+}
+.platform-support h3 {
+  margin:0 0 13px;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:550;
+}
+.platform-status {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  list-style:none;
+  margin:0;
+  padding:0;
+}
+.platform-status li {
+  padding:13px 12px;
+  background:hsl(var(--tone-50) / .45);
+  border:1px solid var(--line);
+  border-radius:8px;
+}
+.platform-status li>span {
+  display:block;
+  color:var(--ink);
+  font-size:12px;
+  font-weight:500;
+}
+.platform-status li>strong {
+  display:block;
+  margin-top:7px;
+  color:var(--muted);
+  font:8px var(--mono);
+  line-height:1.5;
+}
+.platform-status .platform-upcoming {
+  background:transparent;
+  border-style:dashed;
+}
+.chapter-shell .platform-support>p {
+  margin-top:13px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.85;
+}
+@media(max-width:560px) {
+  .platform-status { gap:6px }
+  .platform-status li { padding:12px 9px }
+  .platform-status li>span { font-size:11px }
+  .platform-status li>strong { font-size:7px }
+  .chapter-shell .platform-support>p { font-size:9px }
+}
 .chapter-shell .install-panel {
   background:hsl(var(--tone-950));
   color:hsl(var(--tone-100));

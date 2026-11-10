@@ -95,6 +95,14 @@ Official reference:
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
+- The installation section explicitly lists macOS and Linux as supported, with
+  Windows coming soon as the maintainer's announced direction. Existing platform
+  guards, packaging targets, documentation, and macOS/Ubuntu CI confirm that Linux
+  support already exists; it is not labeled as a future platform. Linux desktop
+  packages require glibc, and both supported platforms target arm64/x64. Native
+  critical-command approval dialogs remain macOS-only; the FAQ states that other
+  platforms retain their denial fallback. This is a source/packaging support
+  check, not a new runtime certification on Linux or Windows.
 - Examples are actual CLI 0.4.6 reports recorded on macOS with explicit Bash
   context and `/tmp` as the working directory. The page does not execute or
   analyze user-supplied commands. See `assets/example-reports.json` for their
