@@ -28,9 +28,16 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: node --check website/app.js
+        run: |
+          node --check website/app.js
+          node --check website/scene-3d.mjs
+          node --check website/graphite-scene.mjs
       - name: Validate static website
         run: python3 website/validate.py
+      - name: Test Three.js geometry and renderer lifecycle
+        run: node --test website/tests/scene-3d.test.mjs
+      - name: Audit pinned production dependency
+        run: npm audit --prefix website/dependencies --omit=dev --audit-level=low
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch

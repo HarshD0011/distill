@@ -1,8 +1,9 @@
 # Distill website
 
-A responsive, dependency-free product website for Distill. It is plain HTML, CSS,
-and JavaScript, with relative asset paths that work at a GitHub Pages project URL
-or at a domain root. Public URL: <https://harshd0011.github.io/distill/>.
+A responsive static product website for Distill. It is plain HTML, CSS, and
+JavaScript with one exactly pinned, self-hosted Three.js dependency for the
+decorative 3D scene. Relative assets work at a GitHub Pages project URL or domain
+root. Public URL: <https://harshd0011.github.io/distill/>.
 
 ## Preview
 
@@ -19,6 +20,42 @@ these hashes in `index.html` when the corresponding asset changes.
 **Ink & Paper** is the fixed site palette, including without JavaScript. It uses
 true black, crisp white, and neutral grays. The temporary theme selector has been
 removed; warning colors stay distinct.
+
+## 3D scene and dependency review
+
+The opening adds a lit graphite disc, metallic edges, moving markers, pointer
+tilt, scroll depth, and a brief light reaction when the command is flagged.
+The HTML terminal and warning stay accessible. The existing CSS backdrop remains
+until the first WebGL frame succeeds and is restored if the context is lost.
+Reduced motion, data-saving mode, and unavailable WebGL 2 use the CSS backdrop.
+Animation pauses offscreen, in hidden tabs, and after the opening fades out.
+Rendering is capped at 30 fps and 1.5x pixel density (1x on mobile); resources and
+event listeners are released on teardown.
+
+- **Pinned release:** [Three.js 0.180.0 / r180](https://github.com/mrdoob/three.js/releases/tag/r180),
+  a non-prerelease from 2025-09-03. The registry's latest version was 0.187.0 when
+  reviewed on 2026-11-10; the site intentionally does not use it.
+- **Audit result:** npm audit, GitHub Advisory Database, and OSV returned no known
+  vulnerabilities for this version on 2026-11-10. This cannot guarantee the
+  absence of undiscovered vulnerabilities. There are no transitive runtime
+  dependencies. CI repeats npm audit and fails on any reported severity.
+- **Supply:** `dependencies/package.json` and its lockfile pin the exact version.
+  Only the two minified browser modules and MIT license are vendored. The npm
+  tarball was verified against its SHA-512 integrity value; `validate.py` checks
+  the copied files' SHA-256 values from `vendor/three-0.180.0/manifest.json`.
+  There are no remote models, textures, shaders, loaders, or CDN requests.
+- **Tests:** `node --test website/tests/scene-3d.test.mjs` exercises actual r180
+  geometries and monochrome materials, deterministic motion, disposal, and a
+  mocked renderer's visibility, context-loss, shader-failure, reduced-motion,
+  and mobile-resolution behavior. These tests do not rasterize on a real GPU;
+  browser visual QA is a separate check.
+
+No dependency installation or build is needed to serve the committed assets.
+To repeat the production audit without installing packages:
+
+```sh
+npm audit --prefix website/dependencies --omit=dev --audit-level=low
+```
 
 ## Publish on GitHub Pages
 
@@ -110,13 +147,17 @@ Official reference:
 - Installation and capability copy comes from the repository's root and
   extension READMEs and the CLI subcommand definitions. Links use the actual
   Git remote (`HarshD0011/distill`), rather than the stale Cargo repository URL.
-- No external fonts, libraries, analytics, runtime network requests, or cookies.
+- No third-party CDNs, external fonts, analytics, model/API requests, or cookies.
+  The pinned Three.js modules are requested from the same origin only when the
+  3D enhancement can run.
 - The existing Distill extension SVG mark is reused for the wordmark and favicon.
 
 Check after changes:
 
 ```sh
 make website-check
+node --test website/tests/scene-3d.test.mjs
+npm audit --prefix website/dependencies --omit=dev --audit-level=low
 make website-check-links
 python3 website/validate.py --online --base-url https://harshd0011.github.io/distill/
 ```
