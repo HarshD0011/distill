@@ -48,9 +48,7 @@ Official reference:
 - A dark opening shows an AI agent proposing a command. The command types in,
   shakes and turns red, then a warning appears. Scrolling contracts the scene
   into a rounded frame with a monochrome backdrop and carries the command panel down
-  into a light section, following the supplied `inspiration.mp4` reference. The
-  incoming paper has a feathered gradient edge. At the end of the scroll scene,
-  the frame gently expands to meet the first section without a dark gap.
+  into a light section, following the supplied `inspiration.mp4` reference.
   The sequence can be replayed. Reduced-motion preferences show the final
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
@@ -62,15 +60,10 @@ Official reference:
   desktop scrolling, one degree on panel entry, and two degrees on verdict/tab
   changes. There is no WebGL scene or Three.js dependency. Reduced-motion users
   keep the static presentation.
-- The rest of the page continues the opening's Ink & Paper palette in continuous,
-  full-width chapters. Each background blends from the preceding chapter over
-  140–260 pixels, with eased gradient stops and a plain-gradient fallback. The
-  fades occupy empty space above the headings, keeping content on solid surfaces.
-  The principles strip shares the first chapter's paper background; the footer
-  also fades into black. Reduced motion and disabled JavaScript retain these
-  static gradients. Panels enter in stages as they reach the viewport. Verdict
-  changes, installation tabs, FAQ answers, and copy notifications use the same
-  motion language.
+- The rest of the page continues the opening's Ink & Paper palette
+  in rounded chapters. Panels enter in stages as they reach the viewport; the
+  surrounding color follows the active chapter. Verdict changes, installation
+  tabs, FAQ answers, and copy notifications use the same motion language.
   `palette.css` defines the neutral Ink & Paper scale for surfaces, text, borders,
   and accents. `journey.css` contains the shared chapter and panel styles. Intersection
   observers reveal each panel once; reduced motion and missing observer support

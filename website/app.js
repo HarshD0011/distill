@@ -93,13 +93,11 @@ function initCommandStory() {
     const reveal = ease(range(progress, .18, .74));
     const fade = ease(range(progress, .07, .28));
     const resolution = ease(range(progress, .68, .9));
-    const settle = ease(range(progress, .76, 1));
-    frame.style.setProperty('--frame-scale', (1 - shrink * (1 - settle) * (narrow.matches ? .07 : .12)).toFixed(4));
-    frame.style.setProperty('--frame-radius', `${shrink * (1 - settle) * 32}px`);
+    frame.style.setProperty('--frame-scale', (1 - shrink * (narrow.matches ? .07 : .12)).toFixed(4));
+    frame.style.setProperty('--frame-radius', `${shrink * 32}px`);
     frame.style.setProperty('--hero-opacity', (1 - fade).toFixed(3));
     frame.style.setProperty('--hero-y', `${-fade * 65}px`);
     frame.style.setProperty('--chapter-y', `${103 * (1 - reveal)}%`);
-    frame.style.setProperty('--chapter-blend-opacity', ease(range(progress, .14, .22)).toFixed(3));
     frame.style.setProperty('--journey-y', `${ease(range(progress, .12, .8)) * (narrow.matches ? 24 : 48)}px`);
     frame.style.setProperty('--journey-scale', (1 - reveal * .025).toFixed(4));
     frame.style.setProperty('--journey-tilt', `${(narrow.matches ? 0 : -Math.sin(progress * Math.PI) * 1.8).toFixed(3)}deg`);

@@ -62,7 +62,6 @@
   --hero-opacity:1;
   --hero-y:0px;
   --chapter-y:103%;
-  --chapter-blend-opacity:0;
   --journey-y:0px;
   --journey-scale:1;
   --resolution-opacity:0;
@@ -206,15 +205,7 @@
   transform:translateY(var(--chapter-y));
   background:var(--paper);
   color:var(--ink);
-}
-.story-chapter:before {
-  content:"";
-  position:absolute;
-  inset:auto 0 100%;
-  height:clamp(90px,12vh,150px);
-  background:linear-gradient(180deg,hsl(var(--tone-50) / 0),var(--paper));
-  opacity:var(--chapter-blend-opacity);
-  pointer-events:none;
+  border-radius:30px 30px 0 0;
 }
 .story-chapter .eyebrow {
   font-size:9px;
