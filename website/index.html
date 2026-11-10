@@ -14,9 +14,9 @@
   <link rel="icon" href="./assets/favicon.svg?v=0d4ecbd2ac18" type="image/svg+xml">
   <link rel="stylesheet" href="./palette.css?v=908593d9bce6">
   <link rel="stylesheet" href="./styles.css?v=7fffc28db2b7">
-  <link rel="stylesheet" href="./story.css?v=40d9d787e4ee">
-  <link rel="stylesheet" href="./journey.css?v=7b9a803710bd">
-  <script src="./app.js?v=50e05a0c7b30" defer></script>
+  <link rel="stylesheet" href="./story.css?v=05e2f88b7fb7">
+  <link rel="stylesheet" href="./journey.css?v=639fe90d3b88">
+  <script src="./app.js?v=f3874d77147e" defer></script>
 </head>
 <body id="top">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -152,6 +152,18 @@
         <article class="model-card"><span class="model-label">CLOUD / ANTHROPIC API</span><h3>Claude</h3><p>Use Anthropic Claude for optional command review. Add your Anthropic API key and select a Claude model available to your account.</p><span class="model-capability">Native Claude API support</span></article>
         <article class="model-card"><span class="model-label">LOCAL / YOUR SERVER</span><h3>Local models</h3><p>Connect a model served by llama.cpp or vLLM, or use an OpenAI-compatible local endpoint. Enter the exact model name or alias served by your server.</p><span class="model-capability">llama.cpp · vLLM</span></article>
       </div>
+      <aside class="model-economics" aria-labelledby="model-economics-title">
+        <div class="model-economics-heading"><div><span class="model-label">SMALL MODEL. SMALL BILL.</span><h3 id="model-economics-title">Choose a model built for volume.</h3></div><span class="model-test-badge">REAL-WORLD TEST</span></div>
+        <p class="model-economics-copy">An agent can run hundreds of commands in a session. Use a low-cost, capable model such as <a href="https://developers.openai.com/api/docs/models/gpt-6-luna">GPT-6 Luna</a> for optional review, so frequent checks stay affordable.</p>
+        <dl class="model-test-stats">
+          <div><dt>API requests</dt><dd><span data-count-to="470" data-count-decimals="0" aria-hidden="true">470</span><span class="counter-final">470</span></dd></div>
+          <div><dt>Total API spend</dt><dd><span aria-hidden="true">$<span data-count-to="0.11" data-count-decimals="2">0.11</span></span><span class="counter-final">$0.11</span></dd></div>
+          <div><dt>Per 1,000 requests</dt><dd><span aria-hidden="true">≈$<span data-count-to="0.23" data-count-decimals="2">0.23</span></span><span class="counter-final">Approximately $0.23</span></dd></div>
+          <div><dt>Model replies observed</dt><dd>&lt;1<span class="metric-unit">s</span></dd></div>
+        </dl>
+        <p class="model-test-note">Maintainer-reported GPT-6 Luna field test. About $0.00023 per request; costs are in USD and normalized figures are rounded. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
+        <div class="model-speed-summary"><h4>How we keep reviews fast.</h4><p>The compact review path sends bounded context and asks for a short, severity-only reply. Recent matching results are cached, duplicate requests share work, and a persistent local service reuses connections. Reviews run in the background so provider waits don’t block the command hook.</p></div>
+      </aside>
       <div class="model-setup"><h3>Connect a model in VS Code.</h3><ol><li>Open <strong>LLM settings</strong> in Distill, or run <strong>Distill: Configure LLM Router</strong>.</li><li>Choose your provider and model. Add an API key for a cloud provider, or set your local server endpoint.</li><li>Enable routing and select <strong>Apply settings</strong>. Model advice appears alongside the command assessment.</li></ol></div>
       <p class="model-note">When enabled, your selected provider receives the command and bounded analysis context. Sharing inspected script excerpts is a separate opt-in setting. API keys are stored in VS Code’s encrypted SecretStorage. Static findings and analysis gaps remain visible alongside model advice.</p>
     </section>

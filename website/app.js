@@ -270,7 +270,7 @@ function initPageJourney() {
     '.demo-section-copy', '.demo-wrap', '.section-intro', '.approach-row',
     '.workflow-heading>div', '.workflow-heading>p', '.trace-window',
     '.integration-list>article', '.models-heading>div', '.model-card',
-    '.model-setup', '.boundaries>div:first-child', '.boundary-grid>article',
+    '.model-economics', '.model-setup', '.boundaries>div:first-child', '.boundary-grid>article',
     '.install-layout>div:first-child', '.install-panel',
     '.faq-section>div:first-child', '.faq-list>details'
   ].map(selector => `.chapter-shell ${selector}`).join(','))];
@@ -323,6 +323,65 @@ function initPageJourney() {
   scenes.forEach(scene => sceneObserver.observe(scene));
 }
 initPageJourney();
+
+function initReviewCounters() {
+  const stats = document.querySelector('.model-test-stats');
+  if (!stats || !window.IntersectionObserver) return;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Final figures are in the HTML for reduced motion, screen readers, and no JS.
+  if (motion.matches) return;
+  const counters = [...stats.querySelectorAll('[data-count-to]')].map(element => ({
+    element,
+    target: Number(element.dataset.countTo),
+    decimals: Number(element.dataset.countDecimals)
+  }));
+  const duration = 2100;
+  const stagger = 90;
+  let started = false;
+  let frameId = 0;
+  let startedAt;
+
+  function render(counter, progress) {
+    const factor = 10 ** counter.decimals;
+    // Floor intermediate values so the final cent is reached at the finish.
+    const value = progress >= 1 ? counter.target :
+      Math.floor(counter.target * (1 - (1 - progress) ** 3) * factor) / factor;
+    counter.element.textContent = value.toFixed(counter.decimals);
+  }
+
+  function finish() {
+    if (frameId) cancelAnimationFrame(frameId);
+    frameId = 0;
+    started = true;
+    counters.forEach(counter => render(counter, 1));
+    observer.disconnect();
+  }
+
+  function tick(timestamp) {
+    if (startedAt === undefined) startedAt = timestamp;
+    const elapsed = timestamp - startedAt;
+    counters.forEach((counter, index) => {
+      const progress = Math.max(0, Math.min(1, (elapsed - index * stagger) / duration));
+      render(counter, progress);
+    });
+    if (elapsed < duration + (counters.length - 1) * stagger) {
+      frameId = requestAnimationFrame(tick);
+    } else finish();
+  }
+
+  const observer = new window.IntersectionObserver(entries => {
+    if (started || !entries.some(entry => entry.isIntersecting && entry.intersectionRatio >= .55)) return;
+    started = true;
+    observer.disconnect();
+    frameId = requestAnimationFrame(tick);
+  }, { threshold: .55, rootMargin: '0px 0px -8% 0px' });
+  counters.forEach(counter => render(counter, 0));
+  observer.observe(stats);
+  motion.addEventListener('change', () => {
+    if (motion.matches) finish();
+  });
+}
+initReviewCounters();
 
 document.querySelectorAll('.faq-list details').forEach(details => {
   details.addEventListener('toggle', () => {

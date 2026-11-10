@@ -602,6 +602,146 @@ body[data-scene-theme="paper"] .site-journey {
   color:hsl(var(--tone-500));
   font-size:10px;
 }
+.chapter-shell .model-economics {
+  margin-top:24px;
+  padding:32px;
+  border:1px solid hsl(var(--tone-300) / .28);
+  border-radius:14px;
+  background:linear-gradient(125deg,hsl(var(--tone-850) / .65),transparent 75%),hsl(var(--tone-900));
+}
+.model-economics-heading {
+  display:flex;
+  align-items:start;
+  justify-content:space-between;
+  gap:24px;
+}
+.chapter-shell .model-economics h3 {
+  color:hsl(var(--tone-100));
+  margin-top:12px;
+  font-size:24px;
+  font-weight:500;
+  letter-spacing:-.6px;
+  line-height:1.3;
+}
+.model-test-badge {
+  flex:none;
+  padding:7px 9px;
+  border:1px solid hsl(var(--tone-300) / .24);
+  border-radius:5px;
+  color:hsl(var(--tone-300));
+  font:7px var(--mono);
+  letter-spacing:.7px;
+}
+.chapter-shell .model-economics-copy {
+  max-width:760px;
+  margin-top:17px;
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.85;
+}
+.model-economics-copy a {
+  color:hsl(var(--tone-100));
+  text-decoration:underline;
+  text-decoration-color:hsl(var(--tone-400));
+  text-underline-offset:4px;
+}
+.model-economics-copy a:hover {
+  text-decoration-color:currentColor;
+}
+.model-test-stats {
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:20px;
+  margin:28px 0 0;
+  padding-block:25px;
+  border-block:1px solid hsl(var(--tone-300) / .17);
+}
+.model-test-stats>div {
+  padding-left:22px;
+  border-left:1px solid hsl(var(--tone-300) / .17);
+}
+.model-test-stats>div:first-child {
+  padding-left:0;
+  border-left:0;
+}
+.model-test-stats dt {
+  color:hsl(var(--tone-300));
+  font:8px var(--mono);
+  line-height:1.6;
+}
+.model-test-stats dd {
+  margin:12px 0 0;
+  color:hsl(var(--tone-50));
+  font-size:clamp(28px,3vw,40px);
+  font-weight:450;
+  letter-spacing:-1.7px;
+  font-variant-numeric:tabular-nums;
+  line-height:1.1;
+}
+.model-test-stats .metric-unit {
+  margin-left:3px;
+  font-size:.6em;
+  letter-spacing:0;
+}
+.model-test-stats .counter-final {
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip-path:inset(50%);
+  white-space:nowrap;
+}
+.chapter-shell .model-test-note {
+  margin-top:15px;
+  max-width:900px;
+  color:hsl(var(--tone-400));
+  font-size:10px;
+  line-height:1.8;
+}
+.model-speed-summary {
+  display:grid;
+  grid-template-columns:220px 1fr;
+  gap:30px;
+  margin-top:25px;
+  padding-top:24px;
+  border-top:1px solid hsl(var(--tone-300) / .17);
+}
+.model-speed-summary h4 {
+  margin:0;
+  color:hsl(var(--tone-200));
+  font-size:13px;
+  font-weight:500;
+  line-height:1.85;
+}
+.chapter-shell .model-speed-summary p {
+  max-width:720px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.85;
+}
+@media(max-width:820px) {
+  .model-test-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:26px 20px }
+  .model-test-stats>div:nth-child(3) { padding-left:0; border-left:0 }
+  .model-test-stats dd { font-size:36px }
+  .model-speed-summary { grid-template-columns:1fr; gap:10px }
+}
+@media(max-width:560px) {
+  .chapter-shell .model-economics { padding:24px 20px }
+  .model-economics-heading { display:block }
+  .model-test-badge { display:inline-block; margin-top:17px; font-size:6px }
+  .chapter-shell .model-economics h3 { font-size:21px }
+  .chapter-shell .model-economics-copy { font-size:11px }
+  .model-test-stats { gap:24px 13px; margin-top:23px; padding-block:21px }
+  .model-test-stats>div { padding-left:13px }
+  .model-test-stats dt { font-size:7px }
+  .model-test-stats dd { font-size:30px; letter-spacing:-1.2px }
+  .chapter-shell .model-test-note { font-size:9px }
+  .model-speed-summary { margin-top:20px; padding-top:20px }
+  .model-speed-summary h4 { font-size:12px }
+  .chapter-shell .model-speed-summary p { font-size:11px }
+}
 .chapter-shell .boundaries {
   gap:80px;
   grid-template-columns:.9fr 1.1fr;

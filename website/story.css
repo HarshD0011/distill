@@ -252,16 +252,29 @@
 }
 .journey-orbit {
   position:absolute;
-  width:120%;
+  width:124%;
   aspect-ratio:1;
   top:50%;
   left:50%;
   transform:translate(-50%,-50%);
-  border:1px solid hsl(var(--tone-300) / 0.039);
+  border:1px solid hsl(var(--tone-400) / .34);
   border-radius:50%;
   z-index:-1;
   opacity:var(--hero-opacity);
-  box-shadow:0 0 0 45px hsl(var(--tone-300) / 0.012),0 0 0 90px hsl(var(--tone-300) / 0.008);
+  pointer-events:none;
+  background:radial-gradient(circle at 36% 27%,hsl(var(--tone-500) / .25) 0%,hsl(var(--tone-800) / .7) 48%,hsl(var(--tone-900) / .9) 100%),hsl(var(--tone-850));
+  box-shadow:inset 0 1px 0 hsl(var(--tone-25) / .12),0 0 0 28px hsl(var(--tone-500) / .035),0 0 0 62px hsl(var(--tone-500) / .018),0 0 110px 28px hsl(var(--tone-400) / .11);
+}
+.journey-orbit:before,.journey-orbit:after {
+  content:"";
+  position:absolute;
+  inset:-7%;
+  border:1px solid hsl(var(--tone-400) / .16);
+  border-radius:50%;
+}
+.journey-orbit:after {
+  inset:-17%;
+  border-color:hsl(var(--tone-400) / .075);
 }
 .agent-presence {
   display:flex;
@@ -346,10 +359,10 @@
 }
 .story-terminal {
   overflow:hidden;
-  background:hsl(var(--tone-950));
-  border:1px solid hsl(var(--tone-800));
+  background:hsl(var(--tone-900));
+  border:1px solid hsl(var(--tone-400) / .36);
   border-radius:12px;
-  box-shadow:0 22px 65px #0003;
+  box-shadow:0 24px 64px hsl(var(--tone-975) / .55),inset 0 1px 0 hsl(var(--tone-25) / .045);
 }
 .story-terminal-bar {
   display:flex;
@@ -781,7 +794,7 @@
   .story-hero .button-primary { min-height:42px; font-size:10px; padding-inline:15px; gap:20px }
   .story-watch { font-size:9px; gap:8px }
   .command-journey { top:68%; right:6%; width:88%; min-width:0; max-width:none }
-  .journey-orbit { width:100% }
+  .journey-orbit { width:116% }
   .story-command { min-height:53px }
   .story-terminal-body { padding:17px 16px 15px }
   .proposal-label { font-size:7px }
@@ -827,7 +840,8 @@
   .intro-story,.intro-story:not(.story-ready) { height:auto; min-height:0 }
   .story-stage { position:relative; top:0; height:850px; min-height:0; background:var(--night) }
   .story-frame { transform:none!important; border-radius:0!important }
-  .story-chapter,.journey-orbit,.story-scroll { display:none }
+  .story-chapter,.story-scroll { display:none }
+  .journey-orbit { opacity:1!important }
   .story-hero { opacity:1!important; transform:translateY(-50%)!important }
   .command-journey { transform:translateY(-50%)!important }
   .journey-resolution { opacity:0!important }

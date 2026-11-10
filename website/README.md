@@ -53,6 +53,9 @@ Official reference:
   warning without animation or a pinned scroll section; without JavaScript,
   the opening still displays the command and warning. Scene styles live in
   `story.css`; timing and scroll progress are handled in `app.js`.
+  The command scene sits on a lighter graphite disc with defined concentric
+  edges and a soft halo, carrying the reference's glow into the monochrome
+  palette. The static backdrop stays visible with reduced motion enabled.
 - The rest of the page continues the opening's Ink & Paper palette
   in rounded chapters. Panels enter in stages as they reach the viewport; the
   surrounding color follows the active chapter. Verdict changes, installation
@@ -75,6 +78,20 @@ Official reference:
   VS Code router setup and describes disabled-by-default routing, provider data
   sharing, opt-in script excerpts, and encrypted API key storage. The website
   itself does not connect to model providers or collect credentials.
+- A model-cost note recommends a small, capable model for high-volume command
+  review. The maintainer reports a real-world GPT-6 Luna test of 470 requests for
+  $0.11: approximately $0.00023/request or $0.23/1,000 requests, in USD. These are
+  rounded observed/extrapolated costs, not a quoted API tariff. The official
+  model page is linked for context. Sub-second responses are reported as observed
+  cases, not a universal latency guarantee; checked-in live samples also include
+  slower replies. The speed summary reflects compact severity-only prompts,
+  bounded context, matching-result caching and deduplication, reusable provider
+  connections, and background model work in the current service implementation.
+  The three cost/request figures count up once when the statistics enter the
+  viewport, easing to their final values over roughly 2.3 seconds. Reduced motion,
+  missing observer support, and disabled JavaScript show final values immediately;
+  screen readers receive stable final figures throughout the animation. The
+  observed latency bound remains static.
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
