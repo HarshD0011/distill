@@ -28,13 +28,7 @@ jobs:
         with:
           node-version: 22
       - name: Check JavaScript syntax
-        run: |
-          node --check website/app.js
-          node --check website/liquid-logo.mjs
-      - name: Check glass geometry and renderer lifecycle
-        run: node --test website/tests/liquid-logo.test.mjs
-      - name: Audit pinned website dependency
-        run: npm audit --prefix website/dependencies --omit=dev --audit-level=low
+        run: node --check website/app.js
       - name: Validate static website
         run: python3 website/validate.py
 

@@ -1,6 +1,6 @@
 # Distill website
 
-A responsive product website for Distill. It is plain HTML, CSS,
+A responsive, dependency-free product website for Distill. It is plain HTML, CSS,
 and JavaScript, with relative asset paths that work at a GitHub Pages project URL
 or at a domain root. Public URL: <https://harshd0011.github.io/distill/>.
 
@@ -45,29 +45,16 @@ Official reference:
 
 ## Content and interactions
 
-- On an ordinary arrival at the top of the page, a glass `distill.` wordmark
-  catches moving studio reflections on black, following `logo.mp4`. After a
-  5.8-second pass it shrinks into the real header wordmark over 1.4 seconds as
+- On an ordinary arrival at the top of the page, a chrome `distill.` wordmark
+  catches a moving curved highlight on black, following `logo.mp4`. After one
+  5.8-second pass it shrinks into the real header wordmark over 1.15 seconds as
   the site fades into view. The command animation starts after that handoff.
-  Three.js renders a small, word-sized GPU surface with rounded distance-field
-  edges, Fresnel reflections, refraction, restrained dispersion, and slow surface
-  flow. During the flight, that surface continuously flattens into the header's
-  plain text. One render loop uses elapsed time, caps pixel density at 1.75, and
-  releases its canvas, textures, geometry, material, and WebGL context on exit.
-  Skip intro and Escape reveal the site immediately.
+  The finish uses CSS gradients and a measured Web Animations transform, with
+  no new dependencies. Skip intro and Escape reveal the site immediately.
   Reduced motion, anchor links, history returns, unsupported animation APIs,
   and disabled JavaScript open the site directly. A nine-second fail-open
   watchdog protects access if initialization fails. `logo-intro.css` contains
-  the fallback and reveal styles; `liquid-logo.mjs` contains the glass shader.
-  Unsupported graphics retain a static CSS wordmark. Resizing during the handoff
-  ends it cleanly; resizing earlier releases the renderer and keeps the fallback.
-  Three.js is self-hosted and pinned to stable **0.180.0 (r180)**, an older release.
-  The npm tarball's integrity and vendor hashes are checked. npm audit, GitHub
-  Advisory Database, and OSV reported no known advisories for this version at
-  review time; this does not guarantee the absence of undiscovered issues.
-  The license, hashes, and review details live in `vendor/three-0.180.0/`;
-  `dependencies/` contains the audit lockfile. CI checks the pin and hashes,
-  audits the dependency, and tests the distance field and renderer cleanup.
+  the finish and reveal styles; resizing during the handoff ends it cleanly.
 - A dark opening shows an AI agent proposing a command. The command types in,
   shakes and turns red, then a warning appears. Scrolling contracts the scene
   into a rounded frame with a monochrome backdrop and carries the command panel down
@@ -81,8 +68,8 @@ Official reference:
   palette. The static backdrop stays visible with reduced motion enabled.
   Depth is limited to small CSS perspective tilts: up to 1.8 degrees during
   desktop scrolling, one degree on panel entry, and two degrees on verdict/tab
-  changes. The glass renderer is confined to the opening wordmark.
-  Reduced-motion users keep the static presentation.
+  changes. There is no WebGL scene or Three.js dependency. Reduced-motion users
+  keep the static presentation.
 - The rest of the page continues the opening's Ink & Paper palette
   in rounded chapters. Panels enter in stages as they reach the viewport; the
   surrounding color follows the active chapter. Verdict changes, installation
@@ -137,17 +124,13 @@ Official reference:
 - Installation and capability copy comes from the repository's root and
   extension READMEs and the CLI subcommand definitions. Links use the actual
   Git remote (`HarshD0011/distill`), rather than the stale Cargo repository URL.
-- No third-party runtime requests, external fonts, analytics, or cookies.
-  The optional intro dynamically loads the self-hosted Three.js module locally.
+- No external fonts, libraries, analytics, runtime network requests, or cookies.
 - The existing Distill extension SVG mark is reused for the wordmark and favicon.
 
 Check after changes:
 
 ```sh
 make website-check
-node --check website/liquid-logo.mjs
-node --test website/tests/liquid-logo.test.mjs
-npm audit --prefix website/dependencies --omit=dev
 make website-check-links
 python3 website/validate.py --online --base-url https://harshd0011.github.io/distill/
 ```
