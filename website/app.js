@@ -1,5 +1,106 @@
 'use strict';
 
+function initLogoIntro() {
+  const root = document.documentElement;
+  const intro = document.getElementById('logo-intro');
+  if (!intro || !root.classList.contains('intro-pending')) return Promise.resolve();
+
+  return new Promise(resolve => {
+    const word = intro.querySelector('.intro-word');
+    const skip = intro.querySelector('.intro-skip');
+    const destination = document.querySelector('.site-header .brand-name');
+    const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const surfaces = [...document.querySelectorAll('.site-header,main,.site-footer,.chapter-rail,.skip-link')];
+    const inertBefore = surfaces.map(element => element.inert);
+    const previousFocus = document.activeElement;
+    let finished = false;
+    let docking = false;
+    let sweepTimer;
+    let handoffTimer;
+    let flight;
+
+    function finish() {
+      if (finished) return;
+      finished = true;
+      clearTimeout(sweepTimer);
+      clearTimeout(handoffTimer);
+      flight?.cancel();
+      intro.hidden = true;
+      root.classList.remove('intro-pending', 'intro-revealing');
+      surfaces.forEach((element, index) => { element.inert = inertBefore[index]; });
+      skip.removeEventListener('click', finish);
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('pageshow', onPageShow);
+      window.removeEventListener('distill:intro-failsafe', finish);
+      motion.removeEventListener('change', onMotion);
+      if (document.activeElement === skip) {
+        const focusTarget = previousFocus && previousFocus !== document.body && previousFocus.isConnected
+          ? previousFocus : destination.closest('a');
+        focusTarget?.focus({ preventScroll:true });
+      }
+      resolve();
+    }
+
+    function onKey(event) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        finish();
+      } else if (event.key === 'Tab') {
+        event.preventDefault();
+        skip.focus({ preventScroll:true });
+      }
+    }
+    function onMotion() { if (motion.matches) finish(); }
+    function onVisibility() { if (document.hidden) finish(); }
+    function onResize() { if (docking) finish(); }
+    function onPageShow(event) { if (event.persisted) finish(); }
+
+    function dock() {
+      if (finished) return;
+      try {
+        const from = word.getBoundingClientRect();
+        const to = destination.getBoundingClientRect();
+        if (!from.width || !from.height || !to.width || !to.height) {
+          finish();
+          return;
+        }
+        docking = true;
+        word.classList.add('is-docking');
+        root.classList.add('intro-revealing');
+        flight = word.animate([
+          { transform:'translate3d(0,0,0) scale(1,1)' },
+          { transform:`translate3d(${to.left - from.left}px,${to.top - from.top}px,0) scale(${to.width / from.width},${to.height / from.height})` }
+        ], { duration:1150, easing:'cubic-bezier(.76,0,.24,1)', fill:'forwards' });
+        flight.finished.then(finish, finish);
+        handoffTimer = setTimeout(finish, 1300);
+      } catch {
+        finish();
+      }
+    }
+
+    // Register recovery before making the rest of the page inert.
+    window.addEventListener('distill:intro-failsafe', finish);
+    skip.addEventListener('click', finish);
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('pageshow', onPageShow);
+    motion.addEventListener('change', onMotion);
+    if (motion.matches || document.hidden || typeof word.animate !== 'function' || !destination || window.scrollY > 8) {
+      finish();
+      return;
+    }
+    surfaces.forEach(element => { element.inert = true; });
+    intro.hidden = false;
+    intro.classList.add('is-playing');
+    skip.focus({ preventScroll:true });
+    sweepTimer = setTimeout(dock, 5800);
+  });
+}
+const logoIntroFinished = initLogoIntro();
+
 // A presentation only: command text is never evaluated or sent anywhere.
 function initCommandStory() {
   const story = document.getElementById('command-story');
@@ -34,6 +135,7 @@ function initCommandStory() {
   function phase(name) {
     journey.dataset.phase = name;
     activity.textContent = {
+      idle: 'Preparing a tool call',
       arriving: 'Preparing a tool call',
       typing: 'Proposing a shell command',
       checking: 'Requesting execution',
@@ -126,7 +228,16 @@ function initCommandStory() {
     finishSequence();
     renderScroll();
   });
-  playSequence();
+  if (document.documentElement.classList.contains('intro-pending')) {
+    command.textContent = '';
+    phase('idle');
+    logoIntroFinished.then(() => {
+      playSequence();
+      renderScroll();
+    });
+  } else {
+    playSequence();
+  }
   renderScroll();
 }
 initCommandStory();

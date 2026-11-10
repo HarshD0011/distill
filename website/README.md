@@ -45,6 +45,16 @@ Official reference:
 
 ## Content and interactions
 
+- On an ordinary arrival at the top of the page, a chrome `distill.` wordmark
+  catches a moving curved highlight on black, following `logo.mp4`. After one
+  5.8-second pass it shrinks into the real header wordmark over 1.15 seconds as
+  the site fades into view. The command animation starts after that handoff.
+  The finish uses CSS gradients and a measured Web Animations transform, with
+  no new dependencies. Skip intro and Escape reveal the site immediately.
+  Reduced motion, anchor links, history returns, unsupported animation APIs,
+  and disabled JavaScript open the site directly. A nine-second fail-open
+  watchdog protects access if initialization fails. `logo-intro.css` contains
+  the finish and reveal styles; resizing during the handoff ends it cleanly.
 - A dark opening shows an AI agent proposing a command. The command types in,
   shakes and turns red, then a warning appears. Scrolling contracts the scene
   into a rounded frame with a monochrome backdrop and carries the command panel down

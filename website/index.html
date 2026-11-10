@@ -11,18 +11,36 @@
   <meta property="og:url" content="https://harshd0011.github.io/distill/">
   <link rel="canonical" href="https://harshd0011.github.io/distill/">
   <title>Distill — Know what runs. Before it does.</title>
+  <script>
+    // Opt in before the first paint; a failed script must never hide the page.
+    if (!location.hash && !matchMedia('(prefers-reduced-motion: reduce)').matches &&
+        typeof Element.prototype.animate === 'function' &&
+        performance.getEntriesByType('navigation')[0]?.type !== 'back_forward') {
+      document.documentElement.classList.add('intro-pending');
+      setTimeout(() => {
+        window.dispatchEvent(new Event('distill:intro-failsafe'));
+        document.documentElement.classList.remove('intro-pending', 'intro-revealing');
+      }, 9000);
+    }
+  </script>
   <link rel="icon" href="./assets/favicon.svg?v=0d4ecbd2ac18" type="image/svg+xml">
   <link rel="stylesheet" href="./palette.css?v=908593d9bce6">
   <link rel="stylesheet" href="./styles.css?v=7fffc28db2b7">
   <link rel="stylesheet" href="./story.css?v=0bfcee27d38b">
   <link rel="stylesheet" href="./journey.css?v=abb6abad320b">
-  <script src="./app.js?v=4f45a8267dbd" defer></script>
+  <link rel="stylesheet" href="./logo-intro.css?v=c766ee1784f1">
+  <script src="./app.js?v=bbc639ed0167" defer></script>
 </head>
 <body id="top">
+  <div class="logo-intro" id="logo-intro" role="dialog" aria-modal="true" aria-label="Distill opening animation" hidden>
+    <div class="intro-backdrop" aria-hidden="true"></div>
+    <span class="intro-word" data-word="distill." aria-hidden="true">distill.</span>
+    <button class="intro-skip" type="button">Skip intro <span aria-hidden="true">↗</span></button>
+  </div>
   <a class="skip-link" href="#main">Skip to content</a>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="wordmark" href="#top" aria-label="Distill home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8l3 3-3 3M13 14h3M8 18h8"/></svg></span>distill<span class="brand-period">.</span></a>
+      <a class="wordmark" href="#top" aria-label="Distill home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 8l3 3-3 3M13 14h3M8 18h8"/></svg></span><span class="brand-name">distill<span class="brand-period">.</span></span></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu <span aria-hidden="true">☰</span></button>
       <nav id="site-nav" aria-label="Main navigation">
         <a href="#approach">The approach</a>
