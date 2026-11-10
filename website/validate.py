@@ -6,7 +6,6 @@ from urllib.parse import unquote, urldefrag, urljoin, urlsplit
 from urllib.request import Request, urlopen
 from concurrent.futures import ThreadPoolExecutor
 import argparse
-import hashlib
 import json
 import re
 
@@ -61,36 +60,6 @@ page.feed((ROOT / 'index.html').read_text())
 page.close()
 if page.open_tags:
     page.errors.append('Unclosed HTML elements: ' + ', '.join(page.open_tags))
-
-# All Three.js files are local and immutable; verify them against the reviewed
-# npm tarball snapshot rather than trusting a floating CDN import.
-vendor = ROOT / 'vendor/three-0.180.0'
-manifest = json.loads((vendor / 'manifest.json').read_text())
-lock = json.loads((ROOT / 'dependencies/package-lock.json').read_text())
-dependency = lock['packages']['node_modules/three']
-if (manifest['version'] != '0.180.0' or dependency['version'] != '0.180.0' or
-        lock['packages']['']['dependencies']['three'] != '0.180.0' or
-        dependency['integrity'] != manifest['npm_integrity']):
-    page.errors.append('Three.js must match the exact reviewed 0.180.0 dependency')
-for name, expected_hash in manifest['sha256'].items():
-    asset = (vendor / name).resolve()
-    if not asset.is_relative_to(vendor.resolve()) or not asset.is_file():
-        page.errors.append(f'Missing or escaping Three.js asset: {name}')
-    elif hashlib.sha256(asset.read_bytes()).hexdigest() != expected_hash:
-        page.errors.append(f'Three.js checksum mismatch: {name}')
-
-# Native module imports are assets too, including the lazy geometry module and
-# Three.js's relative core-module import.
-modules = list(ROOT.glob('*.mjs')) + list(vendor.glob('*.js'))
-for module in modules:
-    for reference in re.findall(r'''(?:from\s*|import\s*\(\s*)['"](\.[^'"]+)['"]''', module.read_text()):
-        parts = urlsplit(reference)
-        asset = (module.parent / unquote(parts.path)).resolve()
-        if not asset.is_relative_to(ROOT) or not asset.is_file():
-            page.errors.append(f'Missing or escaping module asset: {module.name}: {reference}')
-        else:
-            page.links.append('./' + asset.relative_to(ROOT).as_posix() +
-                              ('?' + parts.query if parts.query else ''))
 for stylesheet in ROOT.glob('*.css'):
     for asset in re.findall(r'url\(\s*[\'\"]?([^\s\)\'\"]+)', stylesheet.read_text()):
         page.links.append(asset)

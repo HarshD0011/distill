@@ -100,6 +100,7 @@ function initCommandStory() {
     frame.style.setProperty('--chapter-y', `${103 * (1 - reveal)}%`);
     frame.style.setProperty('--journey-y', `${ease(range(progress, .12, .8)) * (narrow.matches ? 24 : 48)}px`);
     frame.style.setProperty('--journey-scale', (1 - reveal * .025).toFixed(4));
+    frame.style.setProperty('--journey-tilt', `${(narrow.matches ? 0 : -Math.sin(progress * Math.PI) * 1.8).toFixed(3)}deg`);
     frame.style.setProperty('--resolution-opacity', resolution.toFixed(3));
     frame.style.setProperty('--frame-label-opacity', ease(range(progress, .62, .82)).toFixed(3));
     frame.style.setProperty('--scroll-opacity', (1 - ease(range(progress, 0, .18))).toFixed(3));
@@ -135,9 +136,9 @@ function animatePanel(panel) {
   if (!panel.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   panelAnimations.get(panel)?.cancel();
   panelAnimations.set(panel, panel.animate([
-    { opacity: .45, transform: 'translateY(9px) scale(.985)' },
-    { opacity: 1, transform: 'translateY(0) scale(1)' }
-  ], { duration: 380, easing: 'cubic-bezier(.22,1,.36,1)' }));
+    { opacity: .8, transform: 'perspective(1200px) translateY(5px) rotateX(-2deg)' },
+    { opacity: 1, transform: 'perspective(1200px) translateY(0) rotateX(0deg)' }
+  ], { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' }));
 }
 
 // Examples are recorded CLI reports, not a browser implementation of the analyzer.

@@ -1,9 +1,0 @@
-{
-  "name": "distill-website-dependencies",
-  "version": "1.0.0",
-  "private": true,
-  "description": "Audit manifest for the self-hosted, exactly pinned website runtime dependency.",
-  "dependencies": {
-    "three": "0.180.0"
-  }
-}
