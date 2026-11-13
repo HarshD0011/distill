@@ -20,16 +20,16 @@
       setTimeout(() => {
         window.dispatchEvent(new Event('distill:intro-failsafe'));
         document.documentElement.classList.remove('intro-pending', 'intro-revealing');
-      }, 9000);
+      }, 3000);
     }
   </script>
   <link rel="icon" href="./assets/favicon.svg?v=0d4ecbd2ac18" type="image/svg+xml">
   <link rel="stylesheet" href="./palette.css?v=908593d9bce6">
   <link rel="stylesheet" href="./styles.css?v=7fffc28db2b7">
   <link rel="stylesheet" href="./story.css?v=0bfcee27d38b">
-  <link rel="stylesheet" href="./journey.css?v=abb6abad320b">
-  <link rel="stylesheet" href="./logo-intro.css?v=c766ee1784f1">
-  <script src="./app.js?v=bbc639ed0167" defer></script>
+  <link rel="stylesheet" href="./journey.css?v=ea7ed1862494">
+  <link rel="stylesheet" href="./logo-intro.css?v=93a8e1ca7368">
+  <script src="./app.js?v=7e50fd527a5e" defer></script>
 </head>
 <body id="top">
   <div class="logo-intro" id="logo-intro" role="dialog" aria-modal="true" aria-label="Distill opening animation" hidden>
@@ -174,12 +174,11 @@
         <div class="model-economics-heading"><div><span class="model-label">SMALL MODEL. SMALL BILL.</span><h3 id="model-economics-title">Choose a model built for volume.</h3></div><span class="model-test-badge">REAL-WORLD TEST</span></div>
         <p class="model-economics-copy">An agent can run hundreds of commands in a session. Use a low-cost, capable model such as <a href="https://developers.openai.com/api/docs/models/gpt-6-luna">GPT-6 Luna</a> for optional review, so frequent checks stay affordable.</p>
         <dl class="model-test-stats">
-          <div><dt>API requests</dt><dd><span data-count-to="610" data-count-decimals="0" aria-hidden="true">610</span><span class="counter-final">610</span></dd></div>
-          <div><dt>Total API spend</dt><dd><span aria-hidden="true">$<span data-count-to="0.12" data-count-decimals="2">0.12</span></span><span class="counter-final">$0.12</span></dd></div>
-          <div><dt>Per 1,000 requests</dt><dd><span aria-hidden="true">≈$<span data-count-to="0.20" data-count-decimals="2">0.20</span></span><span class="counter-final">Approximately $0.20</span></dd></div>
+          <div><dt>API requests</dt><dd><span data-count-to="1000" data-count-decimals="0" aria-hidden="true">1000</span><span class="counter-final">1,000</span></dd></div>
+          <div><dt>Total API spend</dt><dd><span aria-hidden="true">$<span data-count-to="0.15" data-count-decimals="2">0.15</span></span><span class="counter-final">$0.15</span></dd></div>
           <div><dt>Model replies observed</dt><dd>&lt;1<span class="metric-unit">s</span></dd></div>
         </dl>
-        <p class="model-test-note">Maintainer-reported GPT-6 Luna field test. About $0.00020 per request; costs are in USD and normalized figures are rounded. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
+        <p class="model-test-note">Maintainer-reported GPT-6 Luna field test; costs are in USD. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
         <div class="model-speed-summary"><h4>How we keep reviews fast.</h4><p>The compact review path sends bounded context and asks for a short, severity-only reply. Recent matching results are cached, duplicate requests share work, and a persistent local service reuses connections. Reviews run in the background so provider waits don’t block the command hook.</p></div>
       </aside>
       <div class="model-setup"><h3>Connect a model in VS Code.</h3><ol><li>Open <strong>LLM settings</strong> in Distill, or run <strong>Distill: Configure LLM Router</strong>.</li><li>Choose your provider and model. Add an API key for a cloud provider, or set your local server endpoint.</li><li>Enable routing and select <strong>Apply settings</strong>. Model advice appears alongside the command assessment.</li></ol></div>
@@ -201,8 +200,8 @@
       <div class="container install-layout"><div><p class="eyebrow">A SMALL ADDITION TO YOUR WORKFLOW</p><h2 id="install-title">Make the next<br>command clearer.</h2><p>Start with the VS Code extension, or build the CLI from source.</p>
           <aside class="platform-support" aria-labelledby="platform-support-title">
             <h3 id="platform-support-title">Platform support</h3>
-            <ul class="platform-status"><li><span>macOS</span><strong>Supported</strong></li><li><span>Linux</span><strong>Supported</strong></li><li class="platform-upcoming"><span>Windows</span><strong>Coming soon</strong></li></ul>
-            <p>Local desktop support on arm64 and x64. Linux requires glibc. Native critical-command approval dialogs are currently macOS-only.</p>
+            <ul class="platform-status"><li><span>macOS</span><strong>Supported</strong></li><li><span>Windows</span><strong>Supported</strong></li><li class="platform-upcoming"><span>Linux</span><strong>Coming soon</strong></li></ul>
+            <p>Local desktop support on macOS and Windows. Linux support is coming soon, pending runtime testing. Native critical-command approval dialogs are currently macOS-only.</p>
           </aside>
           <a class="install-doc-link" href="https://github.com/HarshD0011/distill/blob/HEAD/README.md">Full installation documentation <span aria-hidden="true">↗</span></a></div>
         <div class="install-panel"><div class="install-tabs" role="tablist" aria-label="Installation method"><button type="button" id="tab-extension" role="tab" aria-selected="true" aria-controls="panel-extension" tabindex="0">VS Code</button><button type="button" id="tab-cli" role="tab" aria-selected="false" aria-controls="panel-cli" tabindex="-1">CLI</button><button type="button" id="tab-hooks" role="tab" aria-selected="false" aria-controls="panel-hooks" tabindex="-1">Agent hooks</button></div>
@@ -222,7 +221,7 @@ distill doctor --json --workspace-root "$PWD"</code></pre><button type="button" 
 
     <div class="chapter-shell scene-night" data-scene-theme="night" data-scene-target="faq" data-scene-number="07">
       <div class="container chapter-bar"><span><i aria-hidden="true"></i>07 / BEFORE YOU BEGIN</span><span>A FEW USEFUL ANSWERS</span></div>
-      <section class="section container faq-section" id="faq" aria-labelledby="faq-title"><div><p class="eyebrow">A FEW USEFUL ANSWERS</p><h2 id="faq-title">Before you begin.</h2></div><div class="faq-list"><details><summary>Does Distill execute the command to analyze it?<span aria-hidden="true">+</span></summary><p>No. <code>analyze</code> and hook assessment inspect commands without executing them. The separate <code>run</code> subcommand is an opt-in execution gate.</p></details><details><summary>Is a “safe” rating a guarantee?<span aria-hidden="true">+</span></summary><p>No. It describes modeled impact within the supported static semantics. Coverage, source dependencies, shell context, and host permissions still matter. Incomplete coverage can require review even when the modeled impact is safe.</p></details><details><summary>Does installing the hooks sandbox my agent?<span aria-hidden="true">+</span></summary><p>No. Hooks are analysis adapters. Execution goes through native containment only when explicitly routed through <code>distill run</code>. macOS uses Seatbelt; supported Linux kernels use Landlock and seccomp.</p></details><details><summary>Which editor environments are supported?<span aria-hidden="true">+</span></summary><p>The extension supports trusted local desktop VS Code folders on macOS and Linux (glibc), on arm64 and x64. Windows support is coming soon. Native critical-command approval dialogs are currently macOS-only; other platforms retain the denial fallback for those commands. Remote workspaces, WSL, containers, and browser VS Code are not currently supported.</p></details></div></section>
+      <section class="section container faq-section" id="faq" aria-labelledby="faq-title"><div><p class="eyebrow">A FEW USEFUL ANSWERS</p><h2 id="faq-title">Before you begin.</h2></div><div class="faq-list"><details><summary>Does Distill execute the command to analyze it?<span aria-hidden="true">+</span></summary><p>No. <code>analyze</code> and hook assessment inspect commands without executing them. The separate <code>run</code> subcommand is an opt-in execution gate.</p></details><details><summary>Is a “safe” rating a guarantee?<span aria-hidden="true">+</span></summary><p>No. It describes modeled impact within the supported static semantics. Coverage, source dependencies, shell context, and host permissions still matter. Incomplete coverage can require review even when the modeled impact is safe.</p></details><details><summary>Does installing the hooks sandbox my agent?<span aria-hidden="true">+</span></summary><p>No. Hooks are analysis adapters. Execution goes through native containment only when explicitly routed through <code>distill run</code>. macOS uses Seatbelt; supported Linux kernels use Landlock and seccomp.</p></details><details><summary>Which editor environments are supported?<span aria-hidden="true">+</span></summary><p>The extension supports trusted local desktop VS Code folders on macOS and Windows. Linux support is coming soon, pending runtime testing. Native critical-command approval dialogs are currently macOS-only; other platforms retain the denial fallback for those commands. Remote workspaces, WSL, containers, and browser VS Code are not currently supported.</p></details></div></section>
     </div>
     </div>
   </main>

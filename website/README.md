@@ -45,14 +45,20 @@ Official reference:
 
 ## Content and interactions
 
-- On an ordinary arrival at the top of the page, a chrome `distill.` wordmark
-  catches a moving curved highlight on black, following `logo.mp4`. After one
-  5.8-second pass it shrinks into the real header wordmark over 1.15 seconds as
-  the site fades into view. The command animation starts after that handoff.
+- On an ordinary arrival at the top of the page, the original chrome `distill.`
+  wordmark plays on black, following `logo.mp4`. Three overlapping gradient layers
+  turn, stretch, and change direction independently across the letters. Sharp
+  light folds alternate with a soft haze whose blur and intensity breathe through
+  the animation. The silhouette stays sharp. The light motion keeps its original
+  5.8-second pace; after 2.2 seconds, it starts shrinking into the real header
+  wordmark over 0.75 seconds as the site fades into view. The intro lasts
+  2.95 seconds total, capped at 3 seconds by the fail-open watchdog. Highlight
+  opacity fades independently during the handoff so the slow animation can end
+  smoothly before its full cycle completes. The command animation starts afterward.
   The finish uses CSS gradients and a measured Web Animations transform, with
   no new dependencies. Skip intro and Escape reveal the site immediately.
   Reduced motion, anchor links, history returns, unsupported animation APIs,
-  and disabled JavaScript open the site directly. A nine-second fail-open
+  and disabled JavaScript open the site directly. A three-second fail-open
   watchdog protects access if initialization fails. `logo-intro.css` contains
   the finish and reveal styles; resizing during the handoff ends it cleanly.
 - A dark opening shows an AI agent proposing a command. The command types in,
@@ -93,15 +99,15 @@ Official reference:
   sharing, opt-in script excerpts, and encrypted API key storage. The website
   itself does not connect to model providers or collect credentials.
 - A model-cost note recommends a small, capable model for high-volume command
-  review. The maintainer reports a real-world GPT-6 Luna test of 610 requests for
-  $0.12: approximately $0.00020/request or $0.20/1,000 requests, in USD. These are
-  rounded observed/extrapolated costs, not a quoted API tariff. The official
+  review. The maintainer reports a real-world GPT-6 Luna test of 1,000 requests for
+  $0.15 USD. The page shows the request count and total spend without a redundant
+  normalized-cost metric. These are observed costs, not a quoted API tariff. The official
   model page is linked for context. Sub-second responses are reported as observed
   cases, not a universal latency guarantee; checked-in live samples also include
   slower replies. The speed summary reflects compact severity-only prompts,
   bounded context, matching-result caching and deduplication, reusable provider
   connections, and background model work in the current service implementation.
-  The three cost/request figures count up once when the statistics enter the
+  The request count and total spend count up once when the statistics enter the
   viewport, easing to their final values over roughly 2.3 seconds. Reduced motion,
   missing observer support, and disabled JavaScript show final values immediately;
   screen readers receive stable final figures throughout the animation. The
@@ -109,14 +115,11 @@ Official reference:
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
-- The installation section explicitly lists macOS and Linux as supported, with
-  Windows coming soon as the maintainer's announced direction. Existing platform
-  guards, packaging targets, documentation, and macOS/Ubuntu CI confirm that Linux
-  support already exists; it is not labeled as a future platform. Linux desktop
-  packages require glibc, and both supported platforms target arm64/x64. Native
-  critical-command approval dialogs remain macOS-only; the FAQ states that other
-  platforms retain their denial fallback. This is a source/packaging support
-  check, not a new runtime certification on Linux or Windows.
+- The installation section and editor FAQ list macOS and Windows as supported,
+  with Linux coming soon pending runtime testing, following the maintainer's
+  release status. Native critical-command approval dialogs remain macOS-only;
+  the FAQ states that other platforms retain their denial fallback. This website
+  copy update does not perform new platform runtime testing.
 - Examples are actual CLI 0.4.6 reports recorded on macOS with explicit Bash
   context and `/tmp` as the working directory. The page does not execute or
   analyze user-supplied commands. See `assets/example-reports.json` for their
