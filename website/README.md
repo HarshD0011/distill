@@ -112,6 +112,17 @@ Official reference:
   missing observer support, and disabled JavaScript show final values immediately;
   screen readers receive stable final figures throughout the animation. The
   observed latency bound remains static.
+- The latest local benchmark reports **47/48 commands** matching the revised
+  model rubric, up from 35/48, with two uncached reviews per command. All 24 fresh
+  challenge cases match, up from 15/24. Median advice latency is **148 ms**, with
+  **166 ms p95**. These GPT-6 Luna / OpenAI Decisions results are from a small
+  synthetic set, not a general accuracy guarantee; billing was not measured in
+  this evaluation. The linked `assets/review-benchmark.json` contains the frozen
+  expected labels, before/after replies, per-review timings and limitations.
+  The copy also describes the verified static fix for recursive shared-home
+  deletion in Python, shell and Node under the default policy. Static checks do
+  not require model advice. The benchmark and fix are labeled as local test-build
+  evidence, separately from the older maintainer-reported cost test.
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
