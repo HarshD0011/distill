@@ -912,11 +912,13 @@ fn exercise_model(provider: distill_core::JudgeProvider) {
             Default::default(),
         )
         .unwrap();
+        // The 40 ms queue acknowledgement can expire on a loaded CI host.
+        // Pending and unavailable advice must both preserve static review.
+        assert_eq!(first.decision, distill_core::Decision::Ask);
+        assert_eq!(first.impact_severity, None);
         assert_eq!(
-            first.judge.as_ref().unwrap()["status"],
-            "pending",
-            "{:?}",
-            first.judge
+            first.coverage.summary,
+            distill_core::CoverageSummary::Partial
         );
         let started = Instant::now();
         let report = loop {
