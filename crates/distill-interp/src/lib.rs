@@ -76,6 +76,7 @@ struct Analyzer<'a> {
     shell_options: Option<Vec<String>>,
     secret_targets: Vec<PathBuf>,
     remote_targets: Vec<PathBuf>,
+    home_roots: std::cell::OnceCell<Vec<(PathBuf, bool)>>,
 }
 
 impl Analyzer<'_> {
@@ -905,7 +906,7 @@ impl Analyzer<'_> {
     }
 
     fn protected(&self, path: &Path) -> bool {
-        if application_path(path) {
+        if application_path(path) || self.home_boundary(path) {
             return true;
         }
         if path == Path::new("/") {
@@ -925,17 +926,58 @@ impl Analyzer<'_> {
         })
     }
 
+    /// Shared home containers and complete user homes are destructive boundaries,
+    /// even when they are not the current account's HOME. Keep project subtrees
+    /// under a home on the ordinary effect policy. Resolve aliases once per
+    /// analysis so shell paths and language literals recognize the same roots.
+    fn home_boundary(&self, path: &Path) -> bool {
+        self.home_roots
+            .get_or_init(|| {
+                let mut roots = Vec::new();
+                for (name, container) in [
+                    ("/home", true),
+                    ("/Users", true),
+                    ("/var/home", true),
+                    ("/export/home", true),
+                    ("/root", false),
+                ] {
+                    let root = PathBuf::from(name);
+                    if let Some(resolved) = physical_path(&root)
+                        && resolved != root
+                    {
+                        roots.push((resolved, container));
+                    }
+                    roots.push((root, container));
+                }
+                roots
+            })
+            .iter()
+            .any(|(root, container)| path == root || (*container && path.parent() == Some(root)))
+    }
+
     fn root_or_home(&self, raw: &str, path: Option<&Path>) -> bool {
         if matches!(
             raw,
-            "/" | "/*" | "~" | "~/" | "~/*" | "$HOME" | "${HOME}" | "$HOME/" | "$HOME/*"
+            "/" | "/*"
+                | "~"
+                | "~/"
+                | "~/*"
+                | "$HOME"
+                | "${HOME}"
+                | "$HOME/"
+                | "$HOME/*"
+                | "/home"
+                | "/Users"
+                | "/var/home"
+                | "/export/home"
+                | "/root"
         ) {
             return true;
         }
         let Some(path) = path else {
             return false;
         };
-        if path == Path::new("/") {
+        if path == Path::new("/") || self.home_boundary(path) {
             return true;
         }
         if let Some(home) = std::env::var_os("HOME")
@@ -1730,6 +1772,7 @@ fn analyzer_for<'a>(request: &AnalyzeRequest, config: &'a Config) -> Analyzer<'a
         shell_options: request.context.shell_options.clone(),
         secret_targets: Vec::new(),
         remote_targets: Vec::new(),
+        home_roots: Default::default(),
     }
 }
 

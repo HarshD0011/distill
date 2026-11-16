@@ -1,5 +1,8 @@
 //! Content bindings and private local keys. No candidate code is executed here.
-use crate::AnalysisBudget;
+use crate::{
+    AnalysisBudget,
+    platform::{self, PrivateFileMode},
+};
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -107,47 +110,17 @@ impl FileSnapshot {
     }
 }
 
-pub fn private_directory(path: &Path) -> Result<(), String> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::{DirBuilderExt, MetadataExt};
-        let mut builder = fs::DirBuilder::new();
-        builder.recursive(true).mode(0o700);
-        builder.create(path).map_err(|e| e.to_string())?;
-        let metadata = fs::symlink_metadata(path).map_err(|e| e.to_string())?;
-        if !metadata.is_dir()
-            || metadata.file_type().is_symlink()
-            || metadata.uid() != unsafe { libc::geteuid() }
-            || metadata.mode() & 0o077 != 0
-        {
-            return Err("State directory must be private and owned by the current user".into());
-        }
-        Ok(())
-    }
-    #[cfg(not(unix))]
-    {
-        let _ = path;
-        Err("Private state requires Unix".into())
-    }
-}
+pub use platform::private_directory;
 
 pub fn read_private(path: &Path, cap: usize) -> Result<Vec<u8>, String> {
-    let mut options = fs::OpenOptions::new();
-    options.read(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let file = options.open(path).map_err(|e| e.to_string())?;
+    let file = platform::open_private(path, PrivateFileMode::Read)?;
+    read_private_handle(&file, cap)
+}
+
+/// Read using the already verified/locked handle, not a second path lookup.
+pub(crate) fn read_private_handle(file: &fs::File, cap: usize) -> Result<Vec<u8>, String> {
+    platform::validate_private_file(file)?;
     let metadata = file.metadata().map_err(|e| e.to_string())?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        if metadata.uid() != unsafe { libc::geteuid() } || metadata.mode() & 0o077 != 0 {
-            return Err("State file permissions are not private".into());
-        }
-    }
     if !metadata.is_file() || metadata.len() > cap as u64 {
         return Err("Invalid state file".into());
     }
@@ -162,9 +135,11 @@ pub fn read_private(path: &Path, cap: usize) -> Result<Vec<u8>, String> {
 }
 
 pub fn key_path(config: &crate::Config) -> Option<PathBuf> {
-    config.security.label_key_path.clone().or_else(|| {
-        std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".config/distill/label.key"))
-    })
+    config
+        .security
+        .label_key_path
+        .clone()
+        .or_else(|| platform::config_directory().map(|path| path.join("label.key")))
 }
 pub fn create_key(path: &Path) -> Result<(), String> {
     private_directory(path.parent().ok_or("Key requires a parent directory")?)?;
@@ -179,19 +154,9 @@ pub fn create_key(path: &Path) -> Result<(), String> {
         return Ok(());
     }
     let mut bytes = [0; 32];
-    fs::File::open("/dev/urandom")
-        .and_then(|mut f| f.read_exact(&mut bytes))
-        .map_err(|e| e.to_string())?;
-    let mut options = fs::OpenOptions::new();
-    options.write(true).create_new(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.mode(0o600);
-    }
-    options
-        .open(path)
-        .and_then(|mut file| file.write_all(&bytes))
+    platform::random_bytes(&mut bytes)?;
+    platform::open_private(path, PrivateFileMode::CreateNew)?
+        .write_all(&bytes)
         .map_err(|e| e.to_string())
 }
 pub fn sign(key: &[u8], text: &str) -> String {

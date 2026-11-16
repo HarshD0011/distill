@@ -13,8 +13,9 @@ function runWithInput(binary, args, { input, ...options }) {
 }
 const { CUSTOM_MODEL } = require('./models');
 const REASONING_EFFORTS = ['provider_default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+const API_MODES = ['provider_default', 'decisions'];
 const PRESETS = {
-  openai_compatible: { endpoint: 'https://api.openai.com/v1/chat/completions', model: 'gpt-6-luna', key: 'OPENAI_API_KEY' },
+  openai_compatible: { endpoint: 'https://api.openai.com/v1/chat/completions', decisionsEndpoint: 'https://api.openai.com/v1/decisions', model: 'gpt-6-luna', key: 'OPENAI_API_KEY' },
   gemini: { endpoint: 'https://generativelanguage.googleapis.com/v1beta', model: 'gemini-3.1-flash-lite', key: 'GEMINI_API_KEY' },
   claude: { endpoint: 'https://api.anthropic.com/v1/messages', model: 'claude-haiku-5-5', key: 'ANTHROPIC_API_KEY' },
   llama_cpp: { endpoint: 'http://127.0.0.1:8080/v1/chat/completions', model: '', key: '' },
@@ -28,7 +29,11 @@ function readRouterSettings(configuration) {
   const provider = read('provider', 'openai_compatible');
   if (!Object.hasOwn(PRESETS, provider)) throw new Error('Unsupported LLM provider.');
   const preset = PRESETS[provider];
-  const endpoint = read('endpoint', '') || preset.endpoint;
+  const apiMode = read('apiMode', 'provider_default');
+  if (!API_MODES.includes(apiMode)) throw new Error('Select a valid API mode.');
+  const decisions = apiMode === 'decisions';
+  if (decisions && provider !== 'openai_compatible') throw new Error('Decisions requires the OpenAI / compatible API provider.');
+  const endpoint = read('endpoint', '') || (decisions ? preset.decisionsEndpoint : preset.endpoint);
   const enabled = read('enabled', false);
   const selection = read('model', '');
   const model = selection === CUSTOM_MODEL ? read('customModel', '') : selection || preset.model;
@@ -46,15 +51,20 @@ function readRouterSettings(configuration) {
   const send_script_contents = read('sendScriptContents', false);
   const review_format = read('reviewFormat', 'severity');
   const batch_window_ms = read('batchWindowMs', 0);
+  const critical_descriptions = read('criticalDescriptions', false);
   if (!['severity', 'effects'].includes(review_format) || !Number.isInteger(batch_window_ms) || batch_window_ms < 0 || batch_window_ms > 500 || batch_window_ms >= background_deadline_ms || (batch_window_ms > 0 && review_format !== 'severity')) throw new Error('Batch window must be 0–500 ms, shorter than the timeout, and requires severity reviews.');
   const url = new URL(endpoint);
+  if (typeof critical_descriptions !== 'boolean') throw new Error('Critical descriptions must be on or off.');
+  if (critical_descriptions && (provider !== 'openai_compatible' || !/\/(?:chat\/completions|decisions)$/.test(url.pathname))) throw new Error('Critical descriptions require an OpenAI-compatible Chat Completions or Decisions connection.');
+  if (decisions && (model !== 'gpt-6-luna' || reasoning !== 'provider_default' || review_format !== 'severity')) throw new Error('Decisions requires GPT-6 Luna, Severity only, and Provider default reasoning (the reasoning control is not sent).');
+  if (decisions && url.pathname.endsWith('/chat/completions') || !decisions && url.pathname.endsWith('/decisions')) throw new Error('Select an endpoint matching the API mode. Leave it empty to use the preset.');
   if (typeof enabled !== 'boolean' || typeof send_script_contents !== 'boolean' || typeof model !== 'string' || model.length > 256 || (enabled && !model.trim())) throw new Error('Select a served model before enabling the local LLM router.');
   if (endpoint.length > 2048 || url.username || url.password || url.hash || !(url.protocol === 'https:' || (url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)))) throw new Error('LLM endpoint must use HTTPS or loopback HTTP, without URL credentials.');
   if (typeof api_key_env !== 'string' || !/^[A-Z0-9_]*$/.test(api_key_env)) throw new Error('LLM API Key Env must be an environment-variable name, or empty for a keyless server.');
   if (enabled && ['gemini', 'claude'].includes(provider) && !api_key_env) throw new Error('Gemini and Claude require an API key environment-variable name.');
   if (provider === 'gemini' && (url.search || url.pathname.includes(':generateContent'))) throw new Error('Gemini endpoint must be the API base URL; select the model separately.');
   if (!Number.isInteger(max_output_tokens) || max_output_tokens < 64 || max_output_tokens > 2048 || !Number.isInteger(deadline_ms) || deadline_ms < 20 || deadline_ms > 800) throw new Error('LLM output or deadline limit is invalid.');
-  return { enabled, provider, endpoint, model, api_key_env, max_output_tokens, deadline_ms, background_deadline_ms, send_script_contents, review_format, batch_window_ms, max_script_bytes: 8192, ...(reasoning === 'provider_default' ? {} : { reasoning_effort: reasoning }) };
+  return { enabled, provider, ...(decisions ? { api_mode: 'decisions' } : {}), endpoint, model, api_key_env, max_output_tokens, deadline_ms, background_deadline_ms, send_script_contents, review_format, batch_window_ms, max_script_bytes: 8192, ...(critical_descriptions ? { critical_descriptions: true } : {}), ...(reasoning === 'provider_default' ? {} : { reasoning_effort: reasoning }) };
 }
 
 // execFile does not accept stdin. Keep JSON off command arguments and bound both
@@ -99,4 +109,4 @@ async function syncRouter({ binary, hosts, router, env = process.env, credential
   return { ...result, running: Boolean(status.running), model: router.model, enabled: router.enabled };
 }
 
-module.exports = { PRESETS, REASONING_EFFORTS, readRouterSettings, syncRouter, configure, runWithInput };
+module.exports = { PRESETS, API_MODES, REASONING_EFFORTS, readRouterSettings, syncRouter, configure, runWithInput };

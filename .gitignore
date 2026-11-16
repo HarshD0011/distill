@@ -54,6 +54,7 @@ __pycache__/
 
 # VS Code extension packages
 *.vsix
+node_modules/
 
 
 # Added by cargo
@@ -63,6 +64,10 @@ __pycache__/
 command-risk-plugin-guide.md
 distill_complete_architecture.md
 
+# Local design and working notes
+/design.md
+/modified.md
+
 # Fuzz build output and transient crash artifacts
 /fuzz/target/
 /fuzz/artifacts/
@@ -70,3 +75,4 @@ distill_complete_architecture.md
 /crash-*
 /timeout-*
 *.env
+*.mp4

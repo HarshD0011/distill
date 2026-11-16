@@ -46,9 +46,14 @@ impl App {
         }
         distill_core::privacy::redact_value(&mut params);
         let key = distill_core::sha256(
-            json!([params, self.config.digest(), "background-1"])
-                .to_string()
-                .as_bytes(),
+            json!([
+                params,
+                self.config.digest(),
+                "background-1",
+                providers::review_prompt_version(&self.config.judge)
+            ])
+            .to_string()
+            .as_bytes(),
         );
         let mut jobs = self.jobs.lock().map_err(|_| "Model queue unavailable")?;
         jobs.entries.retain(|_, job| {

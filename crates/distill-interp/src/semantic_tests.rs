@@ -76,6 +76,105 @@ fn ordinary_home_subdirectories_use_the_shared_delete_policy() {
 }
 
 #[test]
+fn recursive_home_boundary_deletions_are_critical_across_languages() {
+    for target in [
+        "/home",
+        "/home/distill-fixture-user",
+        "/Users",
+        "/Users/distill-fixture-user",
+        "/var/home",
+        "/export/home",
+        "/root",
+    ] {
+        for command in [
+            format!(
+                "python3 -c {}",
+                quoted(&format!("import shutil; shutil.rmtree('{target}')"))
+            ),
+            format!(
+                "python3 -c {}",
+                quoted(&format!(
+                    "from shutil import rmtree as remove; remove('{target}')"
+                ))
+            ),
+            format!("rm -rf {}", quoted(target)),
+            format!(
+                "node -e {}",
+                quoted(&format!(
+                    "require('node:fs').rmSync('{target}',{{recursive:true}})"
+                ))
+            ),
+        ] {
+            let r = report(&command);
+            assert_eq!(
+                r.impact_severity,
+                Some(Severity::Critical),
+                "{command}: {:?}",
+                r.findings
+            );
+            assert_eq!(r.decision, Decision::Deny, "{command}");
+            assert!(
+                r.behaviors
+                    .iter()
+                    .any(|effect| effect.kind == EffectKind::FileDelete
+                        && effect.target_class == distill_core::TargetClass::Protected
+                        && effect.recursive),
+                "{command}"
+            );
+        }
+    }
+}
+
+#[test]
+fn literal_home_roots_remain_protected_when_filesystem_resolution_is_unavailable() {
+    let config = Config::default();
+    let req = request("rm -rf /home");
+    let analyzer = crate::analyzer_for(&req, &config);
+    for target in ["/home", "/Users", "/var/home", "/export/home", "/root"] {
+        assert!(analyzer.root_or_home(target, None), "{target}");
+    }
+    for target in ["/home-backup", "/Users-backup", "/rooted", "$DIRECTORY"] {
+        assert!(!analyzer.root_or_home(target, None), "{target}");
+    }
+}
+
+#[test]
+fn home_boundary_checks_preserve_bounded_deletes_and_component_boundaries() {
+    for target in [
+        "/home-backup",
+        "/Users-backup",
+        "/rooted",
+        "/var/homework",
+        "/export/home-backup",
+        "/Users/distill-fixture-user/project-output",
+        "/tmp/distill-home-fixture/output",
+    ] {
+        for command in [
+            format!(
+                "python3 -c {}",
+                quoted(&format!("import shutil; shutil.rmtree('{target}')"))
+            ),
+            format!("rm -rf {}", quoted(target)),
+            format!(
+                "node -e {}",
+                quoted(&format!(
+                    "require('node:fs').rmSync('{target}',{{recursive:true}})"
+                ))
+            ),
+        ] {
+            let r = report(&command);
+            assert_eq!(
+                r.impact_severity,
+                Some(Severity::Medium),
+                "{command}: {:?}",
+                r.findings
+            );
+            assert_ne!(r.decision, Decision::Deny, "{command}");
+        }
+    }
+}
+
+#[test]
 fn directory_removal_preserves_sensitive_protected_and_unresolved_targets() {
     let home = std::path::PathBuf::from(std::env::var_os("HOME").unwrap());
     let mut req = request("rmdir protected/child");

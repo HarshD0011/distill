@@ -1,9 +1,11 @@
 //! Bounded authenticated IPC. Static analysis does not depend on this service.
 use crate::Config;
 use serde_json::{Value, json};
+#[cfg(unix)]
+use std::io::Read;
 use std::{
     fs,
-    io::{Read, Write},
+    io::Write,
     path::{Path, PathBuf},
     time::{Duration, Instant},
 };
@@ -14,26 +16,13 @@ pub fn directory(config: &Config) -> Result<PathBuf, String> {
         .service
         .directory
         .clone()
-        .or_else(|| {
-            std::env::var_os("HOME").map(|v| PathBuf::from(v).join(".config/distill/service"))
-        })
+        .or_else(crate::platform::service_directory)
         .ok_or_else(|| "Service directory unavailable".into())
 }
 
 pub fn endpoint(config: &Config) -> Result<Value, String> {
     let dir = directory(config)?;
-    let meta = fs::symlink_metadata(&dir).map_err(|e| e.to_string())?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::MetadataExt;
-        if !meta.is_dir()
-            || meta.file_type().is_symlink()
-            || meta.uid() != unsafe { libc::geteuid() }
-            || meta.mode() & 0o077 != 0
-        {
-            return Err("Service directory is not private".into());
-        }
-    }
+    crate::platform::validate_private_directory(&dir)?;
     let bytes = crate::integrity::read_private(&dir.join("endpoint.json"), 16384)?;
     let value: Value = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
     if value["v"] != 1
@@ -54,7 +43,10 @@ pub fn request(
     timeout: Duration,
 ) -> Result<Value, String> {
     let started = Instant::now();
+    #[cfg(not(unix))]
+    let _ = (timeout, started);
     let endpoint = endpoint(config)?;
+    #[cfg(unix)]
     let remaining = || {
         timeout
             .checked_sub(started.elapsed())

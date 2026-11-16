@@ -3,6 +3,7 @@
 function shellQuote(value) { return `'${value.replace(/'/g, `'"'"'`)}'`; }
 
 function mergeHooks(existing, host, binary, workspaceRoot, coveredEvents = new Set()) {
+  const statusMessage = `Distill for ${host === 'codex' ? 'Codex' : 'Claude Code'}`;
   const workspace = workspaceRoot ? ` --workspace-root ${shellQuote(workspaceRoot)}` : '';
   if (!existing || typeof existing !== 'object' || Array.isArray(existing)) throw new Error('Hook configuration must be an object');
   const result = structuredClone(existing);
@@ -21,14 +22,14 @@ function mergeHooks(existing, host, binary, workspaceRoot, coveredEvents = new S
         if (args == null) return handler;
         found = true;
         if (coveredEvents.has(event)) return null;
-        return { ...handler, command: `${shellQuote(binary)} hook ${host}${args}${args.includes('--workspace-root') ? '' : workspace}` };
+        return { ...handler, statusMessage, command: `${shellQuote(binary)} hook ${host}${args}${args.includes('--workspace-root') ? '' : workspace}` };
       }).filter(Boolean) };
     }).filter(group => group.hooks.length);
     if (coveredEvents.has(event)) continue;
     if (found) continue;
     const label = host === 'codex' && event === 'PreToolUse' ? ' --label-command' : '';
     result.hooks[event].push({ matcher: '^(Bash|Write|Edit|MultiEdit)$', hooks: [{
-      type: 'command', command: `${shellQuote(binary)} hook ${host} --mode advisory${label}${workspace}`, timeout: event.startsWith('PostToolUse') ? 10 : 150,
+      type: 'command', statusMessage, command: `${shellQuote(binary)} hook ${host} --mode advisory${label}${workspace}`, timeout: event.startsWith('PostToolUse') ? 10 : 150,
     }] });
   }
   return result;

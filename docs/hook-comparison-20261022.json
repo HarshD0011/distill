@@ -38,7 +38,7 @@
   "before": {
     "phase": "before",
     "recorded_at": "2026-10-22T03:05:47.273913+00:00",
-    "handler": "/Users/harshdhiman/.cargo/bin/distill hook codex --mode advisory --label-command",
+    "handler": "<redacted-home>/.cargo/bin/distill hook codex --mode advisory --label-command",
     "candidate_execution": false,
     "fixture": "/private/tmp/distill-hook-comparison-20261022/fixture",
     "cases": [
@@ -1006,7 +1006,7 @@
   "after": {
     "phase": "after",
     "recorded_at": "2026-10-22T03:32:29.436141+00:00",
-    "handler": "/usr/bin/python3 -I '/Users/harshdhiman/.config/distill/hook-launcher.py' --binary '/Users/harshdhiman/.cargo/bin/distill' --sha256 a00959df2bcb8bff9ca82839335e5d1d46204a17b1412ae855ac6146b5a068c0 hook codex --config '/Users/harshdhiman/.config/distill/hook-policy-codex.toml' --mode advisory --label-command",
+    "handler": "/usr/bin/python3 -I '<redacted-home>/.config/distill/hook-launcher.py' --binary '<redacted-home>/.cargo/bin/distill' --sha256 a00959df2bcb8bff9ca82839335e5d1d46204a17b1412ae855ac6146b5a068c0 hook codex --config '<redacted-home>/.config/distill/hook-policy-codex.toml' --mode advisory --label-command",
     "candidate_execution": false,
     "fixture": "/private/tmp/distill-hook-comparison-20261022/fixture",
     "cases": [

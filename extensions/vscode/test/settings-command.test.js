@@ -23,6 +23,7 @@ test('the shipped LLM settings button opens the masked settings form, with advan
   const preferences = new Map();
   const routedModels = [];
   const routedEfforts = [];
+  const routedApiModes = [];
   const disposable = () => ({ dispose() {} });
   const uri = fsPath => ({ scheme: 'file', fsPath });
   const vscode = {
@@ -61,7 +62,7 @@ test('the shipped LLM settings button opens the masked settings form, with advan
     vscode,
     './install': { trustedBinarySetting: nativeRequire('./install').trustedBinarySetting, ensureBinary: async () => ({ binary: '/trusted/distill' }) },
     './setup': { configureUserHooks: async options => { assert.equal(options.debugLog, ''); return [{ host: 'codex', changed: false }]; } },
-    './router': { readRouterSettings: nativeRequire('./router').readRouterSettings, syncRouter: async ({ router }) => { routedModels.push(router.model); routedEfforts.push(router.reasoning_effort); return { enabled: false, running: false, model: router.model }; } },
+    './router': { readRouterSettings: nativeRequire('./router').readRouterSettings, syncRouter: async ({ router }) => { routedModels.push(router.model); routedEfforts.push(router.reasoning_effort); routedApiModes.push(router.api_mode); return { enabled: false, running: false, model: router.model }; } },
     './client': { connectBroker: async () => ({ broker_version: 7, instance_id: 'test-recorder' }) },
     './transport': { rpc: async () => ({ version: 1, sessions: [], page: { sessionKey: '', offset: 0, limit: 100, total: 0 } }) },
     './titles': { SessionTitles: class { async enrich(sessions) { return sessions; } clear() {} } },
@@ -108,6 +109,13 @@ test('the shipped LLM settings button opens the masked settings form, with advan
   assert.equal(routedModels.at(-1), 'gpt-5.4-mini');
   assert.equal(routedEfforts.at(-1), undefined);
   assert.equal(preferences.get('llm.reasoningEffort'), 'provider_default');
+  await receiveSettings({ type: 'save', values: { ...FIELDS, apiMode: 'decisions', model: 'gpt-6-luna', criticalDescriptions: true }, apiKey: '' });
+  assert.equal(preferences.get('llm.criticalDescriptions'), true);
+  assert.equal(messages.at(-1).values.criticalDescriptions, true);
+  assert.equal(preferences.get('llm.apiMode'), 'decisions');
+  assert.equal(routedApiModes.at(-1), 'decisions');
+  assert.equal(routedEfforts.at(-1), undefined);
+  assert.equal(messages.at(-1).values.apiMode, 'decisions');
   await receiveSettings({ type: 'advanced' });
   assert.equal(opened.length, 1);
   assert.equal(opened[0].id, 'workbench.action.openSettings');

@@ -6,7 +6,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { promisify } = require('node:util');
 const execFile = promisify(require('node:child_process').execFile);
-const { configureUserHooks, detectHosts } = require('../src/setup');
+const { configureUserHooks, detectHosts, HookSetupDeclined } = require('../src/setup');
 const extensionPath = path.resolve(__dirname, '..');
 const binary = process.env.DISTILL_TEST_BINARY || path.resolve(extensionPath, '../../target/debug/distill');
 
@@ -88,6 +88,73 @@ test('Codex is configured on first install and existing Claude installs are also
   assert.deepEqual(detectHosts(options.home), ['codex']);
   fs.mkdirSync(path.join(options.home, '.claude'));
   assert.deepEqual(detectHosts(options.home), ['codex', 'claude']);
+});
+
+test('a hook document edited during approval prevents writes to every service', async t => {
+  const options = fixture(t);
+  const calls = [];
+  let dirty = false;
+  await assert.rejects(configureUserHooks({ ...options, hosts: ['codex', 'claude'], debugLog: '',
+    run: async (_binary, args) => {
+      calls.push(args);
+      const host = args[1];
+      return { stdout: JSON.stringify({ path: path.join(options.home, host, 'hooks.json'), policy_path: path.join(options.home, `${host}.toml`), configuration: { hooks: {} } }) };
+    },
+    approve: async () => { dirty = true; return true; },
+    isDirty: file => dirty && file.includes('claude'),
+  }), /Save or revert/);
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(args => args.includes('--check')));
+  assert.deepEqual(fs.readdirSync(options.home), []);
+});
+
+test('one named setup approval covers every host and lifecycle event; declining writes nothing', { skip: !fs.existsSync(binary) }, async t => {
+  const options = { ...fixture(t), hosts: ['codex', 'claude'] };
+  let prompts = 0;
+  const approve = async services => {
+    prompts++;
+    assert.deepEqual(services.map(service => service.name), ['Distill for Codex', 'Distill for Claude Code']);
+    assert.equal(fs.existsSync(path.join(options.home, '.codex/hooks.json')), false);
+    assert.equal(fs.existsSync(path.join(options.home, '.claude/settings.json')), false);
+    return false;
+  };
+  await assert.rejects(configureUserHooks({ ...options, approve }), HookSetupDeclined);
+  assert.equal(prompts, 1);
+  assert.deepEqual(fs.readdirSync(options.home), []);
+  const setups = await configureUserHooks({ ...options, approve: async services => { prompts++; assert.equal(services.length, 2); return true; } });
+  assert.equal(prompts, 2);
+  for (const setup of setups) {
+    const name = setup.host === 'codex' ? 'Distill for Codex' : 'Distill for Claude Code';
+    assert.equal(setup.service_name, name);
+    const hooks = JSON.parse(fs.readFileSync(setup.path)).hooks;
+    assert.deepEqual(Object.keys(hooks).sort(), (setup.host === 'codex' ? ['PreToolUse', 'PermissionRequest', 'PostToolUse'] : ['PreToolUse', 'PostToolUse', 'PostToolUseFailure']).sort());
+    for (const groups of Object.values(hooks)) {
+      assert.equal(groups.length, 1);
+      assert.equal(groups[0].hooks.length, 1);
+      assert.equal(groups[0].hooks[0].statusMessage, name);
+    }
+  }
+  await configureUserHooks({ ...options, approve: () => assert.fail('Unchanged setup must not ask again') });
+});
+
+test('upgrades consolidate unnamed duplicate Distill handlers and preserve strict mode and unrelated hooks', { skip: !fs.existsSync(binary) }, async t => {
+  const options = fixture(t);
+  const [first] = await configureUserHooks(options);
+  const existing = JSON.parse(fs.readFileSync(first.path));
+  const strict = structuredClone(existing.hooks.PreToolUse[0]);
+  delete strict.hooks[0].statusMessage;
+  strict.hooks[0].command = strict.hooks[0].command.replace('--mode advisory --label-command', '--mode strict');
+  const other = { matcher: 'Bash', hooks: [{ type: 'command', command: 'echo another-service', statusMessage: 'Another service' }] };
+  existing.hooks.PreToolUse.push(strict, other);
+  fs.writeFileSync(first.path, JSON.stringify(existing));
+  let prompts = 0;
+  await configureUserHooks({ ...options, approve: async services => { prompts++; assert.equal(services[0].name, 'Distill for Codex'); return true; } });
+  const updated = JSON.parse(fs.readFileSync(first.path)).hooks.PreToolUse;
+  assert.equal(prompts, 1);
+  assert.equal(updated.length, 2);
+  assert.deepEqual(updated[0], other);
+  assert.equal(updated[1].hooks[0].statusMessage, 'Distill for Codex');
+  assert.match(updated[1].hooks[0].command, /--mode strict/);
 });
 
 test('hook diagnostics survive automatic refresh and remain optional', { skip: !fs.existsSync(binary) }, async t => {

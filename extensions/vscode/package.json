@@ -1,14 +1,17 @@
 {
   "name": "distill-trace",
   "displayName": "Distill \u2014 Chat Command Trace",
-  "description": "Temporary per-chat command history with Distill severity, policy decisions, and output.",
-  "version": "0.5.10",
+  "description": "Command safety checks and temporary chat traces for Codex and Claude Code. Includes the Distill CLI with guided hook setup.",
+  "version": "0.5.15",
   "publisher": "distill",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/harshdhiman/distill"
   },
+  "homepage": "https://github.com/harshdhiman/distill#readme",
+  "bugs": { "url": "https://github.com/harshdhiman/distill/issues" },
+  "keywords": ["distill", "codex", "claude", "command safety", "hooks", "trace"],
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -137,6 +140,14 @@
           "default": "openai_compatible",
           "scope": "machine",
           "description": "Request format and endpoint preset. Uses exactly the selected model; never falls back to a cloud or more expensive model."
+        },
+        "distill.llm.apiMode": {
+          "type": "string",
+          "enum": ["provider_default", "decisions"],
+          "enumItemLabels": ["Provider default API", "OpenAI Decisions (GPT-6 Luna)"],
+          "default": "provider_default",
+          "scope": "machine",
+          "description": "Select OpenAI Decisions for typed severity classifications with GPT-6 Luna. Requires OpenAI / compatible API, Severity only, and Provider default reasoning; reasoning and output-token controls are not sent. Empty endpoint uses the selected API preset. Existing provider behavior is preserved by default."
         },
         "distill.llm.endpoint": {
           "type": "string",
@@ -311,6 +322,12 @@
           "scope": "machine",
           "description": "Legacy synchronous model budget. Background advice uses Background Deadline Ms; the hook waits at most 40 ms for a local queue acknowledgement."
         },
+        "distill.llm.criticalDescriptions": {
+          "type": "boolean",
+          "default": false,
+          "scope": "machine",
+          "description": "Explain critical commands in the macOS approval dialog using GPT-6 Luna on the selected OpenAI-compatible connection. Requires enabled LLM routing. Uses a separate, bounded text request with normal input/output charges, including when verdicts use Decisions. Explanations never grant approval."
+        },
         "distill.llm.sendScriptContents": {
           "type": "boolean",
           "default": false,
@@ -365,5 +382,7 @@
     "check": "node scripts/check.js",
     "package": "python3 scripts/package.py",
     "sync-models": "node scripts/sync-models.js"
-  }
+  },
+  "devDependencies": { "@vscode/vsce": "4.1.0" },
+  "overrides": { "minimatch": "11.0.6" }
 }

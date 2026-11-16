@@ -2,8 +2,9 @@
 //! This bridge never writes commands, reports, or output to disk.
 use distill_core::{Integration, Report};
 use serde_json::{Value, json};
+#[cfg(unix)]
+use std::io::{Read, Write};
 use std::{
-    io::{Read, Write},
     path::{Path, PathBuf},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
@@ -382,6 +383,17 @@ fn exchange(endpoint: &Value, message: Value, deadline: Instant) -> Result<Value
     exchange_in_directory(endpoint, message, deadline, &directory)
 }
 
+#[cfg(not(unix))]
+fn exchange_in_directory(
+    _endpoint: &Value,
+    _message: Value,
+    _deadline: Instant,
+    _directory: &Path,
+) -> Result<Value, String> {
+    Err("Authenticated trace transport is not implemented on this platform".into())
+}
+
+#[cfg(unix)]
 fn exchange_in_directory(
     endpoint: &Value,
     mut message: Value,
@@ -446,6 +458,7 @@ fn exchange_in_directory(
     Ok(ack)
 }
 
+#[cfg(unix)]
 fn trace_io_error(error: std::io::Error) -> String {
     if matches!(
         error.kind(),

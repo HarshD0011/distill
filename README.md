@@ -6,7 +6,7 @@ The workspace contains the embedded Rust analyzer, Codex/Claude Bash and direct-
 
 ## Build and install
 
-For VS Code users, the [Distill extension](extensions/vscode/README.md#install-and-connect) bundles and automatically installs the CLI and configures its hooks. Install the platform-specific VSIX, open a trusted local folder, and approve the hooks in your agent. No separate CLI, Rust, or Python installation is required.
+For VS Code users, the [Distill extension](extensions/vscode/README.md#install-and-connect) bundles and automatically installs the CLI and optional service. Install the platform-specific VSIX, open a trusted local folder, and choose **Connect Distill** once. Review the named **Distill for Codex** or **Distill for Claude Code** handlers in your agent. No separate CLI, Rust, or Python installation is required.
 
 ```sh
 cargo test --workspace

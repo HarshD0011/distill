@@ -40,6 +40,9 @@ pub fn configure_router(
     judge: distill_core::JudgeConfig,
     memory_only: bool,
 ) -> Result<Value, String> {
+    if cfg!(windows) {
+        return Err("Native Windows hook and router setup is not implemented".into());
+    }
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
     let path = policy_path(&home, host);
     let original = read_user_file(&path)?;
@@ -74,6 +77,9 @@ pub fn configure(
     node_runtime: Option<&Path>,
     debug_log: Option<&Path>,
 ) -> Result<Value, String> {
+    if cfg!(windows) {
+        return Err("Native Windows hook setup is not implemented".into());
+    }
     if debug_log.is_some_and(|path| !path.is_absolute()) {
         return Err("Hook debug log path must be absolute".into());
     }
@@ -199,7 +205,12 @@ pub fn configure(
         } else {
             150
         };
-        groups.push(json!({"matcher": "^(Bash|Write|Edit|MultiEdit)$", "hooks": [{"type": "command", "command": command, "timeout": timeout}]}));
+        let service_name = if host == "codex" {
+            "Codex"
+        } else {
+            "Claude Code"
+        };
+        groups.push(json!({"matcher": "^(Bash|Write|Edit|MultiEdit)$", "hooks": [{"type": "command", "command": command, "timeout": timeout, "statusMessage": format!("Distill for {service_name}")}]}));
     }
     let inventory = crate::hook_sources::inspect(host, roots)?;
     if inventory["handlers"]
@@ -249,7 +260,8 @@ pub fn configure(
     Ok(
         json!({"path": file, "policy_path": policy, "configuration": existing, "binary": binary, "binary_sha256": digest, "changed": !check, "workspace_warnings": inventory["warnings"],
         "project_handlers": inventory["handlers"].as_array().into_iter().flatten().filter(|h| h["scope"] == "project").collect::<Vec<_>>(),
-        "next_step": if host == "codex" { "Review and trust the changed user hooks in /hooks" } else { "Restart or resume Claude Code to load user hooks" }}),
+        "service_name": if host == "codex" { "Distill for Codex" } else { "Distill for Claude Code" },
+        "next_step": if host == "codex" { "Review and trust Distill for Codex in /hooks" } else { "Restart or resume Claude Code to load Distill for Claude Code" }}),
     )
 }
 fn quote(path: &Path) -> String {
@@ -260,6 +272,9 @@ fn user_directory(path: &Path) -> Result<(), String> {
         return private_directory(path);
     }
     let metadata = fs::symlink_metadata(path).map_err(|e| e.to_string())?;
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return Err("User hook directory must be a real directory".into());
+    }
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;

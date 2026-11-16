@@ -1,20 +1,26 @@
 //! Optional service. Neither SQLite nor HTTP is linked into the hook binary.
+// The existing server is compile-checked on Windows but remains unreachable
+// until authenticated Windows transport is implemented.
+#![cfg_attr(not(unix), allow(dead_code))]
 use clap::Parser;
 use distill_core::{Config, service_ipc};
 use serde_json::{Value, json};
 use std::{
     collections::BTreeMap,
     fs,
-    io::{Read, Write},
+    io::Read,
     path::{Path, PathBuf},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, Ordering},
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
+#[cfg(unix)]
+use std::{io::Write, sync::atomic::AtomicUsize};
 mod background;
 mod concurrency;
+mod descriptions;
 mod providers;
 mod severity;
 
@@ -83,10 +89,10 @@ fn database(config: &Config, dir: &Path) -> Result<Option<rusqlite::Connection>,
     }
     options.open(&path).map_err(|e| e.to_string())?;
     // Validate type and ownership without following links before opening SQLite.
-    let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;
+        let meta = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
         if !meta.is_file()
             || meta.file_type().is_symlink()
             || meta.uid() != unsafe { libc::geteuid() }
@@ -347,6 +353,7 @@ impl App {
             "judge" => self.judge(params),
             "judge_enqueue" => self.enqueue(params),
             "judge_results" => self.advice_results(params),
+            "describe_critical" => self.describe_critical(params),
             "stop" => {
                 self.stop.store(true, Ordering::SeqCst);
                 Ok(json!({"stopping":true}))
@@ -602,9 +609,7 @@ fn serve(
     fs::set_permissions(&socket, fs::Permissions::from_mode(0o600)).map_err(|e| e.to_string())?;
     listener.set_nonblocking(true).map_err(|e| e.to_string())?;
     let mut random = [0u8; 32];
-    fs::File::open("/dev/urandom")
-        .and_then(|mut f| f.read_exact(&mut random))
-        .map_err(|e| e.to_string())?;
+    distill_core::platform::random_bytes(&mut random)?;
     let token = distill_core::sha256(&random);
     providers::endpoint(&config.judge)?;
     let client = reqwest::blocking::Client::builder()
@@ -764,7 +769,7 @@ fn serve(
 
 fn main() {
     let args = Args::parse();
-    let result = Config::load(args.config.as_deref()).and_then(|config| {
+    let result: Result<(), String> = Config::load(args.config.as_deref()).and_then(|config| {
         let credential = if args.credential_stdin {
             distill_core::credentials::ServiceCredential::read(
                 std::io::stdin().lock(),
@@ -779,8 +784,8 @@ fn main() {
         }
         #[cfg(not(unix))]
         {
-            let _ = config;
-            Err("Service requires Unix".into())
+            let _ = (config, credential);
+            Err("Authenticated Windows service transport is not implemented".into())
         }
     });
     if let Err(error) = result {

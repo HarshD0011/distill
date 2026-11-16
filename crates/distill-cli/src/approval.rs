@@ -40,7 +40,7 @@ pub fn finish(args: &[String], input: &[u8], bytes: &[u8]) -> Result<Vec<u8>, St
             &response,
             &config,
             no_prompt,
-            native_dialog,
+            |prompt| native_dialog(prompt, &config),
             || {
                 let (_, current, _) = configuration(args)?;
                 if current.digest() != config.digest() {
@@ -136,7 +136,7 @@ fn decide(
     response: &Value,
     config: &Config,
     no_prompt: bool,
-    ask: impl FnOnce(&str) -> Result<bool, String>,
+    ask: impl FnOnce(&ApprovalPrompt) -> Result<bool, String>,
     policy_current: impl FnOnce() -> Result<(), String>,
 ) -> Value {
     let result: Result<(), String> = (|| {
@@ -214,50 +214,71 @@ fn visible(text: &str) -> String {
         .collect()
 }
 
-fn prompt(command: &str, report: &Value, response: &Value) -> Result<String, String> {
-    let message = format!(
-        "CRITICAL command — explicit approval required\n\nWorking directory:\n{}\n\nExact command (control characters escaped):\n{}\n\n{}\n\nApprove once permits only this invocation. Automatic/model approval does not count. This dialog expires in 120 seconds.",
-        visible(report["cwd"].as_str().unwrap_or("")),
-        visible(command),
-        response["systemMessage"]
+#[derive(Clone, serde::Serialize)]
+struct ApprovalPrompt {
+    #[cfg(target_os = "macos")]
+    #[serde(skip)]
+    command_source: String,
+    #[cfg(target_os = "macos")]
+    #[serde(skip)]
+    cwd_source: String,
+    command: String,
+    cwd: String,
+    reason: String,
+    explanation: Option<String>,
+    description_unavailable: bool,
+}
+
+fn prompt(command: &str, report: &Value, response: &Value) -> Result<ApprovalPrompt, String> {
+    let prompt = ApprovalPrompt {
+        #[cfg(target_os = "macos")]
+        command_source: command.into(),
+        #[cfg(target_os = "macos")]
+        cwd_source: report["cwd"].as_str().unwrap_or("").into(),
+        cwd: visible(report["cwd"].as_str().unwrap_or("")),
+        command: visible(command),
+        reason: response["systemMessage"]
             .as_str()
             .unwrap_or("")
             .split("\nExplicit human approval required.")
             .next()
             .unwrap()
             .lines()
+            .filter(|line| !line.starts_with("Distill | Severity:"))
             .map(visible)
             .collect::<Vec<_>>()
-            .join("\n")
-    );
-    if message.len() > 8192 {
+            .join("\n"),
+        explanation: None,
+        description_unavailable: false,
+    };
+    if prompt.command.len() + prompt.cwd.len() + prompt.reason.len() > 8192 {
         return Err("Command is too long to display completely in the approval dialog".into());
     }
-    Ok(message)
+    Ok(prompt)
 }
 
 #[cfg(target_os = "macos")]
-const DIALOG: &str = r#"ObjC.import('AppKit');
-function run(argv) {
-    var app = $.NSApplication.sharedApplication;
-    app.setActivationPolicy(0);
-    app.finishLaunching;
-    var alert = $.NSAlert.alloc.init;
-    alert.messageText = 'Distill — CRITICAL command';
-    alert.informativeText = argv[0];
-    alert.alertStyle = 2;
-    alert.addButtonWithTitle('Deny');
-    alert.addButtonWithTitle('Approve once');
-    var window = alert.window;
-    window.level = 8;
-    window.collectionBehavior = 1 | 256;
-    window.hidesOnDeactivate = false;
-    window.center;
-    app.activateIgnoringOtherApps(true);
-    window.makeKeyAndOrderFront(null);
-    window.orderFrontRegardless;
-    return Number(alert.runModal) === 1001 ? 'DISTILL_APPROVED_ONCE' : 'DISTILL_DENIED';
-}"#;
+const DIALOG: &str = include_str!("approval_dialog.js");
+
+#[cfg(target_os = "macos")]
+fn command_description(config: &Config, prompt: &ApprovalPrompt) -> Option<String> {
+    if !config.judge.enabled || !config.judge.critical_descriptions {
+        return None;
+    }
+    let result = distill_core::service_ipc::request(
+        config,
+        "describe_critical",
+        json!({"command":prompt.command_source,"cwd":prompt.cwd_source,"reason":prompt.reason,"severity":"critical","model_policy_digest":config.model_digest()}),
+        std::time::Duration::from_millis(2000),
+    ).ok()?;
+    if result["status"] != "description" || result["model"] != "gpt-6-luna" {
+        return None;
+    }
+    result["explanation"]
+        .as_str()
+        .filter(|text| !text.trim().is_empty() && text.len() <= 2400 && text.chars().count() <= 600)
+        .map(visible)
+}
 
 #[cfg(target_os = "macos")]
 fn dialog_result(success: bool, output: &str) -> Result<bool, String> {
@@ -269,20 +290,39 @@ fn dialog_result(success: bool, output: &str) -> Result<bool, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn native_dialog(message: &str) -> Result<bool, String> {
+fn native_dialog(prompt: &ApprovalPrompt, config: &Config) -> Result<bool, String> {
     use std::{
-        io::Read,
+        io::{Read, Write},
         process::{Command, Stdio},
         time::{Duration, Instant},
     };
+    let mut prompt = prompt.clone();
+    prompt.explanation = command_description(config, &prompt);
+    prompt.description_unavailable =
+        config.judge.enabled && config.judge.critical_descriptions && prompt.explanation.is_none();
+    let payload = serde_json::to_vec(&prompt).map_err(|_| "Cannot prepare approval dialog")?;
     let mut child = Command::new("/usr/bin/osascript")
-        .args(["-l", "JavaScript", "-e", DIALOG, "--", message])
+        .args(["-l", "JavaScript", "-e", DIALOG])
         .env_clear()
-        .stdin(Stdio::null())
+        .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
         .map_err(|_| "The macOS approval dialog could not start")?;
+    let stdin = child.stdin.take();
+    let (sent, received) = std::sync::mpsc::sync_channel(1);
+    if std::thread::Builder::new()
+        .name("distill-dialog-input".into())
+        .spawn(move || {
+            let ok = stdin.is_some_and(|mut stdin| stdin.write_all(&payload).is_ok());
+            let _ = sent.send(ok);
+        })
+        .is_err()
+    {
+        let _ = child.kill();
+        let _ = child.wait();
+        return Err("The macOS approval dialog could not receive the command".into());
+    }
     let started = Instant::now();
     loop {
         match child.try_wait() {
@@ -294,7 +334,7 @@ fn native_dialog(message: &str) -> Result<bool, String> {
                         .read_to_string(&mut output)
                         .map_err(|e| e.to_string())?;
                 }
-                return dialog_result(status.success(), &output);
+                return dialog_result(status.success() && received.try_recv() == Ok(true), &output);
             }
             Ok(None) if started.elapsed() < Duration::from_secs(120) => {
                 std::thread::sleep(Duration::from_millis(20))
@@ -309,7 +349,7 @@ fn native_dialog(message: &str) -> Result<bool, String> {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn native_dialog(_message: &str) -> Result<bool, String> {
+fn native_dialog(_prompt: &ApprovalPrompt, _config: &Config) -> Result<bool, String> {
     Err(
         "Native critical approval dialogs currently require macOS; this command remains denied"
             .into(),
@@ -340,8 +380,8 @@ mod tests {
                 &config,
                 false,
                 |text| {
-                    assert!(text.contains("touch /tmp/probe.app"));
-                    assert!(text.contains("/tmp"));
+                    assert_eq!(text.command, "touch /tmp/probe.app");
+                    assert_eq!(text.cwd, "/tmp");
                     Ok(accepted)
                 },
                 || Ok(()),
@@ -473,7 +513,7 @@ mod tests {
             &config,
             false,
             |text| {
-                assert!(text.contains("distill-approval-fixture.app"));
+                assert!(text.command.contains("distill-approval-fixture.app"));
                 Ok(true)
             },
             || Ok(()),
@@ -484,7 +524,7 @@ mod tests {
     fn display_cannot_inject_script_source_or_hide_control_characters() {
         let (_, report, response, _) = fixture();
         let text = prompt("echo \"a\"; $(anything)\nnext\u{202e}", &report, &response).unwrap();
-        assert!(text.contains("$(anything)\\nnext\\u{202e}"));
+        assert!(text.command.contains("$(anything)\\nnext\\u{202e}"));
         assert!(prompt(&"x".repeat(8192), &report, &response).is_err());
     }
 }
