@@ -40,6 +40,9 @@ pub fn configure_router(
     judge: distill_core::JudgeConfig,
     memory_only: bool,
 ) -> Result<Value, String> {
+    if cfg!(windows) {
+        return Err("Native Windows hook and router setup is not implemented".into());
+    }
     let home = PathBuf::from(std::env::var_os("HOME").ok_or("HOME unavailable")?);
     let path = policy_path(&home, host);
     let original = read_user_file(&path)?;
@@ -74,6 +77,9 @@ pub fn configure(
     node_runtime: Option<&Path>,
     debug_log: Option<&Path>,
 ) -> Result<Value, String> {
+    if cfg!(windows) {
+        return Err("Native Windows hook setup is not implemented".into());
+    }
     if debug_log.is_some_and(|path| !path.is_absolute()) {
         return Err("Hook debug log path must be absolute".into());
     }
@@ -266,6 +272,9 @@ fn user_directory(path: &Path) -> Result<(), String> {
         return private_directory(path);
     }
     let metadata = fs::symlink_metadata(path).map_err(|e| e.to_string())?;
+    if !metadata.is_dir() || metadata.file_type().is_symlink() {
+        return Err("User hook directory must be a real directory".into());
+    }
     #[cfg(unix)]
     {
         use std::os::unix::fs::MetadataExt;

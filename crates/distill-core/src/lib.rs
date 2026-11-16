@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 pub mod credentials;
 pub mod diagnostics;
 pub mod integrity;
+pub mod platform;
 pub use diagnostics::{CommandGraph, CommandNode, ContextEvidence, CoverageGap, GapCode, Span};
 pub mod privacy;
 pub mod recoverability;
@@ -16,7 +17,7 @@ use std::{
 pub const PROTOCOL_VERSION: u32 = 1;
 pub const PRODUCT_VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Included in report provenance and the policy digest when built-in semantics change.
-pub const BEHAVIOR_POLICY_VERSION: &str = "10";
+pub const BEHAVIOR_POLICY_VERSION: &str = "11";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -572,6 +573,8 @@ impl Default for ServiceConfig {
 pub struct JudgeConfig {
     pub enabled: bool,
     pub provider: JudgeProvider,
+    #[serde(skip_serializing_if = "JudgeApiMode::is_provider_default")]
+    pub api_mode: JudgeApiMode,
     pub endpoint: String,
     pub model: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -591,6 +594,18 @@ pub enum ReviewFormat {
     #[default]
     Effects,
     Severity,
+}
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum JudgeApiMode {
+    #[default]
+    ProviderDefault,
+    Decisions,
+}
+impl JudgeApiMode {
+    fn is_provider_default(&self) -> bool {
+        *self == Self::ProviderDefault
+    }
 }
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -643,6 +658,7 @@ impl JudgeConfig {
         Self {
             enabled: false,
             provider,
+            api_mode: JudgeApiMode::ProviderDefault,
             endpoint: endpoint.into(),
             model: model.into(),
             reasoning_effort: None,
@@ -665,6 +681,7 @@ impl JudgeConfig {
 struct JudgeOptions {
     enabled: Option<bool>,
     provider: Option<JudgeProvider>,
+    api_mode: Option<JudgeApiMode>,
     endpoint: Option<String>,
     model: Option<String>,
     reasoning_effort: Option<ReasoningEffort>,
@@ -680,6 +697,12 @@ struct JudgeOptions {
 impl From<JudgeOptions> for JudgeConfig {
     fn from(options: JudgeOptions) -> Self {
         let mut result = Self::for_provider(options.provider.unwrap_or_default());
+        result.api_mode = options.api_mode.unwrap_or_default();
+        if result.api_mode == JudgeApiMode::Decisions {
+            result.endpoint = "https://api.openai.com/v1/decisions".into();
+            result.model = "gpt-6-luna".into();
+            result.review_format = ReviewFormat::Severity;
+        }
         if let Some(v) = options.enabled {
             result.enabled = v;
         }
@@ -1027,6 +1050,14 @@ impl Config {
         if self.judge.batch_window_ms > 0 && self.judge.review_format != ReviewFormat::Severity {
             return Err("Batching requires judge.review_format = severity".into());
         }
+        if self.judge.api_mode == JudgeApiMode::Decisions
+            && (self.judge.provider != JudgeProvider::OpenaiCompatible
+                || self.judge.model != "gpt-6-luna"
+                || self.judge.review_format != ReviewFormat::Severity
+                || self.judge.reasoning_effort.is_some())
+        {
+            return Err("Decisions requires the OpenAI-compatible provider, gpt-6-luna, severity format, and omitted reasoning effort".into());
+        }
         if self.judge.reasoning_effort.is_some()
             && matches!(
                 self.judge.provider,
@@ -1164,14 +1195,16 @@ impl Config {
 }
 
 pub fn default_config_path() -> Option<PathBuf> {
-    let home = PathBuf::from(std::env::var_os("HOME")?);
-    let xdg = home.join(".config/distill/config.toml");
+    let xdg = platform::config_directory()?.join("config.toml");
     if xdg.is_file() {
         return Some(xdg);
     }
-    let mac = home.join("Library/Application Support/distill/config.toml");
-    if mac.is_file() {
-        return Some(mac);
+    #[cfg(unix)]
+    {
+        let mac = platform::home_dir()?.join("Library/Application Support/distill/config.toml");
+        if mac.is_file() {
+            return Some(mac);
+        }
     }
     Some(xdg)
 }
@@ -1216,6 +1249,45 @@ mod tests {
     #[test]
     fn default_config_validates() {
         Config::default().validate().unwrap();
+    }
+
+    #[test]
+    fn decisions_defaults_roundtrip_and_reject_incompatible_settings() {
+        let config = Config::from_toml_bytes(b"[judge]\napi_mode='decisions'\n").unwrap();
+        config.validate().unwrap();
+        assert_eq!(config.judge.api_mode, JudgeApiMode::Decisions);
+        assert_eq!(config.judge.model, "gpt-6-luna");
+        assert_eq!(config.judge.endpoint, "https://api.openai.com/v1/decisions");
+        assert_eq!(config.judge.review_format, ReviewFormat::Severity);
+        assert!(config.judge.reasoning_effort.is_none());
+        let roundtrip =
+            Config::from_toml_bytes(toml::to_string(&config).unwrap().as_bytes()).unwrap();
+        assert_eq!(config.model_digest(), roundtrip.model_digest());
+        let mut standard = config.clone();
+        standard.judge.api_mode = JudgeApiMode::ProviderDefault;
+        assert_ne!(standard.model_digest(), config.model_digest());
+        assert!(
+            !toml::to_string(&Config::default())
+                .unwrap()
+                .contains("api_mode")
+        );
+        for fragment in [
+            "provider='gemini'",
+            "provider='vllm'",
+            "model='gpt-6-astra'",
+            "reasoning_effort='none'",
+            "review_format='effects'",
+        ] {
+            let input = format!("[judge]\napi_mode='decisions'\n{fragment}\n");
+            assert!(
+                Config::from_toml_bytes(input.as_bytes())
+                    .unwrap()
+                    .validate()
+                    .is_err(),
+                "{fragment}"
+            );
+        }
+        assert!(Config::from_toml_bytes(b"[judge]\napi_mode='unrecognized'\n").is_err());
     }
 
     #[test]

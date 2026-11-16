@@ -1,4 +1,4 @@
-# Distill Chat Command Trace · 0.5.11
+# Distill Chat Command Trace · 0.5.12
 
 A VS Code sidebar for commands observed by Distill's Codex and Claude Code hooks. The chat picker uses Codex chat headings. Each compact row shows just the command and severity. Click a row for a plain-language reason, policy decision, status, and output. **More details** contains the full command, coverage, bounded modeled effects (including database row scope), directory, shell, and time; **Assessment history** contains distinct revisions and provenance. Output starts with five lines (up to 1,800 characters); **Read more** loads retained output. Search covers the selected chat's complete retained history, with 100 commands per page.
 
@@ -17,7 +17,7 @@ Chat headings come from Codex's local `session_index.jsonl` metadata and update 
 
 Distill is one service connection. Agents require separate lifecycle handlers for checking commands, reviewing permissions, and recording results. Every Distill handler has the same service label, with one handler per event. Codex owns its trust screen and may prefix those labels with a number or require trust for each event; the extension cannot combine or bypass that review. Existing unnamed/duplicate Distill handlers in the user hook file are consolidated on reconnection, preserving strict mode and unrelated services.
 
-Packages support local desktop VS Code 1.95+ on macOS and Linux (glibc), on arm64 and x64. Apple Silicon uses `distill-trace-0.5.11-darwin-arm64.vsix`. Use the package matching your operating system and architecture; Marketplace installations select the matching platform automatically when published.
+Packages support local desktop VS Code 1.95+ on macOS and Linux (glibc), on arm64 and x64. Apple Silicon uses `distill-trace-0.5.12-darwin-arm64.vsix`. Use the package matching your operating system and architecture; Marketplace installations select the matching platform automatically when published.
 
 Extension 0.5.8 bundles CLI 0.5.8 / behavior policy 10. Recognized safe commands retain their conditional SAFE impact when Codex omits execution-shell metadata; analysis remains partial with HIGH approval risk. Unknown commands and unsupported syntax request background advice when routing is enabled; completed fallback ratings are marked as model advice. The installer requires `conditional-shell-impact` and `hook-debug-log` so stale custom CLIs cannot silently retain the old behavior. Python interpreter flags and stdin, pytest/unittest discovery, uv wrappers and environment operations, and Cargo workspace build/test effects remain supported. Dependency, plugin, and shell-context uncertainty remains visible; recognizing a test command does not certify arbitrary test code as safe.
 
@@ -46,7 +46,7 @@ Run `python3 scripts/package_smoke.py path/to/package.vsix` to check fresh CLI/s
 
 ## Publish to the VS Code Marketplace
 
-The **extension packages** GitHub Actions workflow builds and tests `darwin-arm64`, `darwin-x64`, `linux-arm64`, and `linux-x64` packages on native runners. Run it manually or push an `extension-v0.5.11` tag, then download the VSIX artifacts. For a first release, create or verify ownership of the `distill` publisher in [Marketplace publisher management](https://marketplace.visualstudio.com/manage), then upload the matching packages there. The manifest publisher must match the account you control. Building a VSIX does not publish it or verify publisher ownership.
+The **extension packages** GitHub Actions workflow builds and tests `darwin-arm64`, `darwin-x64`, `linux-arm64`, and `linux-x64` packages on native runners. Run it manually or push an `extension-v0.5.12` tag, then download the VSIX artifacts. For a first release, create or verify ownership of the `distill` publisher in [Marketplace publisher management](https://marketplace.visualstudio.com/manage), then upload the matching packages there. The manifest publisher must match the account you control. Building a VSIX does not publish it or verify publisher ownership.
 
 Publish all supported platform packages under the same extension ID and version so users get the correct bundled binaries automatically. Follow [VS Code's publishing guide](https://code.visualstudio.com/api/working-with-extensions/publishing-extension) for account setup and authenticated publishing; use its Trusted Publishing guidance when adding automated release publishing. The build workflow only produces artifacts.
 
@@ -97,6 +97,28 @@ Click **LLM settings** in the trace header, its gear icon, or run **Distill: Con
 3. Select the **API key variable** dropdown: provider default, a standard variable, no key, or a custom variable name.
 4. Paste the actual key into the masked **API key** field. It is stored in SecretStorage; exporting variables or relaunching VS Code from a terminal is unnecessary.
 5. Choose the endpoint if needed, enable routing, and click **Apply settings**. Leave the endpoint empty to use the provider preset.
+
+Version **0.5.14** bundles CLI/service **0.5.12**. **API mode** was added in 0.5.12. Under **OpenAI / compatible API**, choose **OpenAI Decisions (GPT-6 Luna)** for typed severity classifications. This selects GPT-6 Luna and Severity only, and disables reasoning-effort and output-token controls because the Decisions endpoint does not accept them. Leave Endpoint empty to use `https://api.openai.com/v1/decisions`, or provide an explicitly chosen compatible proxy. Switching back restores the chat model, endpoint, reasoning effort, reply format and token-budget draft. The existing provider API remains the default; this setting never changes the active route until Apply settings.
+
+For normal OpenAI-compatible requests, **Reasoning effort → None (disable reasoning)** explicitly sends `reasoning_effort: "none"`. Provider default omits the parameter and can still enable reasoning. Model support varies; invalid requests fail without switching models. Decisions and Chat Completions have distinct preset endpoints, so a key saved for one is not silently reused for the other: paste it into the selected connection when needed.
+
+Decisions answers are matched to commands by their question names and validated as one complete batch. Refusals, missing or duplicate answers, invalid labels and malformed probability data keep the review unavailable; they do not trigger a chat fallback. Confidence and probabilities are retained as advisory metadata, never permission to run a command. Static findings, coverage gaps, source-sharing opt-in and approval requirements remain authoritative. See the [official Decisions guide](https://developers.openai.com/api/docs/guides/decisions). The implementation is tested with local HTTP fixtures; no latency, cost or classification-quality improvement is claimed without a representative live evaluation.
+
+Version 0.5.14 also protects shared home roots and complete user-home directories in static Python, shell and Node deletion analysis. This fixes the accounted `shutil.rmtree("/home")` case without requiring model advice, while bounded project deletions retain their effect policy.
+
+Version 0.5.13 shares an explicit effect rubric across Decisions (`decisions-2`) and text severity reviews (`severity-3`). It distinguishes printed text from executed code, secret content from ordinary reads, and a bounded download from downloaded code execution. Background advice caches are bound to the prompt revision. Model advice still cannot clear static uncertainty or approve a command.
+
+From the repository root, compare frozen command expectations against the configured running service without executing candidates:
+
+```sh
+python3 scripts/evaluate_reviews.py \
+  --corpus corpus/review-prompt-regression.jsonl \
+  --corpus corpus/review-prompt-challenge.jsonl \
+  --expect-prompt decisions-2 \
+  --output /tmp/distill-review-evaluation.json
+```
+
+This performs two uncached live reviews per command using the service's internal credentials. Labels are fixed before requests; exact and accepted-label agreement are reported separately. A small synthetic corpus is a regression check, not a general accuracy guarantee. Direct model results are separate from the installed hook, which normally requests advice only for unresolved analysis.
 
 The model dropdown uses bundled suggestions and makes no provider API calls when opened. The IDs must be available to your endpoint and account. Existing custom model IDs remain selectable, and switching providers restores each provider's unsaved model and endpoint draft. Choosing a model only changes the form until you apply it; there is no automatic model fallback.
 

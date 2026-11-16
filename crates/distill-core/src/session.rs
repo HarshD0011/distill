@@ -1,7 +1,8 @@
 //! Bounded, user-owned policy state. Only hashes, effect labels and timestamps persist.
 use crate::{
     Config, Decision, EffectKind, Evidence, Finding, FindingBasis, Report, Severity, TargetClass,
-    integrity::{private_directory, read_private, sha256},
+    integrity::{private_directory, read_private_handle, sha256},
+    platform::{self, PrivateFileMode, lock_exclusive as lock},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -17,30 +18,6 @@ use std::{
 // a shared CI disk, and two seconds is not enough for that queue to drain.
 // The watchdog remains the aggregate fail-closed backstop for a whole hook.
 const LOCK_WAIT: std::time::Duration = std::time::Duration::from_secs(5);
-
-#[cfg(unix)]
-fn lock(file: &fs::File, timeout: std::time::Duration) -> Result<(), String> {
-    use std::os::fd::AsRawFd;
-    let started = std::time::Instant::now();
-    loop {
-        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
-            return Ok(());
-        }
-        let error = std::io::Error::last_os_error();
-        if !matches!(
-            error.kind(),
-            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
-        ) {
-            return Err(format!(
-                "Cannot lock session ledger: {error}; review is required"
-            ));
-        }
-        let Some(remaining) = timeout.checked_sub(started.elapsed()) else {
-            return Err("Session ledger is busy; review is required".into());
-        };
-        std::thread::sleep(remaining.min(std::time::Duration::from_millis(2)));
-    }
-}
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 struct State {
@@ -73,10 +50,8 @@ pub fn directory(config: &Config) -> Result<PathBuf, String> {
         .ledger
         .directory
         .clone()
-        .or_else(|| {
-            std::env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state/distill"))
-        })
-        .ok_or("HOME is unavailable".into())
+        .or_else(platform::state_directory)
+        .ok_or("User state directory is unavailable".into())
 }
 fn transaction<T>(
     config: &Config,
@@ -106,19 +81,9 @@ fn transaction<T>(
     if files > 256 || bytes > 64 * 1024 * 1024 || files == 256 && !path.exists() {
         return Err("Global session ledger capacity reached; clear old session files".into());
     }
-    let mut options = fs::OpenOptions::new();
-    options.read(true).write(true).create(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options
-            .mode(0o600)
-            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let mut file = options.open(&path).map_err(|e| e.to_string())?;
-    #[cfg(unix)]
+    let mut file = platform::open_private(&path, PrivateFileMode::ReadWrite)?;
     lock(&file, LOCK_WAIT)?;
-    let original = read_private(&path, 2 * 1024 * 1024)?;
+    let original = read_private_handle(&file, 2 * 1024 * 1024)?;
     let mut state: State = if original.is_empty() {
         State::default()
     } else {
@@ -359,32 +324,11 @@ pub fn clear(config: &Config, source: &str, session: &str, workspace: &Path) -> 
     let directory = directory(config)?;
     private_directory(&directory)?;
     let key = sha256(format!("{source}\0{session}\0{}", workspace.display()).as_bytes());
-    let mut options = fs::OpenOptions::new();
-    options.read(true).write(true).create(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options
-            .mode(0o600)
-            .custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let file = options
-        .open(directory.join(format!("{key}.json")))
-        .map_err(|e| e.to_string())?;
-    let metadata = file.metadata().map_err(|e| e.to_string())?;
-    #[cfg(unix)]
-    {
-        use std::{os::fd::AsRawFd, os::unix::fs::MetadataExt};
-        if metadata.uid() != unsafe { libc::geteuid() }
-            || metadata.mode() & 0o077 != 0
-            || !metadata.is_file()
-        {
-            return Err("Ledger must be a private regular file".into());
-        }
-        if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
-            return Err("Session ledger is busy; retry clearing it".into());
-        }
-    }
+    let file = platform::open_private(
+        &directory.join(format!("{key}.json")),
+        PrivateFileMode::ReadWrite,
+    )?;
+    lock(&file, std::time::Duration::ZERO)?;
     file.set_len(0)
         .and_then(|_| file.sync_data())
         .map_err(|e| e.to_string())

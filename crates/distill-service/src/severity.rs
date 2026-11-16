@@ -87,9 +87,21 @@ impl App {
         }
         let response: Value =
             serde_json::from_slice(&bytes).map_err(|_| "Model response is not JSON")?;
-        let text = providers::response_text(self.config.judge.provider, &response)?;
-        Ok(parse(&text, params.len())?.into_iter().zip(params).map(|(severity,param)| {
-            let mut result = json!({"status":"advisory","severity":severity,"model":self.config.judge.model,"provider":self.config.judge.provider,"prompt_version":"severity-2","cached":false,"batch_size":params.len(),"proposal":{"effects":[],"intent_match":"unavailable","explanation":"Model severity suggestion only. Approval requirements retained."}});
+        let decisions = self.config.judge.api_mode == distill_core::JudgeApiMode::Decisions;
+        let ratings: Vec<_> = if decisions {
+            providers::decision_ratings(&response, params.len())?.into_iter().map(|rating|
+                (rating.severity, Some(json!({"confidence":rating.confidence,"probabilities":rating.probabilities})))
+            ).collect()
+        } else {
+            let text = providers::response_text(self.config.judge.provider, &response)?;
+            parse(&text, params.len())?
+                .into_iter()
+                .map(|severity| (severity, None))
+                .collect()
+        };
+        Ok(ratings.into_iter().zip(params).map(|((severity, details),param)| {
+            let mut result = json!({"status":"advisory","severity":severity,"model":self.config.judge.model,"provider":self.config.judge.provider,"prompt_version":providers::review_prompt_version(&self.config.judge),"cached":false,"batch_size":params.len(),"proposal":{"effects":[],"intent_match":"unavailable","explanation":"Model severity suggestion only. Approval requirements retained."}});
+            if let Some(details) = details { result["api_mode"] = json!("decisions"); result["decision_details"] = details; }
             if let Some(source) = param.get("source_review") { result["source_review"] = source.clone(); }
             result
         }).collect())

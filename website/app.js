@@ -72,9 +72,9 @@ function initLogoIntro() {
         flight = word.animate([
           { transform:'translate3d(0,0,0) scale(1,1)' },
           { transform:`translate3d(${to.left - from.left}px,${to.top - from.top}px,0) scale(${to.width / from.width},${to.height / from.height})` }
-        ], { duration:1150, easing:'cubic-bezier(.76,0,.24,1)', fill:'forwards' });
+        ], { duration:750, easing:'cubic-bezier(.76,0,.24,1)', fill:'forwards' });
         flight.finished.then(finish, finish);
-        handoffTimer = setTimeout(finish, 1300);
+        handoffTimer = setTimeout(finish, 800);
       } catch {
         finish();
       }
@@ -96,7 +96,8 @@ function initLogoIntro() {
     intro.hidden = false;
     intro.classList.add('is-playing');
     skip.focus({ preventScroll:true });
-    sweepTimer = setTimeout(dock, 5800);
+    // Keep the light animation at its original pace; leave the intro early.
+    sweepTimer = setTimeout(dock, 2200);
   });
 }
 const logoIntroFinished = initLogoIntro();

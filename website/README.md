@@ -45,14 +45,20 @@ Official reference:
 
 ## Content and interactions
 
-- On an ordinary arrival at the top of the page, a chrome `distill.` wordmark
-  catches a moving curved highlight on black, following `logo.mp4`. After one
-  5.8-second pass it shrinks into the real header wordmark over 1.15 seconds as
-  the site fades into view. The command animation starts after that handoff.
+- On an ordinary arrival at the top of the page, the original chrome `distill.`
+  wordmark plays on black, following `logo.mp4`. Three overlapping gradient layers
+  turn, stretch, and change direction independently across the letters. Sharp
+  light folds alternate with a soft haze whose blur and intensity breathe through
+  the animation. The silhouette stays sharp. The light motion keeps its original
+  5.8-second pace; after 2.2 seconds, it starts shrinking into the real header
+  wordmark over 0.75 seconds as the site fades into view. The intro lasts
+  2.95 seconds total, capped at 3 seconds by the fail-open watchdog. Highlight
+  opacity fades independently during the handoff so the slow animation can end
+  smoothly before its full cycle completes. The command animation starts afterward.
   The finish uses CSS gradients and a measured Web Animations transform, with
   no new dependencies. Skip intro and Escape reveal the site immediately.
   Reduced motion, anchor links, history returns, unsupported animation APIs,
-  and disabled JavaScript open the site directly. A nine-second fail-open
+  and disabled JavaScript open the site directly. A three-second fail-open
   watchdog protects access if initialization fails. `logo-intro.css` contains
   the finish and reveal styles; resizing during the handoff ends it cleanly.
 - A dark opening shows an AI agent proposing a command. The command types in,
@@ -93,30 +99,47 @@ Official reference:
   sharing, opt-in script excerpts, and encrypted API key storage. The website
   itself does not connect to model providers or collect credentials.
 - A model-cost note recommends a small, capable model for high-volume command
-  review. The maintainer reports a real-world GPT-6 Luna test of 610 requests for
-  $0.12: approximately $0.00020/request or $0.20/1,000 requests, in USD. These are
-  rounded observed/extrapolated costs, not a quoted API tariff. The official
+  review. The maintainer reports a real-world GPT-6 Luna test of 1,000 requests for
+  $0.15 USD. The page shows the request count and total spend without a redundant
+  normalized-cost metric. These are observed costs, not a quoted API tariff. The official
   model page is linked for context. Sub-second responses are reported as observed
   cases, not a universal latency guarantee; checked-in live samples also include
   slower replies. The speed summary reflects compact severity-only prompts,
   bounded context, matching-result caching and deduplication, reusable provider
   connections, and background model work in the current service implementation.
-  The three cost/request figures count up once when the statistics enter the
+  The request count and total spend count up once when the statistics enter the
   viewport, easing to their final values over roughly 2.3 seconds. Reduced motion,
   missing observer support, and disabled JavaScript show final values immediately;
   screen readers receive stable final figures throughout the animation. The
   observed latency bound remains static.
+- A separate OpenAI Decisions pricing section explains why severity classification
+  can cost less than standard text generation: GPT-6 Luna Decisions has no output-token
+  charge, with uncached input at **$0.10** and cache hits at **$0.01 per million
+  tokens**. The standard USD rates were checked against OpenAI's Decisions guide
+  and model page on 2026-11-16; cache writes are billed separately and regional or
+  long-context premiums may apply. The page links both official sources and keeps
+  published token rates separate from the older $0.15 field-test spend. Verdict
+  quality is tied to the existing 47/48-command Decisions evaluation below, without
+  claiming a measured accuracy comparison against another API mode.
+- The latest local benchmark reports **47/48 commands** matching the revised
+  model rubric, up from 35/48, with two uncached reviews per command. All 24 fresh
+  challenge cases match, up from 15/24. Median advice latency is **148 ms**, with
+  **166 ms p95**. These GPT-6 Luna / OpenAI Decisions results are from a small
+  synthetic set, not a general accuracy guarantee; billing was not measured in
+  this evaluation. The linked `assets/review-benchmark.json` contains the frozen
+  expected labels, before/after replies, per-review timings and limitations.
+  The copy also describes the verified static fix for recursive shared-home
+  deletion in Python, shell and Node under the default policy. Static checks do
+  not require model advice. The benchmark and fix are labeled as local test-build
+  evidence, separately from the older maintainer-reported cost test.
 - **Extension install guide** links to the public VSIX build and installation
   instructions. The Marketplace listing and release packages were unavailable
   when checked on 2026-11-09, so the site describes the source-build path.
-- The installation section explicitly lists macOS and Linux as supported, with
-  Windows coming soon as the maintainer's announced direction. Existing platform
-  guards, packaging targets, documentation, and macOS/Ubuntu CI confirm that Linux
-  support already exists; it is not labeled as a future platform. Linux desktop
-  packages require glibc, and both supported platforms target arm64/x64. Native
-  critical-command approval dialogs remain macOS-only; the FAQ states that other
-  platforms retain their denial fallback. This is a source/packaging support
-  check, not a new runtime certification on Linux or Windows.
+- The installation section and editor FAQ list macOS and Windows as supported,
+  with Linux coming soon pending runtime testing, following the maintainer's
+  release status. Native critical-command approval dialogs remain macOS-only;
+  the FAQ states that other platforms retain their denial fallback. This website
+  copy update does not perform new platform runtime testing.
 - Examples are actual CLI 0.4.6 reports recorded on macOS with explicit Bash
   context and `/tmp` as the working directory. The page does not execute or
   analyze user-supplied commands. See `assets/example-reports.json` for their

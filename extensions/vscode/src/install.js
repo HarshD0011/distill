@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const { promisify } = require('node:util');
 const execFile = promisify(require('node:child_process').execFile);
 const { resolveBinary } = require('./client');
-const REQUIRED = ['assessments', 'completion', 'memory-only', 'workspace-context', 'hook-source-inspection', 'user-hook-setup', 'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval', 'conditional-shell-impact', 'hook-debug-log', 'node-module-analysis', 'structured-diagnostics', 'direct-file-hooks', 'optional-service', 'configurable-router', 'versioned-hook-policy', 'native-gemini-claude', 'session-only-router', 'background-model-advice', 'model-agnostic-router', 'pipe-credentials', 'severity-batching', 'named-hook-services'];
+const REQUIRED = ['assessments', 'completion', 'memory-only', 'workspace-context', 'hook-source-inspection', 'user-hook-setup', 'critical-hook-block', 'shell-context-coverage', 'node-hook-launcher', 'coding-workflows', 'native-critical-approval', 'foreground-critical-approval', 'conditional-shell-impact', 'hook-debug-log', 'node-module-analysis', 'structured-diagnostics', 'direct-file-hooks', 'optional-service', 'configurable-router', 'versioned-hook-policy', 'native-gemini-claude', 'session-only-router', 'background-model-advice', 'model-agnostic-router', 'pipe-credentials', 'severity-batching', 'named-hook-services', 'decisions-api'];
 
 function digest(bytes) { return crypto.createHash('sha256').update(bytes).digest('hex'); }
 function privateDirectory(directory) {

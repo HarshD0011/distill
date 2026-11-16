@@ -2,7 +2,7 @@
   "name": "distill-trace",
   "displayName": "Distill \u2014 Chat Command Trace",
   "description": "Command safety checks and temporary chat traces for Codex and Claude Code. Includes the Distill CLI with guided hook setup.",
-  "version": "0.5.11",
+  "version": "0.5.14",
   "publisher": "distill",
   "license": "GPL-3.0-only",
   "repository": {
@@ -140,6 +140,14 @@
           "default": "openai_compatible",
           "scope": "machine",
           "description": "Request format and endpoint preset. Uses exactly the selected model; never falls back to a cloud or more expensive model."
+        },
+        "distill.llm.apiMode": {
+          "type": "string",
+          "enum": ["provider_default", "decisions"],
+          "enumItemLabels": ["Provider default API", "OpenAI Decisions (GPT-6 Luna)"],
+          "default": "provider_default",
+          "scope": "machine",
+          "description": "Select OpenAI Decisions for typed severity classifications with GPT-6 Luna. Requires OpenAI / compatible API, Severity only, and Provider default reasoning; reasoning and output-token controls are not sent. Empty endpoint uses the selected API preset. Existing provider behavior is preserved by default."
         },
         "distill.llm.endpoint": {
           "type": "string",

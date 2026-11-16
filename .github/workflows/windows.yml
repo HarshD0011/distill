@@ -1,0 +1,33 @@
+name: Windows foundation
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+          - os: windows-11-arm
+            target: aarch64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable-${{ matrix.target }}
+          components: clippy
+      # The extension, Unix IPC suites, and containment are deliberately not
+      # advertised as supported by this initial native-platform milestone.
+      - name: Check Windows libraries and executables
+        run: cargo check --locked --workspace --lib --bins --target ${{ matrix.target }}
+      - name: Check platform code with warnings denied
+        run: cargo clippy --locked -p distill-core --all-targets --target ${{ matrix.target }} -- -D warnings
+      - name: Test native core, private state, randomness, and locking
+        run: cargo test --locked -p distill-core --lib --target ${{ matrix.target }} -- --nocapture

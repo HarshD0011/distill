@@ -148,6 +148,9 @@ pub fn manage(
             let meta = std::fs::symlink_metadata(&binary).map_err(
                 |_| "Install the service binary from the current platform extension package",
             )?;
+            if !meta.is_file() || meta.file_type().is_symlink() {
+                return Err("Service binary must be a real file".into());
+            }
             #[cfg(unix)]
             {
                 use std::os::unix::fs::MetadataExt;

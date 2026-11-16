@@ -1,4 +1,9 @@
-/* A single chrome-light pass, followed by a handoff to the real header wordmark. */
+/* The original chrome wordmark, with overlapping light folds and breathing blur. */
+@property --intro-light-angle {
+  syntax:'<angle>';
+  inherits:false;
+  initial-value:115deg;
+}
 html {
   scrollbar-gutter:stable;
 }
@@ -23,9 +28,10 @@ html {
   z-index:-1;
   background:#000;
   opacity:1;
-  transition:opacity .95s ease .1s;
+  transition:opacity .62s ease .04s;
 }
 .intro-word {
+  --intro-haze:clamp(2px,.65vw,8px);
   position:relative;
   display:block;
   padding:0;
@@ -35,7 +41,7 @@ html {
   line-height:1;
   letter-spacing:-.052em;
   color:transparent;
-  background-image:linear-gradient(115deg,
+  background-image:linear-gradient(var(--intro-light-angle),
     #e5e5e8 0%,#75757d 9%,#1a1a1e 17%,#414148 24%,
     #c3c3cb 32%,#f6f6f8 37%,#8b8b94 40%,#242429 48%,
     #16161a 58%,#9a9aa2 68%,#e2e2e8 73%,#51515b 83%,#242429 100%);
@@ -45,9 +51,9 @@ html {
   -webkit-background-clip:text;
   -webkit-text-stroke:.65px #b9b9c166;
   transform-origin:0 0;
-  animation:intro-metal 5.8s linear both;
+  animation:intro-metal 5.8s cubic-bezier(.4,0,.2,1) both;
   animation-play-state:paused;
-  transition:color .4s ease;
+  transition:color .35s ease;
   user-select:none;
 }
 .intro-word:before,.intro-word:after {
@@ -59,24 +65,39 @@ html {
   -webkit-background-clip:text;
   color:transparent;
   pointer-events:none;
-  transition:opacity .4s ease;
+  transition:opacity .35s ease;
 }
 .intro-word:before {
-  background-image:linear-gradient(180deg,#eeeef1 0%,#9a9aa433 25%,#08080a 48%,#f9f9fc88 64%,#72727c 100%);
-  opacity:.45;
-  -webkit-text-stroke:.8px #d6d6df55;
+  background-image:
+    linear-gradient(calc(var(--intro-light-angle) + 55deg),
+      transparent 20%,#dadade22 34%,#fff9 44%,#fff 49%,#aaaab355 57%,transparent 72%),
+    conic-gradient(from var(--intro-light-angle) at 45% 55%,
+      transparent 0deg,#d6d6df88 38deg,#fff 49deg,transparent 76deg,
+      transparent 182deg,#bbbcc566 218deg,#fff9 235deg,transparent 265deg);
+  background-size:220% 190%,180% 250%;
+  background-position:75% 30%,20% 75%;
+  -webkit-text-stroke:0;
+  filter:blur(1px);
+  animation:intro-haze 5.8s cubic-bezier(.4,0,.2,1) both;
+  animation-play-state:paused;
 }
 .intro-word:after {
-  background-image:radial-gradient(ellipse at 50% 110%,
-    transparent 38%,#15151b 41%,#b9b0d7 42%,#f8f8ff 43%,
-    #fff 44%,#d7e9ee 45%,#d0be9655 46%,#fff9 47%,transparent 50%);
-  background-size:240% 180%;
-  background-position:100% 50%;
+  background-image:
+    conic-gradient(from var(--intro-light-angle) at 55% 45%,
+      transparent 0deg,transparent 34deg,#d9d9e166 42deg,#fff 46deg,
+      #f2f2f7aa 49deg,transparent 57deg,transparent 207deg,
+      #96969f66 220deg,#fff 226deg,transparent 234deg),
+    linear-gradient(calc(var(--intro-light-angle) - 80deg),
+      transparent 36%,#dedee633 44%,#fff9 49%,transparent 55%);
+  background-size:210% 250%,270% 180%;
+  background-position:20% 70%,90% 25%;
   -webkit-text-stroke:0;
   animation:intro-glint 5.8s cubic-bezier(.4,0,.6,1) both;
   animation-play-state:paused;
 }
-.logo-intro.is-playing .intro-word,.logo-intro.is-playing .intro-word:after {
+.logo-intro.is-playing .intro-word,
+.logo-intro.is-playing .intro-word:before,
+.logo-intro.is-playing .intro-word:after {
   animation-play-state:running;
 }
 .intro-word.is-docking {
@@ -98,10 +119,15 @@ html {
   background:transparent;
   font:10px var(--mono);
   letter-spacing:.4px;
-  transition:color .2s,opacity .3s;
+  transition:color .2s,opacity .2s;
 }
 .intro-skip:hover {
   color:hsl(var(--tone-100));
+}
+.intro-skip:focus-visible {
+  outline:1px solid #ffffff90;
+  outline-offset:6px;
+  border-radius:4px;
 }
 html.intro-pending,html.intro-pending body {
   overflow:hidden;
@@ -115,13 +141,13 @@ html.intro-pending main,
 html.intro-pending .site-footer {
   visibility:hidden;
   opacity:0;
-  transition:opacity .85s ease .2s;
+  transition:opacity .6s ease .06s;
 }
 html.intro-pending .site-header .brand-name {
   opacity:0;
 }
 .command-journey {
-  transition:opacity .6s ease;
+  transition:opacity .4s ease;
 }
 html.intro-pending .command-journey {
   opacity:0;
@@ -138,26 +164,42 @@ html.intro-revealing .site-footer {
   visibility:visible;
   opacity:1;
 }
+html.intro-revealing .command-journey {
+  opacity:1;
+}
 html.intro-revealing .intro-skip {
   opacity:0;
   pointer-events:none;
 }
 @keyframes intro-metal {
-  from { background-position:100% 50% }
-  to { background-position:0% 50% }
+  0% { --intro-light-angle:115deg; background-position:100% 35%; background-size:260% 180% }
+  24% { --intro-light-angle:142deg; background-position:42% 15%; background-size:230% 240% }
+  48% { --intro-light-angle:98deg; background-position:68% 80%; background-size:310% 170% }
+  74% { --intro-light-angle:76deg; background-position:18% 30%; background-size:220% 220% }
+  100% { --intro-light-angle:118deg; background-position:35% 60%; background-size:260% 180% }
+}
+@keyframes intro-haze {
+  0% { --intro-light-angle:150deg; background-position:75% 30%,20% 75%; filter:blur(1px) opacity(0) }
+  18% { --intro-light-angle:205deg; background-position:30% 65%,65% 25%; filter:blur(calc(var(--intro-haze) * .75)) opacity(.5) }
+  40% { --intro-light-angle:125deg; background-position:60% 15%,35% 60%; filter:blur(calc(var(--intro-haze) * .25)) opacity(.85) }
+  64% { --intro-light-angle:245deg; background-position:15% 80%,80% 35%; filter:blur(var(--intro-haze)) opacity(.45) }
+  84% { --intro-light-angle:190deg; background-position:50% 45%,25% 85%; filter:blur(calc(var(--intro-haze) * .4)) opacity(.7) }
+  100% { --intro-light-angle:225deg; background-position:35% 60%,60% 40%; filter:blur(1px) opacity(0) }
 }
 @keyframes intro-glint {
-  0% { background-position:110% 50%; opacity:0 }
-  8% { opacity:1 }
-  88% { opacity:1 }
-  100% { background-position:-10% 50%; opacity:0 }
+  0% { --intro-light-angle:25deg; background-position:20% 70%,90% 25%; background-size:210% 250%,270% 180%; filter:blur(.3px) opacity(0) }
+  14% { --intro-light-angle:65deg; background-position:65% 30%,40% 65%; filter:blur(1.4px) opacity(.85) }
+  36% { --intro-light-angle:150deg; background-position:35% 60%,75% 20%; background-size:260% 170%,180% 260%; filter:blur(.2px) opacity(1) }
+  58% { --intro-light-angle:95deg; background-position:80% 20%,20% 80%; filter:blur(1.1px) opacity(.65) }
+  80% { --intro-light-angle:200deg; background-position:30% 75%,60% 35%; background-size:180% 270%,240% 190%; filter:blur(.35px) opacity(1) }
+  100% { --intro-light-angle:255deg; background-position:55% 45%,35% 60%; background-size:210% 250%,270% 180%; filter:blur(1.8px) opacity(0) }
 }
 @media(max-width:600px) {
   .intro-word { font-size:clamp(90px,26vw,152px) }
   .intro-skip { font-size:9px }
 }
 @media(prefers-reduced-motion:reduce) {
-  .intro-word,.intro-word:after { animation:none }
+  .intro-word,.intro-word:before,.intro-word:after { animation:none }
   .intro-backdrop,.intro-word,.intro-word:before,.intro-word:after,
   .intro-skip,html.intro-pending .site-header,html.intro-pending main,
   html.intro-pending .site-footer { transition:none }

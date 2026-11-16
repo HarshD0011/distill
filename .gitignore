@@ -64,6 +64,10 @@ node_modules/
 command-risk-plugin-guide.md
 distill_complete_architecture.md
 
+# Local design and working notes
+/design.md
+/modified.md
+
 # Fuzz build output and transient crash artifacts
 /fuzz/target/
 /fuzz/artifacts/
