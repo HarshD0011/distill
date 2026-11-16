@@ -13,6 +13,8 @@ const binary = process.env.DISTILL_TEST_BINARY || path.join(root, 'target/debug/
 test('real signed hooks and recorder preserve impact badges, separate approval risk, UNKNOWN and unassessed in the sidebar renderer', { skip: !fs.existsSync(binary) }, async () => {
   const { stdout } = await execFile(process.execPath, [path.join(root, 'scripts/trace_label_audit.js'), binary, '--extension-check'], { timeout: 20000 });
   const result = JSON.parse(stdout);
+  assert.equal(typeof result.behaviorPolicyVersion, 'string');
+  assert.ok(result.behaviorPolicyVersion.length > 0, 'CLI must declare its behavior policy version');
   assert.equal(result.candidateExecution, false);
   assert.equal(result.rows, 14);
   assert.equal(result.unassessed, 1);
@@ -32,6 +34,11 @@ test('real signed hooks and recorder preserve impact badges, separate approval r
     ui.receive({ type: 'command', sessionKey: session.key, command });
     row = ui.elements.get('commands').children[index];
     assert.equal(row.children[0].children[0].textContent, badge, `${id} expanded badge`);
+    if (id !== 'missing') {
+      const primary = command.assessments.find(revision => revision.hook === 'PreToolUse').report;
+      assert.equal(primary.behavior_policy_version, result.behaviorPolicyVersion, `${id} signed report policy version`);
+      assert.equal(command.behaviorPolicyVersion, result.behaviorPolicyVersion, `${id} sidebar policy provenance`);
+    }
     if (id === 'partial-read') {
       assert.equal(command.approvalRisk, 'medium');
       assert.match(row.textContent, /Approval risk.*medium/);
@@ -45,7 +52,6 @@ test('real signed hooks and recorder preserve impact badges, separate approval r
     }
     if (id === 'sql-cte-delete' || id === 'sql-constant-delete') {
       const primary = command.assessments.find(revision => revision.hook === 'PreToolUse').report;
-      assert.equal(primary.behavior_policy_version, '11');
       assert.ok(primary.behaviors.some(behavior => behavior.kind === 'database' && behavior.database?.action === 'delete' && behavior.database.scope === 'all_rows'));
       assert.match(row.textContent, /Modeled effects.*all rows/);
     }

@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
-const { spawn } = require('node:child_process');
+const { spawn, execFileSync } = require('node:child_process');
 const { once } = require('node:events');
 const { processIdentity, endpointPath, readEndpoint, rpc } = require('../extensions/vscode/src/transport');
 const binary = path.resolve(process.argv[2] || 'target/debug/distill');
@@ -55,6 +55,9 @@ async function main() {
     const session=(await rpc(broker.endpoint,{action:'snapshot'})).sessions.find(session=>session.id==='audit');
     const result={replayedCommands:cases.length+(extensionCheck?1:0),rows:session.commands.length,unknown:session.commands.filter(row=>row.severity==='unknown').length,unassessed:session.commands.filter(row=>row.assessmentCount===0).length,proposed:session.commands.filter(row=>row.status==='proposed').length,completed:session.commands.filter(row=>row.status==='completed').length,blocked:session.commands.filter(row=>row.status==='blocked').length,candidateExecution:false};
     if(extensionCheck) {
+      // Use this fixture's CLI metadata, not a duplicated policy-version literal.
+      const doctor = JSON.parse(execFileSync(binary, ['doctor', '--json', '--config', policy, '--workspace-root', directory], { encoding:'utf8', timeout:5000 }));
+      result.behaviorPolicyVersion = doctor.behavior_policy_version;
       const compact=(await rpc(broker.endpoint,{action:'snapshot',compact:true})).sessions.find(session=>session.id==='audit');
       result.extension={session:compact,details:[]};
       for(const entry of compact.commands) result.extension.details.push((await rpc(broker.endpoint,{action:'command',sessionKey:compact.key,id:entry.id})).command);
