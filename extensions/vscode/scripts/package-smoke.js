@@ -41,13 +41,14 @@ async function main() {
     assert.ok((await configureUserHooks(setup)).every(service => !service.changed));
     assert.equal(approvals, 1, 'An unchanged install must not prompt again');
     const { configure, readRouterSettings } = require(path.join(extensionPath, 'src/router'));
-    const route = readRouterSettings({ inspect: key => ({ globalValue: key === 'llm.apiMode' ? 'decisions' : undefined }) });
+    const route = readRouterSettings({ inspect: key => ({ globalValue: key === 'llm.apiMode' ? 'decisions' : key === 'llm.criticalDescriptions' ? true : undefined }) });
     const updated = await configure(installed.binary, 'codex', route, { env });
     assert.equal(updated.router.api_mode, 'decisions');
     assert.equal(updated.router.model, 'gpt-6-luna');
     assert.equal(updated.router.endpoint, 'https://api.openai.com/v1/decisions');
+    assert.equal(updated.router.critical_descriptions, true);
     assert.equal(updated.router.enabled, false, 'Packaging checks must not contact a model endpoint');
-    console.log('Packaged CLI/service installation, named hook approval, safe hook invocation, reconnect, and Decisions configuration passed.');
+    console.log('Packaged CLI/service installation, named hook approval, safe hook invocation, reconnect, Decisions, and critical-description configuration passed.');
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 }
 

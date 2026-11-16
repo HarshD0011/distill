@@ -22,7 +22,7 @@ function app(script = path.resolve(__dirname, '../../media/trace.js'), markupFil
   for (const [id, element] of elements) if (id === 'llm-apiKeyEnv') element.append(new Element('option'));
   const messages = []; let receive;
   const context = vm.createContext({ document: { getElementById: id => elements.get(id), createElement: tag => new Element(tag) },
-    window: { addEventListener: (_, listener) => { receive = listener; } }, acquireVsCodeApi: () => ({ postMessage: message => messages.push(JSON.parse(JSON.stringify(message))) }), setTimeout, clearTimeout });
+    window: { addEventListener: (_, listener) => { receive = listener; } }, acquireVsCodeApi: () => ({ postMessage: message => messages.push(JSON.parse(JSON.stringify(message))) }), setTimeout, clearTimeout, URL });
   vm.runInContext(fs.readFileSync(script, 'utf8'), context);
   return { elements, messages, receive: data => receive({ data }) };
 }

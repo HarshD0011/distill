@@ -20,6 +20,7 @@ use std::{
 use std::{io::Write, sync::atomic::AtomicUsize};
 mod background;
 mod concurrency;
+mod descriptions;
 mod providers;
 mod severity;
 
@@ -352,6 +353,7 @@ impl App {
             "judge" => self.judge(params),
             "judge_enqueue" => self.enqueue(params),
             "judge_results" => self.advice_results(params),
+            "describe_critical" => self.describe_critical(params),
             "stop" => {
                 self.stop.store(true, Ordering::SeqCst);
                 Ok(json!({"stopping":true}))

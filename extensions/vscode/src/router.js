@@ -51,8 +51,11 @@ function readRouterSettings(configuration) {
   const send_script_contents = read('sendScriptContents', false);
   const review_format = read('reviewFormat', 'severity');
   const batch_window_ms = read('batchWindowMs', 0);
+  const critical_descriptions = read('criticalDescriptions', false);
   if (!['severity', 'effects'].includes(review_format) || !Number.isInteger(batch_window_ms) || batch_window_ms < 0 || batch_window_ms > 500 || batch_window_ms >= background_deadline_ms || (batch_window_ms > 0 && review_format !== 'severity')) throw new Error('Batch window must be 0–500 ms, shorter than the timeout, and requires severity reviews.');
   const url = new URL(endpoint);
+  if (typeof critical_descriptions !== 'boolean') throw new Error('Critical descriptions must be on or off.');
+  if (critical_descriptions && (provider !== 'openai_compatible' || !/\/(?:chat\/completions|decisions)$/.test(url.pathname))) throw new Error('Critical descriptions require an OpenAI-compatible Chat Completions or Decisions connection.');
   if (decisions && (model !== 'gpt-6-luna' || reasoning !== 'provider_default' || review_format !== 'severity')) throw new Error('Decisions requires GPT-6 Luna, Severity only, and Provider default reasoning (the reasoning control is not sent).');
   if (decisions && url.pathname.endsWith('/chat/completions') || !decisions && url.pathname.endsWith('/decisions')) throw new Error('Select an endpoint matching the API mode. Leave it empty to use the preset.');
   if (typeof enabled !== 'boolean' || typeof send_script_contents !== 'boolean' || typeof model !== 'string' || model.length > 256 || (enabled && !model.trim())) throw new Error('Select a served model before enabling the local LLM router.');
@@ -61,7 +64,7 @@ function readRouterSettings(configuration) {
   if (enabled && ['gemini', 'claude'].includes(provider) && !api_key_env) throw new Error('Gemini and Claude require an API key environment-variable name.');
   if (provider === 'gemini' && (url.search || url.pathname.includes(':generateContent'))) throw new Error('Gemini endpoint must be the API base URL; select the model separately.');
   if (!Number.isInteger(max_output_tokens) || max_output_tokens < 64 || max_output_tokens > 2048 || !Number.isInteger(deadline_ms) || deadline_ms < 20 || deadline_ms > 800) throw new Error('LLM output or deadline limit is invalid.');
-  return { enabled, provider, ...(decisions ? { api_mode: 'decisions' } : {}), endpoint, model, api_key_env, max_output_tokens, deadline_ms, background_deadline_ms, send_script_contents, review_format, batch_window_ms, max_script_bytes: 8192, ...(reasoning === 'provider_default' ? {} : { reasoning_effort: reasoning }) };
+  return { enabled, provider, ...(decisions ? { api_mode: 'decisions' } : {}), endpoint, model, api_key_env, max_output_tokens, deadline_ms, background_deadline_ms, send_script_contents, review_format, batch_window_ms, max_script_bytes: 8192, ...(critical_descriptions ? { critical_descriptions: true } : {}), ...(reasoning === 'provider_default' ? {} : { reasoning_effort: reasoning }) };
 }
 
 // execFile does not accept stdin. Keep JSON off command arguments and bound both

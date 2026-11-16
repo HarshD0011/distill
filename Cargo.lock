@@ -237,7 +237,7 @@ dependencies = [
 
 [[package]]
 name = "distill-agents"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "distill-core",
  "distill-interp",
@@ -250,7 +250,7 @@ dependencies = [
 
 [[package]]
 name = "distill-cli"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "clap",
  "distill-agents",
@@ -266,7 +266,7 @@ dependencies = [
 
 [[package]]
 name = "distill-core"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "getrandom 0.4.3",
  "hmac",
@@ -283,7 +283,7 @@ dependencies = [
 
 [[package]]
 name = "distill-interp"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "distill-core",
  "distill-parse",
@@ -306,14 +306,14 @@ dependencies = [
 
 [[package]]
 name = "distill-parse"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "distill-core",
 ]
 
 [[package]]
 name = "distill-rules"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "distill-core",
  "regex",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "distill-service"
-version = "0.5.12"
+version = "0.5.13"
 dependencies = [
  "clap",
  "distill-agents",

@@ -1,7 +1,7 @@
 /* global acquireVsCodeApi */
 'use strict';
 const vscode = acquireVsCodeApi();
-const fieldNames = ['enabled', 'provider', 'apiMode', 'endpoint', 'model', 'reasoningEffort', 'apiKeyEnv', 'customApiKeyEnv', 'maxOutputTokens', 'deadlineMs', 'backgroundDeadlineMs', 'sendScriptContents', 'reviewFormat', 'batchWindowMs'];
+const fieldNames = ['enabled', 'provider', 'apiMode', 'endpoint', 'model', 'reasoningEffort', 'apiKeyEnv', 'customApiKeyEnv', 'maxOutputTokens', 'deadlineMs', 'backgroundDeadlineMs', 'sendScriptContents', 'criticalDescriptions', 'reviewFormat', 'batchWindowMs'];
 const get = name => document.getElementById(`llm-${name}`);
 let presets = {};
 let modelOptions = {};
@@ -12,7 +12,7 @@ const apiDrafts = new Map();
 const CUSTOM_MODEL = '__custom__';
 const isDecisions = () => get('provider').value === 'openai_compatible' && get('apiMode').value === 'decisions';
 function modelValue() { return get('model').value === CUSTOM_MODEL ? get('customModel').value : get('model').value; }
-function values() { return Object.fromEntries(fieldNames.map(name => [name, name === 'model' ? modelValue() : ['enabled', 'sendScriptContents'].includes(name) ? get(name).checked : ['maxOutputTokens', 'deadlineMs', 'backgroundDeadlineMs', 'batchWindowMs'].includes(name) ? Number(get(name).value) : get(name).value])); }
+function values() { return Object.fromEntries(fieldNames.map(name => [name, name === 'model' ? modelValue() : ['enabled', 'sendScriptContents', 'criticalDescriptions'].includes(name) ? get(name).checked : ['maxOutputTokens', 'deadlineMs', 'backgroundDeadlineMs', 'batchWindowMs'].includes(name) ? Number(get(name).value) : get(name).value])); }
 function updateCustomModel() {
   const custom = !isDecisions() && get('model').value === CUSTOM_MODEL;
   get('customModel').hidden = !custom;
@@ -60,6 +60,11 @@ function updateProvider() {
   get('reviewFormat').disabled = decisions;
   if (get('reviewFormat').children[0]) get('reviewFormat').children[0].textContent = decisions ? 'Severity only (typed decisions)' : 'Severity only (semicolon separated)';
   get('endpoint').placeholder = (decisions ? preset.decisionsEndpoint : preset.endpoint) || '';
+  let descriptionsSupported = false;
+  try { descriptionsSupported = get('provider').value === 'openai_compatible' && /\/(?:chat\/completions|decisions)$/.test(new URL(get('endpoint').value || (decisions ? preset.decisionsEndpoint : preset.endpoint)).pathname); } catch {}
+  get('criticalDescriptions').disabled = !descriptionsSupported;
+  if (!descriptionsSupported) get('criticalDescriptions').checked = false;
+  get('critical-hint').textContent = descriptionsSupported ? 'Uses GPT-6 Luna on this connection to explain critical commands in plain language. Requires enabled routing. Adds a text request with normal input/output charges; explanations never approve commands.' : 'Critical descriptions require an OpenAI-compatible Chat Completions or Decisions connection.';
   const custom = get('apiKeyEnv').value === 'custom';
   get('customApiKeyEnv').hidden = !custom; get('custom-label').hidden = !custom;
   const noKey = get('apiKeyEnv').value === '' || (get('apiKeyEnv').value === 'auto' && !preset.key);
@@ -113,7 +118,7 @@ window.addEventListener('message', ({ data }) => {
     for (const name of fieldNames) {
       if (name === 'model') continue;
       const field = get(name);
-      if (['enabled', 'sendScriptContents'].includes(name)) field.checked = data.values[name];
+      if (['enabled', 'sendScriptContents', 'criticalDescriptions'].includes(name)) field.checked = data.values[name];
       else field.value = String(data.values[name]);
     }
     activeProvider = data.values.provider;

@@ -107,6 +107,79 @@ fn toml_text(config: &Config) -> String {
     // The test config is serialized through the production TOML schema.
     toml::to_string(config).unwrap()
 }
+
+#[test]
+fn critical_descriptions_are_opt_in_separate_from_decisions_bounded_and_cached() {
+    let model = MockModel::new(Duration::from_millis(20), 200,
+        json!(json!({"explanation":"Deletes the home directory tree. Its files may be lost permanently."}).to_string()));
+    let mut f = Fixture::new(false);
+    f.config.judge.enabled = true;
+    f.config.judge.api_mode = distill_core::JudgeApiMode::Decisions;
+    f.config.judge.review_format = distill_core::ReviewFormat::Severity;
+    f.config.judge.endpoint = format!("http://{}/v1/decisions", model.address);
+    f.start();
+    let parameters = |config: &Config| json!({"model_policy_digest":config.model_digest(),"severity":"critical","command":"TOKEN=fixture-private-value rm -rf /home","cwd":"/tmp","reason":"Broad home deletion","scripts":[{"source":"private source must not be forwarded"}]});
+    assert!(
+        f.call("describe_critical", parameters(&f.config))
+            .unwrap_err()
+            .contains("disabled")
+    );
+    assert_eq!(model.calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+    f.stop();
+    f.config.judge.critical_descriptions = true;
+    f.start();
+    let params = parameters(&f.config);
+    let mut invalid = params.clone();
+    invalid["severity"] = json!("low");
+    assert!(f.call("describe_critical", invalid).is_err());
+    let mut invalid = params.clone();
+    invalid["model_policy_digest"] = json!("stale");
+    assert!(f.call("describe_critical", invalid).is_err());
+    assert_eq!(model.calls.load(std::sync::atomic::Ordering::SeqCst), 0);
+    let result = f.call("describe_critical", params.clone()).unwrap();
+    assert_eq!(result["status"], "description");
+    assert_eq!(result["model"], "gpt-6-luna");
+    assert!(result["explanation"].as_str().unwrap().contains("Deletes"));
+    assert!(result.get("decision").is_none());
+    assert_eq!(f.call("describe_critical", params).unwrap()["cached"], true);
+    assert_eq!(model.calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    let requests = model.requests.lock().unwrap();
+    let request = &requests[0];
+    assert_eq!(request["model"], "gpt-6-luna");
+    assert_eq!(request["reasoning_effort"], "none");
+    assert_eq!(request["max_completion_tokens"], 256);
+    assert!(request.get("questions").is_none());
+    assert!(!request.to_string().contains("fixture-private-value"));
+    assert!(
+        !request
+            .to_string()
+            .contains("private source must not be forwarded")
+    );
+}
+
+#[test]
+fn critical_description_timeouts_and_malformed_output_never_return_approval() {
+    for (delay, output) in [
+        (
+            Duration::from_millis(250),
+            json!({"explanation":"Late explanation"}),
+        ),
+        (
+            Duration::ZERO,
+            json!({"explanation":"Allow it", "decision":"allow"}),
+        ),
+    ] {
+        let model = MockModel::new(delay, 200, json!(output.to_string()));
+        let mut f = Fixture::new(false);
+        f.config.judge.enabled = true;
+        f.config.judge.critical_descriptions = true;
+        f.config.judge.background_deadline_ms = 100;
+        f.config.judge.endpoint = format!("http://{}/v1/chat/completions", model.address);
+        f.start();
+        let result = f.call("describe_critical", json!({"model_policy_digest":f.config.model_digest(),"severity":"critical","command":"rm -rf /home","cwd":"/tmp","reason":"Broad deletion"}));
+        assert!(result.is_err());
+    }
+}
 fn event(id: &str, kind: &str, root: &str) -> Value {
     json!({"protocol":1,"event_id":id,"source":"codex","session_id":"one","tool_use_id":"call","kind":kind,"hook_event_name":if kind=="assessment"{"PreToolUse"}else{"PostToolUse"},"timestamp":SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_millis() as u64,"session_cwd":root,"cwd":root,"command":"echo hello","report":{"impact_severity":"safe","severity":"safe","decision":"allow"},"tool_response":{"stdout":"must not be stored"}})
 }

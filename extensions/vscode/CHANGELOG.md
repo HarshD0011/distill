@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.15
+
+- Add an opt-in **Critical descriptions** setting. GPT-6 Luna gives a short plain-language explanation of critical shell commands in the macOS approval dialog using the selected OpenAI-compatible connection.
+- Keep explanations separate from Decisions verdicts: use a bounded text request with reasoning off, normal text-generation charges, redacted evidence, and a short in-memory cache. Timeout or malformed output falls back to the static warning.
+- Redesign macOS confirmations with labeled explanation, command, directory and static findings, selectable scrollable text, and clear **Block command** / **Allow once** buttons. Escape blocks the command and there is no implicit approval shortcut; Allow once requires an explicit button action.
+- Pass dialog content over stdin, preserve exact-command and source/policy checks, and bundle CLI/service 0.5.13.
+
 ## 0.5.14
 
 - Treat shared home roots and complete user-home directories as protected deletion targets across Python, shell and Node analysis, including `/home` when it is not the current user's home.

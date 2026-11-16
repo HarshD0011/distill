@@ -587,6 +587,8 @@ pub struct JudgeConfig {
     pub background_deadline_ms: u64,
     pub review_format: ReviewFormat,
     pub batch_window_ms: u64,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub critical_descriptions: bool,
 }
 #[derive(Debug, Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -670,6 +672,7 @@ impl JudgeConfig {
             background_deadline_ms: 5000,
             review_format: ReviewFormat::Effects,
             batch_window_ms: 0,
+            critical_descriptions: false,
         }
     }
 }
@@ -693,6 +696,7 @@ struct JudgeOptions {
     background_deadline_ms: Option<u64>,
     review_format: Option<ReviewFormat>,
     batch_window_ms: Option<u64>,
+    critical_descriptions: Option<bool>,
 }
 impl From<JudgeOptions> for JudgeConfig {
     fn from(options: JudgeOptions) -> Self {
@@ -736,6 +740,9 @@ impl From<JudgeOptions> for JudgeConfig {
         }
         if let Some(v) = options.batch_window_ms {
             result.batch_window_ms = v;
+        }
+        if let Some(v) = options.critical_descriptions {
+            result.critical_descriptions = v;
         }
         result
     }
@@ -1050,6 +1057,11 @@ impl Config {
         if self.judge.batch_window_ms > 0 && self.judge.review_format != ReviewFormat::Severity {
             return Err("Batching requires judge.review_format = severity".into());
         }
+        if self.judge.critical_descriptions
+            && self.judge.provider != JudgeProvider::OpenaiCompatible
+        {
+            return Err("Critical descriptions require an OpenAI-compatible connection".into());
+        }
         if self.judge.api_mode == JudgeApiMode::Decisions
             && (self.judge.provider != JudgeProvider::OpenaiCompatible
                 || self.judge.model != "gpt-6-luna"
@@ -1238,6 +1250,25 @@ pub fn redact_command(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn critical_descriptions_default_off_round_trip_and_bind_model_policy() {
+        let config = super::Config::default();
+        assert!(!config.judge.critical_descriptions);
+        assert!(
+            serde_json::to_value(&config.judge)
+                .unwrap()
+                .get("critical_descriptions")
+                .is_none()
+        );
+        let mut enabled = config.clone();
+        enabled.judge.critical_descriptions = true;
+        assert_ne!(enabled.model_digest(), config.model_digest());
+        let round_trip =
+            super::Config::from_toml_bytes(toml::to_string(&enabled).unwrap().as_bytes()).unwrap();
+        assert!(round_trip.judge.critical_descriptions);
+        enabled.judge.provider = super::JudgeProvider::Claude;
+        assert!(enabled.validate().is_err());
+    }
     use super::*;
 
     #[test]

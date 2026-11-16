@@ -109,7 +109,9 @@ test('the shipped LLM settings button opens the masked settings form, with advan
   assert.equal(routedModels.at(-1), 'gpt-5.4-mini');
   assert.equal(routedEfforts.at(-1), undefined);
   assert.equal(preferences.get('llm.reasoningEffort'), 'provider_default');
-  await receiveSettings({ type: 'save', values: { ...FIELDS, apiMode: 'decisions', model: 'gpt-6-luna' }, apiKey: '' });
+  await receiveSettings({ type: 'save', values: { ...FIELDS, apiMode: 'decisions', model: 'gpt-6-luna', criticalDescriptions: true }, apiKey: '' });
+  assert.equal(preferences.get('llm.criticalDescriptions'), true);
+  assert.equal(messages.at(-1).values.criticalDescriptions, true);
   assert.equal(preferences.get('llm.apiMode'), 'decisions');
   assert.equal(routedApiModes.at(-1), 'decisions');
   assert.equal(routedEfforts.at(-1), undefined);
