@@ -721,11 +721,13 @@ body[data-scene-theme="paper"] .site-journey {
   font-size:12px;
   line-height:1.85;
 }
+.model-decisions,
 .model-benchmark {
   margin-top:28px;
   padding-top:28px;
   border-top:1px solid hsl(var(--tone-300) / .17);
 }
+.model-decisions h4,
 .model-benchmark h4 {
   margin:12px 0 0;
   color:hsl(var(--tone-100));
@@ -742,6 +744,7 @@ body[data-scene-theme="paper"] .site-journey {
   font:9px/1.7 var(--mono);
   letter-spacing:0;
 }
+.model-decisions .model-test-note a,
 .model-benchmark .model-test-note a {
   color:hsl(var(--tone-200));
   text-decoration:underline;
@@ -774,8 +777,8 @@ body[data-scene-theme="paper"] .site-journey {
   .model-speed-summary { margin-top:20px; padding-top:20px }
   .model-speed-summary h4 { font-size:12px }
   .chapter-shell .model-speed-summary p { font-size:11px }
-  .model-benchmark { margin-top:23px; padding-top:23px }
-  .model-benchmark h4 { font-size:18px }
+  .model-decisions,.model-benchmark { margin-top:23px; padding-top:23px }
+  .model-decisions h4,.model-benchmark h4 { font-size:18px }
   .chapter-shell .model-benchmark-copy { font-size:11px }
 }
 .chapter-shell .boundaries {

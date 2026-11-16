@@ -112,6 +112,15 @@ Official reference:
   missing observer support, and disabled JavaScript show final values immediately;
   screen readers receive stable final figures throughout the animation. The
   observed latency bound remains static.
+- A separate OpenAI Decisions pricing section explains why severity classification
+  can cost less than standard text generation: GPT-6 Luna Decisions has no output-token
+  charge, with uncached input at **$0.10** and cache hits at **$0.01 per million
+  tokens**. The standard USD rates were checked against OpenAI's Decisions guide
+  and model page on 2026-11-16; cache writes are billed separately and regional or
+  long-context premiums may apply. The page links both official sources and keeps
+  published token rates separate from the older $0.15 field-test spend. Verdict
+  quality is tied to the existing 47/48-command Decisions evaluation below, without
+  claiming a measured accuracy comparison against another API mode.
 - The latest local benchmark reports **47/48 commands** matching the revised
   model rubric, up from 35/48, with two uncached reviews per command. All 24 fresh
   challenge cases match, up from 15/24. Median advice latency is **148 ms**, with

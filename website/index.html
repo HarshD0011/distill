@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="./palette.css?v=908593d9bce6">
   <link rel="stylesheet" href="./styles.css?v=7fffc28db2b7">
   <link rel="stylesheet" href="./story.css?v=0bfcee27d38b">
-  <link rel="stylesheet" href="./journey.css?v=e69ec1deecc4">
+  <link rel="stylesheet" href="./journey.css?v=8bc3711915e7">
   <link rel="stylesheet" href="./logo-intro.css?v=93a8e1ca7368">
   <script src="./app.js?v=7e50fd527a5e" defer></script>
 </head>
@@ -179,6 +179,17 @@
           <div><dt>Model replies observed</dt><dd>&lt;1<span class="metric-unit">s</span></dd></div>
         </dl>
         <p class="model-test-note">Maintainer-reported GPT-6 Luna field test; costs are in USD. Sub-second responses were observed in testing. Cost and latency vary with workload, network, and provider.</p>
+        <section class="model-decisions" aria-labelledby="model-decisions-title">
+          <div class="model-economics-heading"><div><span class="model-label">OPENAI DECISIONS · GPT-6 LUNA</span><h4 id="model-decisions-title">Lower the bill further with Decisions.</h4></div><span class="model-test-badge">NO OUTPUT-TOKEN CHARGE</span></div>
+          <p class="model-benchmark-copy">Command severity is a classification task. OpenAI Decisions returns a severity choice directly, with no output-token charge. That can reduce review costs further compared with standard text generation, while cached input costs 90% less than uncached input.</p>
+          <dl class="model-test-stats model-review-stats">
+            <div><dt>Output tokens</dt><dd>$0</dd></div>
+            <div><dt>Cached input · cache hits</dt><dd>$0.01</dd></div>
+            <div><dt>Uncached input</dt><dd>$0.10</dd></div>
+          </dl>
+          <p class="model-test-note">Standard rates in USD per 1 million tokens, checked November 16, 2026. Cache writes are billed separately; regional and long-context premiums may apply. <a href="https://developers.openai.com/api/docs/guides/decisions#pricing-and-availability">Decisions pricing</a> · <a href="https://developers.openai.com/api/docs/models/gpt-6-luna">Cached input rates</a>. These are published rates, separate from the field-test spend above.</p>
+          <p class="model-benchmark-copy"><strong>Lower cost, tested verdict quality.</strong> This Decisions path uses Distill’s severity rubric and keeps static protections in place. In the local test below, 47 of 48 commands matched the expected labels on both reviews. Results are limited to this small synthetic test set.</p>
+        </section>
         <div class="model-speed-summary"><h4>How we keep reviews fast.</h4><p>The compact review path sends bounded context and asks for a short, severity-only reply. Recent matching results are cached, duplicate requests share work, and a persistent local service reuses connections. Reviews run in the background so provider waits don’t block the command hook.</p></div>
         <section class="model-benchmark" aria-labelledby="model-benchmark-title">
           <div class="model-economics-heading"><div><span class="model-label">GPT-6 LUNA · OPENAI DECISIONS</span><h4 id="model-benchmark-title">A sharper rubric. Measured on real model replies.</h4></div><span class="model-test-badge">LOCAL TEST · NOV 15, 2026</span></div>
