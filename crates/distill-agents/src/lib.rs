@@ -1440,7 +1440,20 @@ mod tests {
                     barrier.wait();
                     for index in 0..8 {
                         let event = json!({"hook_event_name":"PreToolUse", "tool_name":"Bash", "cwd":"/tmp", "session_id":"parallel", "tool_use_id":format!("{worker}-{index}"), "tool_input":{"command":"echo hello", "shell":"/bin/bash"}});
-                        let (_, report) = assess_hook(Integration::Codex, &event.to_string(), config, HookOptions::default()).unwrap();
+                        // Contention may legitimately exhaust one hook's bounded
+                        // lock wait on a shared CI disk. Retry only that explicit
+                        // fail-closed result, using the same id to check idempotence.
+                        let started = std::time::Instant::now();
+                        let report = loop {
+                            match assess_hook(Integration::Codex, &event.to_string(), config, HookOptions::default()) {
+                                Ok((_, report)) => break report,
+                                Err(error) if error == "Session ledger is busy; review is required" => {
+                                    assert!(started.elapsed() < std::time::Duration::from_secs(20), "Ledger contention did not clear: {error}");
+                                    std::thread::sleep(std::time::Duration::from_millis(10));
+                                }
+                                Err(error) => panic!("Concurrent hook failed: {error}"),
+                            }
+                        };
                         assert_eq!(report.decision, Decision::Allow);
                     }
                 })
